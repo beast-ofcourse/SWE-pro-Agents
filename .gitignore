@@ -10,5 +10,8 @@ Thumbs.db
 # Node
 node_modules/
 
+# Separate repos
+opencode-autonomous-team/
+
 # Logs
 *.log
