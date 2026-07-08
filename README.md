@@ -6,8 +6,9 @@
 [![npm downloads](https://img.shields.io/npm/dt/swe-pro-agents?style=flat-square)](https://www.npmjs.com/package/swe-pro-agents)
 [![license](https://img.shields.io/github/license/beast-ofcourse/SWE-pro-Agents?style=flat-square)](LICENSE)
 [![agents](https://img.shields.io/badge/agents-49-success?style=flat-square)](#agents)
+[![skills](https://img.shields.io/badge/skills-7-blue?style=flat-square)](#skills)
 
-**49 production-grade OpenCode subagent profiles — deploy a full engineering team in your terminal.**
+**49 production-grade OpenCode subagent profiles + 7 delivery pipeline skills — deploy a full engineering team in your terminal.**
 
 </div>
 
@@ -19,6 +20,7 @@
 - [Install](#install)
 - [Quick Start](#quick-start)
 - [Agents](#agents)
+- [Skills](#skills)
 - [Workflows](#workflows)
 - [Updating](#updating)
 - [Agent Philosophy](#agent-philosophy)
@@ -46,9 +48,9 @@ What you get:
 npm install -g swe-pro-agents
 ```
 
-This copies all 49 agent profiles to `~/.config/opencode/agents/swe-pro-agents/`.
+This copies all 49 agent profiles to `~/.config/opencode/agents/swe-pro-agents/` and all 7 skills to `~/.config/opencode/skills/`.
 
-Then register them with OpenCode by adding to your `opencode.json`:
+Then register the agents with OpenCode by adding to your `opencode.json`:
 
 ```json
 {
@@ -152,6 +154,40 @@ The team is organized into four squads. Each agent has a focused role, explicit 
 | `arch-tech-debt` | Debt identification, prioritization, and remediation planning |
 | `arch-technical-strategy` | Long-term technology roadmap and decision framework |
 | `architecture-mapper` | Architecture diagram generation and system visualization |
+
+---
+
+## Skills
+
+Beyond agents, SWE Pro Agents ships **7 delivery pipeline skills** — a staged engineering workflow you can load on demand via OpenCode's `skill` tool. Each stage is a focused `SKILL.md` with its own instructions:
+
+```
+swe-pipeline (entry point)
+    |
+  repository        -- get oriented before touching anything
+    |
+  planner (optional) -- skip for small, well-understood tasks
+    |
+  specialists        -- do the actual implementation work
+    |
+  reviewer           -- read-only check of the diff
+    |
+  testing            -- write/run tests, confirm the change holds
+    |
+  return             -- one consolidated report back to the user
+```
+
+Skills auto-install to `~/.config/opencode/skills/` and are picked up by OpenCode automatically — no config needed. Just start working and OpenCode's skill tool offers `swe-pipeline` when relevant.
+
+| Skill | Stage | Purpose |
+|---|---|---|
+| `swe-pipeline` | Entry | Maps the task through all stages |
+| `repository` | Orientation | Read-only codebase map before any change |
+| `planner` | Planning | Ordered implementation plan (optional) |
+| `specialists` | Implementation | Routes work by domain (backend/frontend/general) |
+| `reviewer` | Review | Read-only diff review |
+| `testing` | Testing | Write + run tests, report real results |
+| `pipeline-return` | Return | One consolidated report to the user |
 
 ---
 

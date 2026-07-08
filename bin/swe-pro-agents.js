@@ -16,7 +16,9 @@ const os = require('os');
 
 const PACKAGE_NAME = 'swe-pro-agents';
 const AGENTS_DIR = path.join(__dirname, '..', 'agents');
-const TARGET_DIR = path.join(os.homedir(), '.config', 'opencode', 'agents', PACKAGE_NAME);
+const SKILLS_DIR = path.join(__dirname, '..', 'skills');
+const TARGET_AGENTS_DIR = path.join(os.homedir(), '.config', 'opencode', 'agents', PACKAGE_NAME);
+const TARGET_SKILLS_DIR = path.join(os.homedir(), '.config', 'opencode', 'skills');
 
 const pkg = require(path.join(__dirname, '..', 'package.json'));
 
@@ -25,32 +27,50 @@ function getAgentCount() {
   return fs.readdirSync(AGENTS_DIR).filter(f => f.endsWith('.md')).length;
 }
 
+function getSkillCount() {
+  if (!fs.existsSync(SKILLS_DIR)) return 0;
+  return fs.readdirSync(SKILLS_DIR).filter(e =>
+    fs.statSync(path.join(SKILLS_DIR, e)).isDirectory()
+      && fs.existsSync(path.join(SKILLS_DIR, e, 'SKILL.md'))
+  ).length;
+}
+
 function getInstalledAgentCount() {
-  if (!fs.existsSync(TARGET_DIR)) return 0;
-  return fs.readdirSync(TARGET_DIR).filter(f => f.endsWith('.md')).length;
+  if (!fs.existsSync(TARGET_AGENTS_DIR)) return 0;
+  return fs.readdirSync(TARGET_AGENTS_DIR).filter(f => f.endsWith('.md')).length;
+}
+
+function getInstalledSkillCount() {
+  if (!fs.existsSync(TARGET_SKILLS_DIR)) return 0;
+  return fs.readdirSync(TARGET_SKILLS_DIR).filter(e =>
+    fs.statSync(path.join(TARGET_SKILLS_DIR, e)).isDirectory()
+      && fs.existsSync(path.join(TARGET_SKILLS_DIR, e, 'SKILL.md'))
+  ).length;
 }
 
 function cmdSetup() {
-  console.log(`\n  Add this to your opencode.json:\n`);
+  console.log(`\n  Add this to your opencode.json or AGENTS.md:\n`);
   console.log(`  {`);
-  console.log(`    "agents": [{ "path": "${TARGET_DIR.replace(/\\/g, '\\\\')}" }]`);
+  console.log(`    "agents": [{ "path": "${TARGET_AGENTS_DIR.replace(/\\/g, '\\\\')}" }]`);
   console.log(`  }\n`);
   console.log(`  Or add this line to your AGENTS.md:\n`);
-  console.log(`  - path: ${TARGET_DIR}\n`);
+  console.log(`  - path: ${TARGET_AGENTS_DIR}\n`);
+  console.log(`  Skills are auto-discovered from ~/.config/opencode/skills/ — no config needed.\n`);
 }
 
 function cmdStatus() {
   const agentCount = getAgentCount();
-  const installedCount = getInstalledAgentCount();
+  const skillCount = getSkillCount();
+  const installedAgentCount = getInstalledAgentCount();
 
   console.log(`\n  SWE Pro Agents — Status`);
   console.log(`  ${'─'.repeat(40)}`);
   console.log(`  Version:    ${pkg.version}`);
-  console.log(`  Package:    ${agentCount} agent profiles`);
-  console.log(`  Installed:  ${installedCount > 0 ? `${installedCount} agents at ${TARGET_DIR}` : 'Not installed'}`);
+  console.log(`  Agents:     ${agentCount} in package` + (installedAgentCount > 0 ? `, ${installedAgentCount} installed` : ''));
+  console.log(`  Skills:     ${skillCount} pipeline skills in package`);
 
-  if (installedCount > 0 && installedCount !== agentCount) {
-    console.log(`  Warning: installed count (${installedCount}) doesn't match package (${agentCount}). Run 'npm update -g swe-pro-agents'.`);
+  if (installedAgentCount > 0 && installedAgentCount !== agentCount) {
+    console.log(`  Warning: installed agent count (${installedAgentCount}) doesn't match package (${agentCount}). Run 'npm update -g swe-pro-agents'.`);
   }
 
   // Check if opencode.json references these agents
