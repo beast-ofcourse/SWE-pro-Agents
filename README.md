@@ -5,10 +5,9 @@
 [![npm version](https://img.shields.io/npm/v/swe-pro-agents?color=blue&style=flat-square)](https://www.npmjs.com/package/swe-pro-agents)
 [![npm downloads](https://img.shields.io/npm/dt/swe-pro-agents?style=flat-square)](https://www.npmjs.com/package/swe-pro-agents)
 [![license](https://img.shields.io/github/license/beast-ofcourse/SWE-pro-Agents?style=flat-square)](LICENSE)
-[![agents](https://img.shields.io/badge/agents-59-success?style=flat-square)](#agents)
-[![teams](https://img.shields.io/badge/teams-1-blue?style=flat-square)](#autonomous-team)
+[![agents](https://img.shields.io/badge/agents-49-success?style=flat-square)](#agents)
 
-**59 production-grade OpenCode subagent profiles + 1 autonomous engineering team — deploy a full engineering org in your terminal.**
+**49 production-grade OpenCode subagent profiles — deploy a full engineering team in your terminal.**
 
 </div>
 
@@ -20,7 +19,6 @@
 - [Install](#install)
 - [Quick Start](#quick-start)
 - [Agents](#agents)
-- [Autonomous Team](#autonomous-team)
 - [Workflows](#workflows)
 - [Updating](#updating)
 - [Agent Philosophy](#agent-philosophy)
@@ -38,7 +36,7 @@ What you get:
 
 - **Consistency** — every agent produces disciplined output, not random good intentions
 - **Depth** — agents carry domain knowledge that would take paragraphs to prompt each time
-- **Team structure** — 59 specialized roles + a 10-agent autonomous team that divide and conquer, not one monolithic chat
+- **Team structure** — 49 specialized roles that divide and conquer, not one monolithic chat
 
 ---
 
@@ -48,7 +46,7 @@ What you get:
 npm install -g swe-pro-agents
 ```
 
-This copies all 59 agent profiles + autonomous team to `~/.config/opencode/agents/swe-pro-agents/`.
+This copies all 49 agent profiles to `~/.config/opencode/agents/swe-pro-agents/`.
 
 Then register them with OpenCode by adding to your `opencode.json`:
 
@@ -154,91 +152,6 @@ The team is organized into four squads. Each agent has a focused role, explicit 
 | `arch-tech-debt` | Debt identification, prioritization, and remediation planning |
 | `arch-technical-strategy` | Long-term technology roadmap and decision framework |
 | `architecture-mapper` | Architecture diagram generation and system visualization |
-
----
-
-## Autonomous Team
-
-Beyond individual agents, SWE Pro Agents ships a **fully autonomous engineering team** — a primary orchestrator + 9 specialists that implement the full goal-to-production lifecycle without hand-holding.
-
-```
-User Goal
-    │
-    ▼
-Autonomous Orchestrator (primary agent)
-    │
-    ├── researcher     — competitor/OSS/library/pattern research
-    ├── planner        — requirements, architecture, living task backlog
-    ├── frontend       — UI implementation
-    ├── backend        — API/DB/auth implementation
-    ├── tester         — writes and runs tests, reports real results
-    ├── performance    — measures and optimizes, before/after numbers only
-    ├── security       — evidenced findings, never a generic checklist
-    ├── docs-writer    — README/API docs/changelog/deployment guide
-    └── reviewer       — independent, read-only production-readiness gate
-```
-
-### How it works
-
-The orchestrator runs a **10-phase loop**: Understand → Research → Requirements → Architecture → Planning → Execute → Verify → Critique → Polish → Goal Validation. It delegates specialized work to subagents, integrates results, and doesn't stop until a real user could achieve the stated goal with what's on disk.
-
-### Install
-
-The autonomous team ships as a self-contained scaffold inside this package:
-
-```bash
-npm install -g swe-pro-agents
-```
-
-The team lands at `~/.config/opencode/agents/swe-pro-agents/teams/autonomous/`.
-
-To use it in a project, **copy** the team directory into your project root:
-
-```bash
-cp -r ~/.config/opencode/agents/swe-pro-agents/teams/autonomous ./my-project
-cd my-project
-opencode
-```
-
-The team includes:
-- **10 agent files** — `orchestrator` (primary) + 9 subagents
-- **4 custom commands** — `/start-project`, `/build`, `/status`, `/replan`
-- **5 doc templates** — `project-overview`, `research`, `requirements`, `architecture`, `tasks`
-- **`AGENTS.md`** — cross-cutting rules for every agent in the team
-
-### First run
-
-```bash
-/start-project Build a habit-tracking web app with streaks and mobile support.
-```
-
-This runs Phase 0–5: research, requirements, architecture, task planning — then stops for your review. When ready:
-
-```bash
-/build
-```
-
-Runs the full autonomous loop: implement → test → review → optimize → document → commit, task by task, until done.
-
-Check in anytime:
-
-```bash
-/status
-```
-
-Restructure after scope changes:
-
-```bash
-/replan We need multi-user support now.
-```
-
-### Why it's designed this way
-
-- **One primary agent, nine subagents** — matches how OpenCode's Task tool and `@mention` routing actually work
-- **Every subagent has `task: deny`** — only the orchestrator can dispatch work, preventing uncontrolled recursive delegation
-- **Living documents** — `docs/project-overview.md`, `docs/tasks.md`, `docs/architecture.md` are edited continuously, not one-shot
-- **Evidence over vibes** — tester, performance, and security report only what they actually ran/measured/found
-- **Reviewer is read-only** — its judgment stays independent of whoever wrote the code
 
 ---
 

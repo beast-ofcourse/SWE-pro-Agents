@@ -1,7 +1,7 @@
 {
   "name": "swe-pro-agents",
   "version": "1.1.0",
-  "description": "59 specialized OpenCode subagent profiles + 1 autonomous team (10 agents) — SWE roles, research, architecture, code analysis, and full-stack autonomous engineering",
+  "description": "49 specialized OpenCode subagent profiles — SWE roles, research, architecture, and code analysis agents",
   "keywords": [
     "opencode",
     "agents",
@@ -22,7 +22,6 @@
   },
   "files": [
     "agents/",
-    "teams/",
     "scripts/",
     "bin/",
     "README.md",
