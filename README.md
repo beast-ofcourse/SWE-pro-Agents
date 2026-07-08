@@ -1,6 +1,35 @@
 # SWE Pro Agents
 
-A collection of specialized software engineering agent profiles for AI-assisted development workflows. Each agent profile defines a focused role — from implementation and debugging to architecture review and security auditing — designed to integrate into AI coding assistants like OpenCode.
+A collection of specialized software engineering agent profiles for AI-assisted development workflows. Each agent profile defines a focused role — from implementation and debugging to architecture review and security auditing — designed for use with **OpenCode**.
+
+## Install
+
+```bash
+npm install -g swe-pro-agents
+```
+
+This copies all 49 agent files to `~/.config/opencode/agents/swe-pro-agents/`.
+
+Then add this to your `opencode.json`:
+
+```json
+{
+  "agents": [{ "path": "~/.config/opencode/agents/swe-pro-agents" }]
+}
+```
+
+**To update** when new agents are released:
+
+```bash
+npm update -g swe-pro-agents
+```
+
+### CLI
+
+```bash
+swe-pro-agents status   # Check installation status
+swe-pro-agents setup    # Show config snippet
+```
 
 ## Agents
 

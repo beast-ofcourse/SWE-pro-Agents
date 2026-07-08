@@ -1,0 +1,40 @@
+{
+  "name": "swe-pro-agents",
+  "version": "1.0.0",
+  "description": "49 specialized OpenCode subagent profiles — SWE roles, research, architecture, and code analysis agents",
+  "keywords": [
+    "opencode",
+    "agents",
+    "subagents",
+    "ai-coding",
+    "software-engineering",
+    "developer-tools"
+  ],
+  "homepage": "https://github.com/beast-ofcourse/SWE-pro-Agents",
+  "bugs": {
+    "url": "https://github.com/beast-ofcourse/SWE-pro-Agents/issues"
+  },
+  "license": "MIT",
+  "author": "beast-ofcourse",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/beast-ofcourse/SWE-pro-Agents.git"
+  },
+  "files": [
+    "agents/",
+    "scripts/",
+    "bin/",
+    "README.md",
+    "LICENSE"
+  ],
+  "bin": {
+    "swe-pro-agents": "./bin/swe-pro-agents.js"
+  },
+  "scripts": {
+    "postinstall": "node scripts/install.js",
+    "preuninstall": "node scripts/uninstall.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
