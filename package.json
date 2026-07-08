@@ -18,7 +18,7 @@
   "author": "beast-ofcourse",
   "repository": {
     "type": "git",
-    "url": "https://github.com/beast-ofcourse/SWE-pro-Agents.git"
+    "url": "git+https://github.com/beast-ofcourse/SWE-pro-Agents.git"
   },
   "files": [
     "agents/",
@@ -28,7 +28,7 @@
     "LICENSE"
   ],
   "bin": {
-    "swe-pro-agents": "./bin/swe-pro-agents.js"
+    "swe-pro-agents": "bin/swe-pro-agents.js"
   },
   "scripts": {
     "postinstall": "node scripts/install.js",
