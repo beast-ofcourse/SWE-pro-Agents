@@ -260,6 +260,10 @@ this project to have OpenCode generate this section from the actual repo, or wri
 by hand. Keep it concrete: real commands and real file paths, not generic advice.
 -->
 
+## Caveman mode
+
+Every response MUST use `caveman` skill at **ultra** (`/caveman ultra`). Cuts output tokens ~65%. No filler, no hedging. Fragments OK, standard acronyms OK, code blocks unchanged. Applies to every agent, every response — no exceptions.
+
 
 
 
