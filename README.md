@@ -6,9 +6,9 @@
 [![npm downloads](https://img.shields.io/npm/dt/swe-pro-agents?style=flat-square)](https://www.npmjs.com/package/swe-pro-agents)
 [![license](https://img.shields.io/github/license/beast-ofcourse/SWE-pro-Agents?style=flat-square)](LICENSE)
 [![agents](https://img.shields.io/badge/agents-49-success?style=flat-square)](#agents)
-[![skills](https://img.shields.io/badge/skills-7-blue?style=flat-square)](#skills)
+[![skills](https://img.shields.io/badge/skills-8-ff69b4?style=flat-square)](#skills)
 
-**49 production-grade OpenCode subagent profiles + 7 delivery pipeline skills — deploy a full engineering team in your terminal.**
+**49 production-grade OpenCode subagent profiles + 8 skills — deploy a full engineering team in your terminal.**
 
 </div>
 
@@ -159,7 +159,7 @@ The team is organized into four squads. Each agent has a focused role, explicit 
 
 ## Skills
 
-Beyond agents, SWE Pro Agents ships **7 delivery pipeline skills** — a staged engineering workflow you can load on demand via OpenCode's `skill` tool. Each stage is a focused `SKILL.md` with its own instructions:
+Beyond agents, SWE Pro Agents ships **8 skills** — a staged engineering pipeline plus a token-compression mode, each loadable on demand via OpenCode's `skill` tool. Each skill is a focused `SKILL.md` with its own instructions:
 
 ```
 swe-pipeline (entry point)
@@ -177,7 +177,7 @@ swe-pipeline (entry point)
   return             -- one consolidated report back to the user
 ```
 
-Skills auto-install to `~/.config/opencode/skills/` and are picked up by OpenCode automatically — no config needed. Just start working and OpenCode's skill tool offers `swe-pipeline` when relevant.
+Skills auto-install to `~/.config/opencode/skills/` and are picked up by OpenCode automatically — no config needed. Just start working and OpenCode's skill tool offers `swe-pipeline` and `caveman` when relevant.
 
 | Skill | Stage | Purpose |
 |---|---|---|
@@ -188,6 +188,7 @@ Skills auto-install to `~/.config/opencode/skills/` and are picked up by OpenCod
 | `reviewer` | Review | Read-only diff review |
 | `testing` | Testing | Write + run tests, report real results |
 | `pipeline-return` | Return | One consolidated report to the user |
+| `caveman` | Communication | Ultra-compressed mode, cuts output tokens ~65% |
 
 ---
 

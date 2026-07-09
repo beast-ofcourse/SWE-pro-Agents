@@ -1,6 +1,6 @@
 {
   "name": "swe-pro-agents",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "49 specialized OpenCode subagent profiles + 7 delivery pipeline skills — SWE roles, research, architecture, and code analysis agents",
   "keywords": [
     "opencode",
