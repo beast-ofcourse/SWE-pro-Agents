@@ -20,8 +20,18 @@
 - [Install](#install)
 - [Quick Start](#quick-start)
 - [Agents](#agents)
+  - [SWE Agents — Engineering Core](#swe-agents)
+  - [Research Agents](#research-agents)
+  - [Code Analysis Agents](#code-analysis-agents)
+  - [Architecture Agents](#architecture-agents)
 - [Skills](#skills)
+  - [Pipeline](#pipeline)
+  - [Agents vs. skills](#agents-vs-skills)
 - [Workflows](#workflows)
+  - [Feature Delivery](#feature-delivery)
+  - [Bug Investigation](#bug-investigation)
+  - [Architecture Change](#architecture-change)
+  - [Production Incident](#production-incident)
 - [Updating](#updating)
 - [Agent Philosophy](#agent-philosophy)
 - [License](#license)
@@ -102,6 +112,7 @@ Once installed, invoke any agent from within OpenCode:
 
 The team is organized into four squads. Each agent has a focused role, explicit tool permissions, and a curated system prompt optimized for that specific job.
 
+<a name="swe-agents"></a>
 ### 🛠️ SWE Agents — Engineering Core
 
 | Agent | Role |
@@ -130,6 +141,7 @@ The team is organized into four squads. Each agent has a focused role, explicit 
 | `swe-security` | Vulnerability auditing, threat modeling, unsafe pattern detection |
 | `swe-testing` | Unit, integration, and e2e tests — coverage analysis, flakiness detection |
 
+<a name="research-agents"></a>
 ### 🔬 Research Agents
 
 | Agent | Role |
@@ -138,6 +150,7 @@ The team is organized into four squads. Each agent has a focused role, explicit 
 | `web-researcher` | Real-time web research for current information |
 | `report-generator` | Structured report creation from findings |
 
+<a name="code-analysis-agents"></a>
 ### 🔍 Code Analysis Agents
 
 | Agent | Role |
@@ -152,6 +165,7 @@ The team is organized into four squads. Each agent has a focused role, explicit 
 | `issue-discussion-analyst` | Issue triage and discussion pattern extraction |
 | `repo-investigator` | Full repository structure mapping |
 
+<a name="architecture-agents"></a>
 ### 🏗️ Architecture Agents
 
 | Agent | Role |
@@ -206,6 +220,7 @@ Skills auto-install to `~/.config/opencode/skills/` and are picked up by OpenCod
 | `pipeline-return` | Return | One consolidated report to the user |
 | `caveman` | Communication | Ultra-compressed mode, cuts output tokens ~65% |
 
+<a name="agents-vs-skills"></a>
 ### Agents vs. skills — which one am I actually using?
 
 These are two independent ways to use this pack, not two halves of one system —
