@@ -10,9 +10,9 @@
 [![npm downloads](https://img.shields.io/npm/dt/swe-pro-agents?style=flat-square)](https://www.npmjs.com/package/swe-pro-agents)
 [![license](https://img.shields.io/github/license/beast-ofcourse/SWE-pro-Agents?style=flat-square)](LICENSE)
 [![agents](https://img.shields.io/badge/agents-27-success?style=flat-square)](#agents)
-[![skills](https://img.shields.io/badge/skills-10-ff69b4?style=flat-square)](#skills)
+[![skills](https://img.shields.io/badge/skills-3-ff69b4?style=flat-square)](#skills)
 
-**27 production-grade OpenCode subagent profiles + 10 skills — deploy a full engineering team in your terminal.**
+**27 production-grade OpenCode subagent profiles + 3 skills — deploy a full engineering team in your terminal.**
 
 </div>
 
@@ -28,7 +28,6 @@
 - [Research Agents](#research-agents)
 - [Architecture Agents](#architecture-agents)
 - [Skills](#skills)
-  - [Pipeline](#pipeline)
   - [Agents vs. skills](#agents-vs-skills)
 - [Workflows](#workflows)
   - [Feature Delivery](#feature-delivery)
@@ -62,7 +61,7 @@ npm install -g swe-pro-agents
 ```
 
 This copies all 27 agent profiles to `~/.config/opencode/agents/swe-pro-agents/`,
-all 8 skills to `~/.config/opencode/skills/`, and this pack's `AGENTS.md` to
+all 3 skills to `~/.config/opencode/skills/`, and this pack's `AGENTS.md` to
 `~/.config/opencode/agents/swe-pro-agents/AGENTS.md`.
 
 That last file matters: every agent in `agents/` is intentionally short because
@@ -167,72 +166,41 @@ The team is organized into three squads. Each agent has a focused role, explicit
 
 ## Skills
 
-Beyond agents, SWE Pro Agents ships **10 skills** — a staged engineering pipeline, a professional README generator, an SVG hero generator, and a token-compression mode, each loadable on demand via OpenCode's `skill` tool. Each skill is a focused `SKILL.md` with its own instructions:
+Beyond agents, SWE Pro Agents ships **3 skills** — a token-compression mode, a professional README generator, and an SVG hero generator, each loadable on demand via OpenCode's `skill` tool. Each skill is a focused `SKILL.md` with its own instructions:
 
-### Pipeline
+Skills auto-install to `~/.config/opencode/skills/` and are picked up by OpenCode automatically — no config needed. Just start working and OpenCode's skill tool offers `caveman`, `readme-generator`, and `svg-hero-generator` when relevant.
 
-```text
-swe-pipeline (entry point)
-    |
-  repository        -- get oriented before touching anything
-    |
-  planner (optional) -- skip for small, well-understood tasks
-    |
-  specialists        -- do the actual implementation work
-    |
-  reviewer           -- read-only check of the diff
-    |
-  testing            -- write/run tests, confirm the change holds
-    |
-  return             -- one consolidated report back to the user
-```
-
-Skills auto-install to `~/.config/opencode/skills/` and are picked up by OpenCode automatically — no config needed. Just start working and OpenCode's skill tool offers `swe-pipeline` and `caveman` when relevant.
-
-| Skill             | Stage            | Purpose                                          |
-| ----------------- | ---------------- | ------------------------------------------------ |
-| `swe-pipeline`    | Entry            | Maps the task through all stages                 |
-| `repository`      | Orientation      | Read-only codebase map before any change         |
-| `planner`         | Planning         | Ordered implementation plan (optional)           |
-| `specialists`     | Implementation   | Routes work by domain (backend/frontend/general) |
-| `reviewer`        | Review           | Read-only diff review                            |
-| `testing`         | Testing          | Write + run tests, report real results           |
-| `pipeline-return` | Return           | One consolidated report to the user              |
-| `caveman`         | Communication    | Ultra-compressed mode, cuts output tokens ~65%   |
-| `readme-generator`| Standalone       | Professional READMEs — create, audit, upgrade from repo evidence |
-| `svg-hero-generator` | Standalone    | Repo-aware SVG hero banners — 3–4 concepts, then final SVG      |
+| Skill               | Purpose                                                    |
+| ------------------- | ---------------------------------------------------------- |
+| `caveman`           | Ultra-compressed mode, cuts output tokens ~65%             |
+| `readme-generator`  | Professional READMEs — create, audit, upgrade from repo evidence |
+| `svg-hero-generator`| Repo-aware SVG hero banners — 3–4 concepts, then final SVG |
 
 <a name="agents-vs-skills"></a>
 
-### Agents vs. skills — which one am I actually using?
+### Agents vs. skills
 
-These are two independent ways to use this pack, not two halves of one system —
-pick based on how you want to work, not both at once for the same task:
+Agents are the team; skills are utilities. Invoke an agent directly
+(`@swe-frontend`, `@swe-backend`, …) when you know exactly which specialist you
+want and just need it to do that one job. Agents are lean by design: they assume
+this repo's root `AGENTS.md` is already loaded into context (OpenCode does this
+automatically), and they only state what's specific to their domain — everything
+else (the Constitution, Definition of Done, Handoff protocol) lives in
+`AGENTS.md` once, not repeated 27 times. Their behavior depends on `AGENTS.md`
+being installed — see [Install](#install) if `swe-pro-agents status` reports it
+as missing.
 
-- **Invoke an agent directly** (`@swe-frontend`, `@swe-backend`, …) when you know
-  exactly which specialist you want and just need it to do that one job. Agents
-  are lean by design: they assume this repo's root `AGENTS.md` is already loaded
-  into context (OpenCode does this automatically), and they only state what's
-  specific to their domain — everything else (the Constitution, Definition of
-  Done, Handoff protocol) lives in `AGENTS.md` once, not repeated 27 times. Their
-  behavior depends on `AGENTS.md` being installed — see
-  [Install](#install) if `swe-pro-agents status` reports it as missing.
-- **Invoke `swe-pipeline`** when you want the whole stage sequence run for you —
-  orientation, optional planning, implementation, review, and testing — without
-  picking a specialist agent yourself. Its `specialists` stage routes to a
-  domain reference (`references/backend.md`, `references/frontend.md`,
-  `references/general.md`) that's deliberately self-contained rather than
-  depending on `AGENTS.md`, because a skill can be invoked by any agent in any
-  project — including ones that don't have this pack's `AGENTS.md` installed at
-  all. That's why `specialists/SKILL.md` restates a few principles (read before
-  you write, match conventions, minimize blast radius) that also live in
-  `AGENTS.md` — it's not drift, it's the skill working correctly without an
-  external dependency.
+The three skills are standalone utilities any agent can load on demand —
+`caveman` for ultra-compressed replies, `readme-generator` and
+`svg-hero-generator` for repo-aware document artifacts. They are deliberately
+self-contained rather than depending on `AGENTS.md`, because a skill can be
+invoked by any agent in any project — including ones that don't have this pack's
+`AGENTS.md` installed at all.
 
 If you're not sure which to reach for: a single, well-scoped implementation
-task with a clear owner → an agent. A task where you want repo orientation,
-review, and testing handled for you too → `swe-pipeline`. Don't run both for
-the same task — that's redundant effort, not extra rigor.
+task with a clear owner → an agent. A communication-mode or document-artifact
+need → the matching skill. Don't run both for the same task — that's redundant
+effort, not extra rigor.
 
 ---
 
