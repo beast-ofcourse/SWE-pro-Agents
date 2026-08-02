@@ -45,7 +45,7 @@
     <line x1="0" y1="410" x2="1000" y2="410" stroke="#212836"/>
     <g font-size="13" fill="#5b6472">
       <text x="36" y="434">AGENTS.md loaded</text>
-      <text x="240" y="434">caveman: ultra · −65% tokens</text>
+      <text x="240" y="434">v2.1.0</text>
       <text x="560" y="434">MIT</text>
       <text x="964" y="434" text-anchor="end">main</text>
     </g>

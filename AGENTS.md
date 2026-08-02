@@ -85,8 +85,10 @@ the parent conversation. When delegating:
   (a new consistency guarantee, a cross-service data-flow change, an
   availability-vs-correctness trade-off) stop and say so. They don't redesign — that's
   Architect's job, reached by the user switching primary agents.
-- Read-only audit subagents (security, review, architecture analysis) report findings.
-  They never apply a fix outside their stated scope.
+- Read-only audit subagents (security, architecture analysis) report findings. They
+  never apply a fix outside their stated scope.
+- swe-reviewer verifies findings in an isolated git worktree and writes
+  `review-report.md` + `handoff.md` — it never edits the reviewed code, commits, or pushes.
 - Architect's subagents design; once a design is ready to build, they say so and point
   back to SWE Pro instead of drifting into implementation.
 - Ambiguous or destructive requests — schema changes, force-push, deleting data, a

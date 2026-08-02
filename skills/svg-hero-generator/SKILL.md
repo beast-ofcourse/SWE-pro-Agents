@@ -68,6 +68,7 @@ These override any stylistic preference below them:
 - `references/checklist.md` — final QA gate. Run through this immediately before delivering.
 - `assets/hero_template.svg` — a working, repo-agnostic scaffold with grid, groups, and placeholder text already positioned correctly. Start here instead of a blank canvas.
 - `scripts/repo_signals.py` — structured repo inspection helper for Pass 1.
+- `demos/` — three complete example heroes (architecture, terminal, geometric) generated with this skill for this repo. Skim them during Pass 2 to calibrate density and composition.
 
 ## Do not
 
