@@ -1,0 +1,33 @@
+name: CI
+
+permissions:
+  contents: read
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    name: node ${{ matrix.node }} / ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [18, 20, 22]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Syntax check
+        run: |
+          node --check bin/swe-pro-agents.js
+          node --check scripts/install.js
+          node --check scripts/uninstall.js
+          node --check test/installer.test.js
+      - name: Installer lifecycle tests
+        run: node test/installer.test.js

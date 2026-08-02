@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
 from pathlib import Path
 
 DEFAULT_EXCLUDES = {
@@ -39,6 +40,11 @@ def tree(root: Path, max_depth: int, excludes: set[str]) -> str:
 
 
 if __name__ == "__main__":
+    # Windows consoles default to legacy encodings (e.g. cp1252) that cannot
+    # represent the box-drawing characters below — force UTF-8 output.
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
+
     parser = argparse.ArgumentParser(description="Generate a clean repository tree.")
     parser.add_argument("path", nargs="?", default=".")
     parser.add_argument("--depth", type=int, default=3)

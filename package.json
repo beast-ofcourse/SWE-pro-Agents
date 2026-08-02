@@ -1,7 +1,7 @@
 {
   "name": "swe-pro-agents",
   "version": "2.1.0",
-  "description": "27 specialized OpenCode subagent profiles + 3 skills (caveman mode, README & SVG hero generators) — SWE roles, web research, and architecture agents",
+  "description": "27 OpenCode agent profiles (24 subagents + 3 primary) + 3 skills (caveman mode, README & SVG hero generators) — SWE roles, web research, and architecture agents",
   "keywords": [
     "opencode",
     "agents",
@@ -39,7 +39,8 @@
   },
   "scripts": {
     "postinstall": "node scripts/install.js",
-    "preuninstall": "node scripts/uninstall.js"
+    "preuninstall": "node scripts/uninstall.js",
+    "test": "node test/installer.test.js"
   },
   "engines": {
     "node": ">=18"

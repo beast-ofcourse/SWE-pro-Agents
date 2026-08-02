@@ -1,209 +1,78 @@
 ---
 name: svg-hero-generator
-description: "Generate minimalist, repo-aware SVG hero images for README files. Use when a user wants a README banner/hero image, wants SVG source rather than a raster image, or wants multiple style directions before picking one."
+description: "Generate editable, repo-aware SVG hero/banner images for README files. Use whenever a user wants a README banner, GitHub social preview, project header image, or asks for an SVG (not raster/PNG) hero graphic — especially if they want it to reflect their actual project rather than generic stock-style art. Also use when a user wants a few distinct visual directions to choose between before committing to a final banner. Trigger on phrases like 'hero image for my README', 'banner for this repo', 'make an SVG header', or 'social preview image', even if they don't say 'SVG' explicitly."
 license: MIT
-compatibility: opencode
 ---
 
 # SVG Hero Image Generator
 
-This skill creates **editable SVG hero images for READMEs**. It is designed to be repository-aware, concept-driven, and conservative: the agent first studies the repository, then proposes **3–4 distinct SVG directions**, and only renders the final SVG after the user chooses one.
+Creates editable, information-dense SVG hero images for README files — the opposite of abstract art. Every element on the banner should trace back to a real, verifiable fact about the repository: its name, its stack, its purpose, its badges. Nothing decorative for decoration's sake, nothing invented.
 
-## Core Goal
+This is a **communication design** task, not a generative-art task: the goal is instant legibility of who this project is, not an emergent aesthetic experience. If the repo is sparse or unknown, say so and default to the safest minimal direction rather than inventing facts to fill space.
 
-Make a hero image that feels native to the repository:
-- visually consistent with the project identity
-- readable at README scale
-- simple enough to remain elegant when shrunk
-- editable as SVG source
-- safe to embed in GitHub README files
+## Workflow
 
-## Operating Contract
+This happens in three passes. Do not skip ahead to rendering — the whole value of this skill is that the banner is *earned* by inspecting the repo first, not guessed at.
 
-### First pass: inspect the repository
-Before drawing anything, inspect the repo for:
-- README and existing visual language
-- project type and primary stack
-- package metadata or build configuration
-- brand assets, logos, icons, screenshots, or diagram files
-- terminology that should appear in the banner
-- the project’s tone: experimental, professional, playful, academic, hacker-like, enterprise, etc.
+### Pass 1 — Inspect the repository
 
-Useful signals include:
-- `README.md`
-- `package.json`, `pnpm-lock.yaml`, `yarn.lock`
-- `pyproject.toml`, `requirements.txt`, `setup.py`
-- `go.mod`, `Cargo.toml`, `pom.xml`, `gradle.*`
-- `docker-compose.*`, `Dockerfile`, `.github/workflows/*`
-- `/docs`, `/assets`, `/public`, `/images`, `/static`
+Before proposing anything, gather real signals using your actual tools (`view`, `bash_tool`), not by guessing:
 
-### Second pass: synthesize concepts
-Do **not** immediately render a final image.
+- Read `README.md` if present — title, tagline, badges, tone of the prose.
+- Check for manifest/build files that reveal the stack: `package.json`, `pyproject.toml`, `requirements.txt`, `go.mod`, `Cargo.toml`, `pom.xml`, `build.gradle*`, `Dockerfile`, `docker-compose.*`, `.github/workflows/*`.
+- Look for existing brand signals: a logo, favicon, existing `/assets`, `/docs`, `/public`, `/static` images, or a color already used somewhere (badge colors, existing SVGs).
+- Note the project's apparent tone — experimental hobby project, hacker CLI, polished commercial library, academic tool, enterprise platform — since this drives typography and density, not just color.
 
-Instead, infer the best 3–4 directions and present them as options. Each option should include:
-- a short name
-- the visual idea
-- why it fits this repo
-- composition notes
-- risk/tradeoff notes
+Run `scripts/repo_signals.py <path>` to get a fast structured summary (important files present, candidate existing image assets, a shallow file tree) instead of manually walking the tree yourself. Then read the specific files it surfaces (especially `README.md` and the manifest file) directly, since the script only tells you *what exists*, not what it says.
 
-The options should be meaningfully different. Example directions:
-- minimalist terminal banner
-- abstract architecture diagram
-- editorial headline card
-- geometric logo/grid composition
+If no repo path is given or the user is describing a project verbally instead of pointing at a folder, work from what they tell you directly and say you're doing so — don't fabricate a stack or feature set they never mentioned.
 
-### Third pass: wait for selection
-Do not generate the final SVG until the user picks one option or explicitly asks you to choose.
+### Pass 2 — Propose 3–4 concept directions
 
-If the user asks for a surprise choice, pick the strongest repo-fit direction and say why.
+Do not render a final SVG yet. Synthesize what Pass 1 found into 3–4 **meaningfully different** directions — see `references/concepts.md` for the standard families (terminal banner, architecture diagram, editorial title card, geometric signal card) and when each fits.
 
-## SVG Generation Rules
+For each option give: a short name, the visual idea in one line, why it fits *this specific repo* (cite what you found, not a generic reason), 2–3 concrete visual traits, and one honest risk/tradeoff. Keep the whole set scannable — this is a menu, not four essays.
 
-### Default style
-Prefer:
-- a dark, neutral, or project-aligned background
-- a strict grid
-- a limited palette
-- thin lines and clear spacing
-- monospace or geometric sans typography
-- highly legible small text
-- a single focal structure
+If the user asks you to just pick one, choose the strongest repo-fit direction and say why in a sentence, then proceed to Pass 3 immediately.
 
-### Absolute priorities
-1. **No overlap**
-2. **No unreadable text**
-3. **No fake detail**
-4. **No clutter**
-5. **Repo-specific identity**
+### Pass 3 — Render the final SVG
 
-### Use SVG source, not raster art
-Deliver:
-- pure SVG code
-- one self-contained `<svg>` document
-- no external raster dependency
-- minimal or no remote assets
-- optional gradients only if they improve clarity
+Once a direction is chosen (or you've picked one per above):
 
-### Layout quality rules
-- Use `viewBox` deliberately and keep a stable aspect ratio
-- Align text with consistent baselines and anchors
-- Use groups (`<g>`) to manage sections
-- Avoid placing labels near lines or borders
-- Keep generous padding around edges
-- Prefer fewer elements with stronger hierarchy
-- Do not force too much information into a single banner
+1. Load `assets/hero_template.svg` and `references/svg_rules.md` before writing markup — the template is a working scaffold (viewBox, grid, grouped layers, type baselines already wired up) and the rules file has the concrete spacing/contrast/sizing numbers. Build from the template rather than starting from a blank `<svg>` tag.
+2. Fill in real repo facts only — title, one subtitle line, at most a handful of short fact-chips (stack, license, key feature). Never invent metrics, star counts, or capabilities the repo doesn't show.
+3. Run through `references/checklist.md` before delivering. Do not deliver until every item passes.
+4. Output pure, self-contained SVG — no external raster assets, no remote fonts. Deliver it as an actual `.svg` file, not just SVG code pasted into chat, unless the user is clearly iterating conversationally on a small tweak.
 
-### Text rules
-- Keep the main title short
-- Use at most one strong subtitle line
-- Avoid tiny explanatory paragraphs inside the hero image
-- If multiple repo facts matter, represent them as compact chips, badges, or nodes
-- Never allow long labels to collide or wrap badly
+## Non-negotiables
 
-### Accessibility rules
-- Maintain strong contrast between foreground and background
-- Make sure text remains readable at README thumbnail size
-- Avoid color-only meaning when possible
-- Ensure decorative elements do not compete with the title
+These override any stylistic preference below them:
 
-## Repository-Aware Concept Heuristics
+1. **No overlap** — text, chips, and decorative shapes never collide, at full size or shrunk to README width.
+2. **No unreadable text** — everything must hold up at thumbnail scale (assume ~800px wide rendering).
+3. **No fake detail** — don't invent features, numbers, or badges the repo doesn't actually have.
+4. **No stock-art clutter** — one dominant focal idea; supporting elements stay subordinate.
+5. **Repo-specific identity** — a generic "AI startup banner" that could belong to any repo is a failure state, even if it's pretty.
 
-### If the repo is a CLI / terminal tool
-Bias toward:
-- terminal window framing
-- command prompt motif
-- compact status chips
-- process/pipeline language
+## Quick style defaults
 
-### If the repo is an AI / agent / orchestration project
-Bias toward:
-- nodes, edges, pipelines, or layered stacks
-- orchestration center with peripheral capabilities
-- subtle command line or console cues
-- modular, systems-style composition
+- Dark or project-aligned background, limited palette (one primary accent + one supporting accent), strong contrast.
+- Monospace for anything code-flavored (CLI tools, technical labels); geometric sans for the title otherwise.
+- One short title, at most one subtitle line — represent extra facts as compact chips/badges, never paragraphs.
+- Standard aspect ratio for README headers is wide, e.g. `viewBox="0 0 1280 640"` (2:1) or `viewBox="0 0 1280 400"` (3.2:1) for a slimmer banner — pick based on how much a GitHub README banner typically needs to show. `references/svg_rules.md` has the full sizing table.
 
-### If the repo is a library / package
-Bias toward:
-- clean title cards
-- minimal diagrams
-- feature chips
-- version / runtime / compatibility cues
+## Reference files
 
-### If the repo is a web app
-Bias toward:
-- layout blocks, browser-frame composition, or product-card style
-- concise product value statement
-- understated UI motifs
+- `references/concepts.md` — the 4 standard concept families, when each fits a repo type, and their tradeoffs. Read during Pass 2.
+- `references/svg_rules.md` — concrete SVG construction rules: exact viewBox options, spacing units, contrast minimums, type scale, how to structure `<g>` layers. Read during Pass 3, before writing markup.
+- `references/checklist.md` — final QA gate. Run through this immediately before delivering.
+- `assets/hero_template.svg` — a working, repo-agnostic scaffold with grid, groups, and placeholder text already positioned correctly. Start here instead of a blank canvas.
+- `scripts/repo_signals.py` — structured repo inspection helper for Pass 1.
+- `demos/` — three complete example heroes (architecture, terminal, geometric) generated with this skill for this repo. Skim them during Pass 2 to calibrate density and composition.
 
-### If the repo is a design / creative repo
-Bias toward:
-- editorial composition
-- restrained typography
-- strong whitespace
-- visual identity over technical density
+## Do not
 
-## Output Format When Presenting Options
-
-When asking the user to choose, show each option with:
-- name
-- 1-line summary
-- 2–3 visual traits
-- one reason it is appropriate
-- one risk it avoids
-
-Keep the options short, distinct, and actionable.
-
-## Final SVG Delivery Standard
-
-When the user selects an option:
-- generate the final SVG source
-- keep the composition polished and minimal
-- ensure every element is aligned
-- avoid overlap even under constrained scaling
-- keep the code readable and editable
-- include a short note on how to use or tweak the SVG if helpful
-
-## Quality Gate Before Delivery
-
-Do not deliver the SVG until all of these are true:
-- title is legible
-- spacing is consistent
-- elements are visually centered or intentionally asymmetrical
-- no text collisions
-- no clipped content
-- design clearly matches the repository’s tone
-- the image still works at README width
-
-## Best Practices
-
-### Design best practices
-- Use one visual idea, not five
-- Prefer hierarchy over decoration
-- Keep the banner recognizable in one glance
-- Let the repository content shape the image
-- Do not over-explain inside the banner
-- Leave room for the README around the image
-
-### Engineering best practices
-- Keep the SVG self-contained
-- Keep text editable as text, not outlines, unless requested
-- Use semantic IDs and grouped structure
-- Prefer deterministic placement values
-- Avoid fragile external fonts or assets
-- Validate rendering mentally at both full size and thumbnail size
-
-### Working style best practices
-- Be honest about uncertainty
-- If the repository is sparse, say so and choose the safest minimal direction
-- If the project is highly technical, reflect that in the composition
-- If multiple directions are plausible, present the best 3–4 instead of guessing silently
-
-## Do Not
-- Do not generate a final SVG before showing options
-- Do not overload the composition with paragraphs
-- Do not use generic stock-style art
-- Do not invent project facts
-- Do not use unreadable microscopic labels
-- Do not let labels overlap
-- Do not use a style that ignores the repo’s identity
+- Do not render a final SVG before the user has seen and chosen from the Pass 2 options (unless they explicitly ask you to just pick one).
+- Do not reuse the `algorithmic-art` or `canvas-design` skills' workflow for this task, even if both are available — those produce abstract generative/design-philosophy art with a deliberately hidden conceptual reference, which is the opposite of what a README hero needs: literal, legible, fact-grounded identity. If the user wants abstract generative art or a museum-style poster instead of a repo banner, point them at those skills rather than blending approaches here.
+- Do not invent project facts, metrics, or capabilities not present in the repo or the user's description.
+- Do not ship raster images, outlined/converted text (unless requested), or remote font/asset dependencies.

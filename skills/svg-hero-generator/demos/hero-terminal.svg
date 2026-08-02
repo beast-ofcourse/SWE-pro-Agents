@@ -1,0 +1,57 @@
+<svg viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace, 'SF Mono', 'JetBrains Mono', Consolas, monospace">
+  <rect width="1200" height="630" fill="#0a0c10"/>
+
+  <!-- terminal window -->
+  <g transform="translate(100,90)">
+    <rect x="0" y="0" width="1000" height="450" rx="10" fill="#0f1319" stroke="#212836" stroke-width="1.5"/>
+
+    <!-- title bar -->
+    <rect x="0" y="0" width="1000" height="42" rx="10" fill="#141a24"/>
+    <rect x="0" y="32" width="1000" height="10" fill="#141a24"/>
+    <circle cx="26" cy="21" r="6" fill="#ff5f57"/>
+    <circle cx="46" cy="21" r="6" fill="#febc2e"/>
+    <circle cx="66" cy="21" r="6" fill="#28c840"/>
+    <text x="500" y="26" text-anchor="middle" fill="#5b6472" font-size="13">opencode — swe-pro-agents</text>
+
+    <!-- body -->
+    <g font-size="17">
+      <text x="36" y="90" fill="#5b6472">$ npm install -g swe-pro-agents</text>
+
+      <text x="36" y="130" fill="#4ade80">✓</text>
+      <text x="58" y="130" fill="#a8b1c2">27 agent profiles installed</text>
+
+      <text x="36" y="158" fill="#4ade80">✓</text>
+      <text x="58" y="158" fill="#a8b1c2">3 skills registered</text>
+
+      <text x="36" y="196" fill="#7dd3fc">@swe-database</text>
+      <text x="230" y="196" fill="#a8b1c2">Design the schema for a multi-tenant SaaS app</text>
+
+      <text x="36" y="228" fill="#5b6472">▸ reading migrations/</text>
+      <text x="36" y="252" fill="#5b6472">▸ matching existing conventions</text>
+      <text x="36" y="276" fill="#5b6472">▸ verifying before reporting done</text>
+
+      <rect x="36" y="310" width="1" height="1" fill="none"/>
+      <text x="36" y="330" fill="#4ade80">✓</text>
+      <text x="58" y="330" fill="#e8ecf4">schema.sql</text>
+      <text x="180" y="330" fill="#5b6472">confidence: high — ran migration, checked FK constraints</text>
+    </g>
+
+    <!-- cursor -->
+    <rect x="36" y="360" width="10" height="18" fill="#e8ecf4">
+      <animate attributeName="opacity" values="1;0;1" dur="1.1s" repeatCount="indefinite"/>
+    </rect>
+
+    <!-- bottom status strip -->
+    <line x1="0" y1="410" x2="1000" y2="410" stroke="#212836"/>
+    <g font-size="13" fill="#5b6472">
+      <text x="36" y="434">AGENTS.md loaded</text>
+      <text x="240" y="434">v2.1.0</text>
+      <text x="560" y="434">MIT</text>
+      <text x="964" y="434" text-anchor="end">main</text>
+    </g>
+  </g>
+
+  <!-- headline outside the window -->
+  <text x="100" y="60" fill="#e8ecf4" font-size="30" font-weight="600">SWE Pro Agents</text>
+  <text x="1100" y="60" text-anchor="end" fill="#3b4354" font-size="15">github.com/beast-ofcourse/SWE-pro-Agents</text>
+</svg>

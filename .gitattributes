@@ -1,0 +1,13 @@
+# Normalize line endings: repo stores LF, working copy follows platform defaults.
+* text=auto
+
+# Force LF in the repo for every text file this pack ships.
+*.js text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.py text eol=lf
+*.svg text eol=lf
+
+# Binary assets — never normalize.
+*.png -text
+*.skill -text
