@@ -39,7 +39,8 @@
   },
   "scripts": {
     "postinstall": "node scripts/install.js",
-    "preuninstall": "node scripts/uninstall.js"
+    "preuninstall": "node scripts/uninstall.js",
+    "test": "node test/installer.test.js"
   },
   "engines": {
     "node": ">=18"
