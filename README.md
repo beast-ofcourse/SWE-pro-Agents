@@ -35,6 +35,7 @@
   - [Architecture Change](#architecture-change)
   - [Production Incident](#production-incident)
 - [Updating](#updating)
+- [Uninstalling](#uninstalling)
 - [Agent Philosophy](#agent-philosophy)
 - [License](#license)
 
@@ -86,7 +87,19 @@ Then register the agents with OpenCode by adding to your `opencode.json`:
 }
 ```
 
+Or let the CLI do it — it backs up your config first, then adds the entry:
+
+```bash
+swe-pro-agents setup --apply
+```
+
 **That's it.** Restart OpenCode and your entire agent team is ready.
+
+The installer keeps a manifest at `~/.config/swe-pro-agents/manifest.json`
+recording exactly what it installed. On every install or update it prunes
+previously installed agents and skills the pack no longer ships — so upgrading
+never leaves stale files behind — and on uninstall it removes only what the
+pack owns, never your own skills.
 
 ---
 
@@ -250,11 +263,35 @@ Agents are actively improved — new roles added, prompts refined, permissions t
 npm update -g swe-pro-agents
 ```
 
+The installer prunes agents and skills from older versions automatically, so
+nothing stale lingers in your config after an update.
+
 Check what changed:
 
 ```bash
 swe-pro-agents status
 ```
+
+`status` also checks the npm registry and warns when a newer version is
+available (silently skips the check when offline).
+
+---
+
+## Uninstalling
+
+```bash
+npm uninstall -g swe-pro-agents
+```
+
+The preuninstall hook removes everything this pack installed: the agent files,
+the pack's skills (`caveman`, `readme-generator`, `svg-hero-generator`), and
+its manifest. Your own skills in `~/.config/opencode/skills/` are never
+touched.
+
+Two things remain, by design — they're your content:
+
+- The `opencode.json` entry referencing the agents path — delete it manually
+- Any AGENTS.md sections you merged into your global config — edit manually
 
 ---
 
