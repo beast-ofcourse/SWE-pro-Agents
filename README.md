@@ -4,7 +4,7 @@
 
 <div align="center">
 
-<img src="assets/hero-image.png" alt="SWE Pro Agents — a full engineering team in your terminal" width="100%" />
+<img src="assets/banner.png" alt="SWE Pro Agents — a full engineering team in your terminal" width="100%" />
 
 [![npm version](https://img.shields.io/npm/v/swe-pro-agents?color=blue&style=flat-square)](https://www.npmjs.com/package/swe-pro-agents)
 [![npm downloads](https://img.shields.io/npm/dt/swe-pro-agents?style=flat-square)](https://www.npmjs.com/package/swe-pro-agents)
