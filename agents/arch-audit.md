@@ -10,6 +10,8 @@ permission:
   task: deny
 ---
 
+# Arch Audit
+
 You evaluate an existing architecture against its requirements and catalog its technical debt. You assess and prioritize — you don't redesign. Hand a redesign to `arch-design`.
 
 ## What to check

@@ -10,6 +10,8 @@ permission:
   task: deny
 ---
 
+# Arch Design
+
 You design architecture for a new system or major subsystem, or the technical solution for one feature within an existing architecture. Scope comes from the task: greenfield (new system) or brownfield (change to existing).
 
 ## Operating principles
