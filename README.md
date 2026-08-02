@@ -9,10 +9,10 @@
 [![npm version](https://img.shields.io/npm/v/swe-pro-agents?color=blue&style=flat-square)](https://www.npmjs.com/package/swe-pro-agents)
 [![npm downloads](https://img.shields.io/npm/dt/swe-pro-agents?style=flat-square)](https://www.npmjs.com/package/swe-pro-agents)
 [![license](https://img.shields.io/github/license/beast-ofcourse/SWE-pro-Agents?style=flat-square)](LICENSE)
-[![agents](https://img.shields.io/badge/agents-33-success?style=flat-square)](#agents)
+[![agents](https://img.shields.io/badge/agents-27-success?style=flat-square)](#agents)
 [![skills](https://img.shields.io/badge/skills-8-ff69b4?style=flat-square)](#skills)
 
-**33 production-grade OpenCode subagent profiles + 8 skills — deploy a full engineering team in your terminal.**
+**27 production-grade OpenCode subagent profiles + 8 skills — deploy a full engineering team in your terminal.**
 
 </div>
 
@@ -51,7 +51,7 @@ What you get:
 
 - **Consistency** — every agent produces disciplined output, not random good intentions
 - **Depth** — agents carry domain knowledge that would take paragraphs to prompt each time
-- **Team structure** — 33 specialized roles that divide and conquer, not one monolithic chat
+- **Team structure** — 27 specialized roles that divide and conquer, not one monolithic chat
 
 ---
 
@@ -61,7 +61,7 @@ What you get:
 npm install -g swe-pro-agents
 ```
 
-This copies all 33 agent profiles to `~/.config/opencode/agents/swe-pro-agents/`,
+This copies all 27 agent profiles to `~/.config/opencode/agents/swe-pro-agents/`,
 all 8 skills to `~/.config/opencode/skills/`, and this pack's `AGENTS.md` to
 `~/.config/opencode/agents/swe-pro-agents/AGENTS.md`.
 
@@ -121,10 +121,9 @@ The team is organized into three squads. Each agent has a focused role, explicit
 
 | Agent                | Role                                                                            |
 | -------------------- | ------------------------------------------------------------------------------- |
-| `swe-api`            | API contract design, request/response validation, versioning strategy           |
+| `swe-api`            | API contract design + implementation, request/response validation, versioning   |
 | `swe-backend`        | Server-side logic, services, background jobs, integrations                      |
-| `swe-cli`            | CLI tooling — argument parsing, subcommands, exit codes, output formatting      |
-| `swe-database`       | Schema design, migrations, query optimization, indexing                         |
+| `swe-database`       | Data modeling, schema design, migrations, query optimization, indexing          |
 | `swe-debugger`       | Root-cause analysis through reproduction, then minimal correct fix              |
 | `swe-desktop`        | Desktop apps — windowing, OS APIs, native packaging                             |
 | `swe-devops`         | CI/CD pipelines, containers, infrastructure-as-code                             |
@@ -132,14 +131,12 @@ The team is organized into three squads. Each agent has a focused role, explicit
 | `swe-frontend`       | Components, views, styling, state, animation, client interaction                |
 | `swe-fullstack`      | End-to-end features keeping frontend and backend in sync                        |
 | `swe-git`            | Branch management, commit hygiene, rebase, PR preparation                       |
-| `swe-implementation` | General-purpose implementation for well-defined tasks                           |
+| `swe-implementation` | General-purpose implementation (incl. CLI tools) for well-defined tasks         |
 | `swe-mobile`         | Mobile screens, navigation, platform APIs, on-device perf                       |
-| `swe-opensource`     | Licensing, attribution, contribution guidelines, dependency audits              |
 | `swe-performance`    | Profiling, memory optimization, latency reduction — measured, not guessed       |
-| `swe-planner`        | Breaking features into ordered implementation plans with risks and file targets |
-| `swe-pro`            | Senior engineer — architecture decisions, code review, mentoring                |
+| `swe-pro`            | Senior engineer — planning, architecture decisions, code review, mentoring      |
 | `swe-refactor`       | Restructuring code for clarity and maintainability without behavior change      |
-| `swe-release`        | Versioning, changelogs, publishing — cutting clean releases                     |
+| `swe-release`        | Versioning, changelogs, licensing, contribution readiness, publishing           |
 | `swe-repository`     | Mapping unfamiliar codebases — structure, conventions, build commands           |
 | `swe-reviewer`       | Read-only code review — correctness, risk, standards enforcement                |
 | `swe-security`       | Vulnerability auditing, threat modeling, unsafe pattern detection               |
@@ -157,17 +154,14 @@ The team is organized into three squads. Each agent has a focused role, explicit
 
 ### 🏗️ Architecture Agents
 
-| Agent                      | Role                                                          |
-| -------------------------- | ------------------------------------------------------------- |
-| `architect`                | System design — trade-offs, constraints, decisions            |
-| `arch-api-design`          | REST/GraphQL contract design, breaking change detection       |
-| `arch-audit`               | Architecture assessment + technical-debt remediation planning |
-| `arch-database-design`     | Schema design, data modeling, normalization trade-offs        |
-| `arch-design`              | System and feature architecture, RFC/ADR authoring            |
-| `arch-distributed-systems` | Consistency, partitioning, consensus, failure modes           |
-| `arch-migration`           | Incremental migration planning with rollback strategies       |
-| `arch-scalability`         | Load analysis, bottleneck identification, scaling strategy    |
-| `arch-technical-strategy`  | Long-term technology roadmap and decision framework           |
+| Agent                      | Role                                                                  |
+| -------------------------- | --------------------------------------------------------------------- |
+| `architect`                | System design — trade-offs, constraints, decisions                    |
+| `arch-design`              | System and feature architecture, RFC/ADR authoring                    |
+| `arch-distributed-systems` | Consistency, partitioning, consensus, failure modes                   |
+| `arch-migration`           | Incremental migration planning with rollback strategies               |
+| `arch-scalability`         | Load analysis, bottleneck identification, scaling strategy            |
+| `arch-strategy`            | Architecture assessment, technical-debt catalog, roadmap, build-vs-buy |
 
 ---
 
@@ -218,7 +212,7 @@ pick based on how you want to work, not both at once for the same task:
   are lean by design: they assume this repo's root `AGENTS.md` is already loaded
   into context (OpenCode does this automatically), and they only state what's
   specific to their domain — everything else (the Constitution, Definition of
-  Done, Handoff protocol) lives in `AGENTS.md` once, not repeated 33 times. Their
+  Done, Handoff protocol) lives in `AGENTS.md` once, not repeated 27 times. Their
   behavior depends on `AGENTS.md` being installed — see
   [Install](#install) if `swe-pro-agents status` reports it as missing.
 - **Invoke `swe-pipeline`** when you want the whole stage sequence run for you —
@@ -247,10 +241,10 @@ These agents are designed to **chain together**. Here are real workflows:
 ### Feature Delivery
 
 ```text
-swe-planner → swe-implementation → swe-testing → swe-reviewer
+swe-pro → swe-implementation → swe-testing → swe-reviewer
 ```
 
-Plan the work, implement, write tests, get reviewed. No context lost between steps.
+Plan and implement, write tests, get reviewed. No context lost between steps.
 
 ### Bug Investigation
 
