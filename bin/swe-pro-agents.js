@@ -86,7 +86,7 @@ function cmdStatus() {
   console.log(`  ${'─'.repeat(40)}`);
   console.log(`  Version:    ${pkg.version}`);
   console.log(`  Agents:     ${agentCount} in package` + (installedAgentCount > 0 ? `, ${installedAgentCount} installed` : ''));
-  console.log(`  Skills:     ${skillCount} pipeline skills in package`);
+  console.log(`  Skills:     ${skillCount} skills in package`);
 
   if (installedAgentCount > 0 && installedAgentCount !== agentCount) {
     console.log(`  Warning: installed agent count (${installedAgentCount}) doesn't match package (${agentCount}). Run 'npm update -g swe-pro-agents'.`);
