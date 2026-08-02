@@ -46,9 +46,22 @@ const agentsDir = (home) => path.join(home, '.config', 'opencode', 'agents', PAC
 const skillsDir = (home) => path.join(home, '.config', 'opencode', 'skills');
 const manifestPath = (home) => path.join(home, '.config', 'swe-pro-agents', 'manifest.json');
 
+/** Temp HOME directories created during this run, removed at process exit. */
+const tempHomes = [];
+
+/** Create a throwaway HOME directory, tracked so it is cleaned up at exit. */
 function tempHome() {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'swe-pro-agents-test-'));
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'swe-pro-agents-test-'));
+  tempHomes.push(home);
+  return home;
 }
+
+// Sync-only in the handler, so it also runs when tests fail (process.exit(1)).
+process.on('exit', () => {
+  for (const home of tempHomes) {
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+});
 
 /** Run one of the lifecycle scripts with HOME/USERPROFILE redirected to `home`. */
 function run(script, home) {
@@ -70,11 +83,13 @@ function run(script, home) {
   return res.stdout;
 }
 
+/** Read the manifest written by install.js into the temp HOME. */
 function readManifest(home) {
   const raw = fs.readFileSync(manifestPath(home), 'utf-8');
   return JSON.parse(raw);
 }
 
+/** Sorted top-level names of dir (empty array if dir does not exist). */
 function listDirFiles(dir) {
   if (!fs.existsSync(dir)) return [];
   return fs.readdirSync(dir).sort();
@@ -97,6 +112,7 @@ function listTreeFiles(dir) {
 let passed = 0;
 let failed = 0;
 
+/** Run one test; prints the outcome and records pass/fail totals. */
 function test(name, fn) {
   try {
     fn();

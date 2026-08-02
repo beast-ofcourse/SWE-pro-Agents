@@ -296,7 +296,7 @@ The tests simulate install/update/uninstall against a **throwaway `HOME`/`USERPR
 
 CI (`.github/workflows/ci.yml`) runs syntax checks (`node --check`) and the test suite on **Linux + Windows × Node 18/20/22**.
 
-```
+```text
 SWE-pro-Agents/
 ├── agents/       27 agent profiles (3 primary, 24 subagents)
 ├── skills/       3 skills: caveman, readme-generator, svg-hero-generator

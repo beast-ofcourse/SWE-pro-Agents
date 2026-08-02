@@ -42,7 +42,7 @@ Once a direction is chosen (or you've picked one per above):
 1. Load `assets/hero_template.svg` and `references/svg_rules.md` before writing markup — the template is a working scaffold (viewBox, grid, grouped layers, type baselines already wired up) and the rules file has the concrete spacing/contrast/sizing numbers. Build from the template rather than starting from a blank `<svg>` tag.
 2. Fill in real repo facts only — title, one subtitle line, at most a handful of short fact-chips (stack, license, key feature). Never invent metrics, star counts, or capabilities the repo doesn't show.
 3. Run through `references/checklist.md` before delivering. Do not deliver until every item passes.
-4. Output pure, self-contained SVG — no external raster assets, no remote fonts. Deliver it as an actual `.svg` file (see file-creation guidance below), not just SVG code pasted into chat, unless the user is clearly iterating conversationally on a small tweak.
+4. Output pure, self-contained SVG — no external raster assets, no remote fonts. Deliver it as an actual `.svg` file, not just SVG code pasted into chat, unless the user is clearly iterating conversationally on a small tweak.
 
 ## Non-negotiables
 
@@ -59,7 +59,7 @@ These override any stylistic preference below them:
 - Dark or project-aligned background, limited palette (one primary accent + one supporting accent), strong contrast.
 - Monospace for anything code-flavored (CLI tools, technical labels); geometric sans for the title otherwise.
 - One short title, at most one subtitle line — represent extra facts as compact chips/badges, never paragraphs.
-- Standard aspect ratio for README headers is wide, e.g. `viewBox="0 0 1280 640"` (2:1) or `1280 400` (3.2:1) for a slimmer banner — pick based on how much a GitHub README banner typically needs to show. `references/svg_rules.md` has the full sizing table.
+- Standard aspect ratio for README headers is wide, e.g. `viewBox="0 0 1280 640"` (2:1) or `viewBox="0 0 1280 400"` (3.2:1) for a slimmer banner — pick based on how much a GitHub README banner typically needs to show. `references/svg_rules.md` has the full sizing table.
 
 ## Reference files
 

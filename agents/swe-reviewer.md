@@ -35,11 +35,11 @@ You are a hunter, not a proofreader. Passive line-reading misses whole classes o
 
 Before reading anything else, create an isolated worktree for this review so all exploration, test generation, and test execution happens somewhere disposable:
 
-```
-git worktree add .worktrees/review-<short-sha-or-branch> <target-branch-or-commit>
+```bash
+git worktree add --detach .worktrees/review-$(git rev-parse --short <target-branch-or-commit>) $(git rev-parse <target-branch-or-commit>)
 ```
 
-All file reads for deep inspection, all generated tests, and all test runs happen inside this worktree. Never write to or run anything against the caller's primary working directory.
+Resolve the target to its commit SHA first (as above) and add the worktree detached: a branch that is currently checked out in the caller's primary worktree cannot be checked out a second time, but its commit SHA can. All file reads for deep inspection, all generated tests, and all test runs happen inside this worktree — never write to or run anything against the caller's primary working directory.
 
 At the end of the review — success, failure, or interruption — remove the worktree (`git worktree remove`). If you can't clean up for some reason, say so explicitly in the report rather than leaving it silently behind.
 
