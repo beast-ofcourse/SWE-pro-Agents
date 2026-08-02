@@ -2,6 +2,8 @@
 
 <div align="center">
 
+<img src="assets/hero.svg" alt="SWE Pro Agents — a full engineering team in your terminal" width="100%" />
+
 [![npm version](https://img.shields.io/npm/v/swe-pro-agents?color=blue&style=flat-square)](https://www.npmjs.com/package/swe-pro-agents)
 [![npm downloads](https://img.shields.io/npm/dt/swe-pro-agents?style=flat-square)](https://www.npmjs.com/package/swe-pro-agents)
 [![license](https://img.shields.io/github/license/beast-ofcourse/SWE-pro-Agents?style=flat-square)](LICENSE)
@@ -113,6 +115,7 @@ Once installed, invoke any agent from within OpenCode:
 The team is organized into four squads. Each agent has a focused role, explicit tool permissions, and a curated system prompt optimized for that specific job.
 
 <a name="swe-agents"></a>
+
 ### 🛠️ SWE Agents — Engineering Core
 
 | Agent | Role |
@@ -142,6 +145,7 @@ The team is organized into four squads. Each agent has a focused role, explicit 
 | `swe-testing` | Unit, integration, and e2e tests — coverage analysis, flakiness detection |
 
 <a name="research-agents"></a>
+
 ### 🔬 Research Agents
 
 | Agent | Role |
@@ -151,6 +155,7 @@ The team is organized into four squads. Each agent has a focused role, explicit 
 | `report-generator` | Structured report creation from findings |
 
 <a name="code-analysis-agents"></a>
+
 ### 🔍 Code Analysis Agents
 
 | Agent | Role |
@@ -166,6 +171,7 @@ The team is organized into four squads. Each agent has a focused role, explicit 
 | `repo-investigator` | Full repository structure mapping |
 
 <a name="architecture-agents"></a>
+
 ### 🏗️ Architecture Agents
 
 | Agent | Role |
@@ -221,6 +227,7 @@ Skills auto-install to `~/.config/opencode/skills/` and are picked up by OpenCod
 | `caveman` | Communication | Ultra-compressed mode, cuts output tokens ~65% |
 
 <a name="agents-vs-skills"></a>
+
 ### Agents vs. skills — which one am I actually using?
 
 These are two independent ways to use this pack, not two halves of one system —
