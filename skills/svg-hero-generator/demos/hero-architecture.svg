@@ -1,0 +1,115 @@
+<svg viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg" font-family="ui-monospace, 'SF Mono', 'JetBrains Mono', Consolas, monospace">
+  <defs>
+    <radialGradient id="coreGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1200" height="630" fill="#0b0e14"/>
+
+  <!-- grid -->
+  <g stroke="#151b26" stroke-width="1">
+    <line x1="0" y1="150" x2="1200" y2="150"/>
+    <line x1="0" y1="480" x2="1200" y2="480"/>
+  </g>
+
+  <!-- title block -->
+  <g>
+    <text x="60" y="76" fill="#e8ecf4" font-size="34" font-weight="600" letter-spacing="0.5">SWE Pro Agents</text>
+    <text x="60" y="104" fill="#5b6472" font-size="16">27 subagent profiles, orchestrated from one AGENTS.md</text>
+  </g>
+
+  <!-- badges -->
+  <g font-size="13" fill="#8b93a3">
+    <rect x="880" y="50" width="90" height="26" rx="4" fill="#131822" stroke="#232a38"/>
+    <text x="925" y="67" text-anchor="middle" fill="#7dd3fc">opencode</text>
+    <rect x="982" y="50" width="72" height="26" rx="4" fill="#131822" stroke="#232a38"/>
+    <text x="1018" y="67" text-anchor="middle" fill="#86efac">MIT</text>
+    <rect x="1066" y="50" width="74" height="26" rx="4" fill="#131822" stroke="#232a38"/>
+    <text x="1103" y="67" text-anchor="middle" fill="#fbbf24">npm</text>
+  </g>
+
+  <!-- diagram field -->
+  <g transform="translate(0,20)">
+    <!-- connective lines from core to each satellite, drawn first so nodes sit on top -->
+    <g stroke="#28324a" stroke-width="1.5">
+      <line x1="600" y1="345" x2="290" y2="230"/>
+      <line x1="600" y1="345" x2="600" y2="200"/>
+      <line x1="600" y1="345" x2="910" y2="230"/>
+      <line x1="600" y1="345" x2="230" y2="345"/>
+      <line x1="600" y1="345" x2="970" y2="345"/>
+      <line x1="600" y1="345" x2="290" y2="460"/>
+      <line x1="600" y1="345" x2="600" y2="490"/>
+      <line x1="600" y1="345" x2="910" y2="460"/>
+    </g>
+
+    <!-- core -->
+    <circle cx="600" cy="345" r="86" fill="url(#coreGlow)"/>
+    <circle cx="600" cy="345" r="52" fill="#0f1420" stroke="#3b82f6" stroke-width="2"/>
+    <text x="600" y="340" text-anchor="middle" fill="#e8ecf4" font-size="14" font-weight="600">AGENTS</text>
+    <text x="600" y="357" text-anchor="middle" fill="#5b6472" font-size="11">.md</text>
+
+    <!-- satellite: SWE squad -->
+    <g>
+      <rect x="230" y="205" width="120" height="50" rx="6" fill="#131822" stroke="#232a38"/>
+      <text x="290" y="226" text-anchor="middle" fill="#e8ecf4" font-size="12" font-weight="600">SWE squad</text>
+      <text x="290" y="243" text-anchor="middle" fill="#5b6472" font-size="11">20 roles</text>
+    </g>
+
+    <!-- satellite: Architect squad -->
+    <g>
+      <rect x="540" y="150" width="120" height="50" rx="6" fill="#131822" stroke="#232a38"/>
+      <text x="600" y="171" text-anchor="middle" fill="#e8ecf4" font-size="12" font-weight="600">Architect</text>
+      <text x="600" y="188" text-anchor="middle" fill="#5b6472" font-size="11">6 roles</text>
+    </g>
+
+    <!-- satellite: research -->
+    <g>
+      <rect x="850" y="205" width="120" height="50" rx="6" fill="#131822" stroke="#232a38"/>
+      <text x="910" y="226" text-anchor="middle" fill="#e8ecf4" font-size="12" font-weight="600">Research</text>
+      <text x="910" y="243" text-anchor="middle" fill="#5b6472" font-size="11">1 role</text>
+    </g>
+
+    <!-- satellite: reviewer -->
+    <g>
+      <rect x="170" y="320" width="120" height="50" rx="6" fill="#131822" stroke="#232a38"/>
+      <text x="230" y="341" text-anchor="middle" fill="#e8ecf4" font-size="12" font-weight="600">reviewer</text>
+      <text x="230" y="358" text-anchor="middle" fill="#5b6472" font-size="11">read-only</text>
+    </g>
+
+    <!-- satellite: security -->
+    <g>
+      <rect x="910" y="320" width="120" height="50" rx="6" fill="#131822" stroke="#232a38"/>
+      <text x="970" y="341" text-anchor="middle" fill="#e8ecf4" font-size="12" font-weight="600">security</text>
+      <text x="970" y="358" text-anchor="middle" fill="#5b6472" font-size="11">read-only</text>
+    </g>
+
+    <!-- satellite: skills -->
+    <g>
+      <rect x="230" y="435" width="120" height="50" rx="6" fill="#131822" stroke="#232a38"/>
+      <text x="290" y="456" text-anchor="middle" fill="#e8ecf4" font-size="12" font-weight="600">skills</text>
+      <text x="290" y="473" text-anchor="middle" fill="#5b6472" font-size="11">caveman +2</text>
+    </g>
+
+    <!-- satellite: testing -->
+    <g>
+      <rect x="540" y="465" width="120" height="50" rx="6" fill="#131822" stroke="#232a38"/>
+      <text x="600" y="486" text-anchor="middle" fill="#e8ecf4" font-size="12" font-weight="600">testing</text>
+      <text x="600" y="503" text-anchor="middle" fill="#5b6472" font-size="11">verify done</text>
+    </g>
+
+    <!-- satellite: devops -->
+    <g>
+      <rect x="850" y="435" width="120" height="50" rx="6" fill="#131822" stroke="#232a38"/>
+      <text x="910" y="456" text-anchor="middle" fill="#e8ecf4" font-size="12" font-weight="600">devops</text>
+      <text x="910" y="473" text-anchor="middle" fill="#5b6472" font-size="11">CI/CD</text>
+    </g>
+  </g>
+
+  <!-- footer -->
+  <g>
+    <text x="60" y="590" fill="#3b4354" font-size="13">npm install -g swe-pro-agents</text>
+    <text x="1140" y="590" text-anchor="end" fill="#3b4354" font-size="13">github.com/beast-ofcourse/SWE-pro-Agents</text>
+  </g>
+</svg>
