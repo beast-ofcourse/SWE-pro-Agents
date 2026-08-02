@@ -9,10 +9,10 @@
 [![npm version](https://img.shields.io/npm/v/swe-pro-agents?color=blue&style=flat-square)](https://www.npmjs.com/package/swe-pro-agents)
 [![npm downloads](https://img.shields.io/npm/dt/swe-pro-agents?style=flat-square)](https://www.npmjs.com/package/swe-pro-agents)
 [![license](https://img.shields.io/github/license/beast-ofcourse/SWE-pro-Agents?style=flat-square)](LICENSE)
-[![agents](https://img.shields.io/badge/agents-45-success?style=flat-square)](#agents)
+[![agents](https://img.shields.io/badge/agents-33-success?style=flat-square)](#agents)
 [![skills](https://img.shields.io/badge/skills-8-ff69b4?style=flat-square)](#skills)
 
-**45 production-grade OpenCode subagent profiles + 8 skills — deploy a full engineering team in your terminal.**
+**33 production-grade OpenCode subagent profiles + 8 skills — deploy a full engineering team in your terminal.**
 
 </div>
 
@@ -25,9 +25,8 @@
 - [Quick Start](#quick-start)
 - [Agents](#agents)
   - [SWE Agents — Engineering Core](#swe-agents)
-  - [Research Agents](#research-agents)
-  - [Code Analysis Agents](#code-analysis-agents)
-  - [Architecture Agents](#architecture-agents)
+- [Research Agents](#research-agents)
+- [Architecture Agents](#architecture-agents)
 - [Skills](#skills)
   - [Pipeline](#pipeline)
   - [Agents vs. skills](#agents-vs-skills)
@@ -52,7 +51,7 @@ What you get:
 
 - **Consistency** — every agent produces disciplined output, not random good intentions
 - **Depth** — agents carry domain knowledge that would take paragraphs to prompt each time
-- **Team structure** — 45 specialized roles that divide and conquer, not one monolithic chat
+- **Team structure** — 33 specialized roles that divide and conquer, not one monolithic chat
 
 ---
 
@@ -62,7 +61,7 @@ What you get:
 npm install -g swe-pro-agents
 ```
 
-This copies all 45 agent profiles to `~/.config/opencode/agents/swe-pro-agents/`,
+This copies all 33 agent profiles to `~/.config/opencode/agents/swe-pro-agents/`,
 all 8 skills to `~/.config/opencode/skills/`, and this pack's `AGENTS.md` to
 `~/.config/opencode/agents/swe-pro-agents/AGENTS.md`.
 
@@ -114,7 +113,7 @@ Once installed, invoke any agent from within OpenCode:
 
 ## Agents
 
-The team is organized into four squads. Each agent has a focused role, explicit tool permissions, and a curated system prompt optimized for that specific job.
+The team is organized into three squads. Each agent has a focused role, explicit tool permissions, and a curated system prompt optimized for that specific job.
 
 <a name="swe-agents"></a>
 
@@ -150,27 +149,9 @@ The team is organized into four squads. Each agent has a focused role, explicit 
 
 ### 🔬 Research Agents
 
-| Agent              | Role                                           |
-| ------------------ | ---------------------------------------------- |
-| `researcher`       | Deep investigation on complex technical topics |
-| `web-researcher`   | Real-time web research for current information |
-| `report-generator` | Structured report creation from findings       |
-
-<a name="code-analysis-agents"></a>
-
-### 🔍 Code Analysis Agents
-
-| Agent                      | Role                                               |
-| -------------------------- | -------------------------------------------------- |
-| `codebase-searcher`        | Fast file and pattern matching across the codebase |
-| `context-analyzer`         | Deep context extraction and code understanding     |
-| `dependency-investigator`  | Dependency graph analysis and risk assessment      |
-| `documentation-reader`     | Automated documentation parsing and extraction     |
-| `evidence-verifier`        | Cross-referencing claims against source of truth   |
-| `experiment-runner`        | Controlled experiment design and execution         |
-| `git-history-analyst`      | Git log forensics and change pattern analysis      |
-| `issue-discussion-analyst` | Issue triage and discussion pattern extraction     |
-| `repo-investigator`        | Full repository structure mapping                  |
+| Agent            | Role                                          |
+| ---------------- | --------------------------------------------- |
+| `web-researcher` | Real-time web research for current information |
 
 <a name="architecture-agents"></a>
 
@@ -187,7 +168,6 @@ The team is organized into four squads. Each agent has a focused role, explicit 
 | `arch-migration`           | Incremental migration planning with rollback strategies       |
 | `arch-scalability`         | Load analysis, bottleneck identification, scaling strategy    |
 | `arch-technical-strategy`  | Long-term technology roadmap and decision framework           |
-| `architecture-mapper`      | Architecture diagram generation and system visualization      |
 
 ---
 
@@ -238,7 +218,7 @@ pick based on how you want to work, not both at once for the same task:
   are lean by design: they assume this repo's root `AGENTS.md` is already loaded
   into context (OpenCode does this automatically), and they only state what's
   specific to their domain — everything else (the Constitution, Definition of
-  Done, Handoff protocol) lives in `AGENTS.md` once, not repeated 45 times. Their
+  Done, Handoff protocol) lives in `AGENTS.md` once, not repeated 33 times. Their
   behavior depends on `AGENTS.md` being installed — see
   [Install](#install) if `swe-pro-agents status` reports it as missing.
 - **Invoke `swe-pipeline`** when you want the whole stage sequence run for you —

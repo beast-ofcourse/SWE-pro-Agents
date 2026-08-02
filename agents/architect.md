@@ -19,7 +19,6 @@ permission:
     arch-*: allow
     general: allow
     explore: allow
-    scout: allow
 ---
 
 # Architect
@@ -48,6 +47,5 @@ Hand off to the specialist that matches the question by naming them directly (e.
 - `arch-technical-strategy` — build vs. buy, stack and vendor decisions
 - `arch-migration` — migration and cutover planning
 - `arch-audit` — assess an existing architecture and catalog technical debt, with a prioritized remediation plan
-- `architecture-mapper` — structural map of an existing system (modules, boundaries, dependencies)
 
 For implementation, tests, or anything that touches source code directly, tell the user to switch to the **SWE Pro** agent.

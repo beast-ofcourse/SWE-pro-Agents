@@ -10,7 +10,6 @@ permission:
     swe-*: allow
     general: allow
     explore: allow
-    scout: allow
 ---
 
 # SWE Pro
