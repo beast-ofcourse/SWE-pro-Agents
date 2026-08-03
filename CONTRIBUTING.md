@@ -50,7 +50,7 @@ npm test
 
 ```text
 agents/        Agent profiles (27: 24 subagents + 3 primary)
-skills/        Skills: caveman, readme-generator, svg-hero-generator
+skills/        Skills: caveman, skill-creator, teach-me, readme-generator, svg-hero-generator
 scripts/       install.js (postinstall), uninstall.js (preuninstall)
 bin/           swe-pro-agents CLI
 test/          Installer lifecycle tests

@@ -51,14 +51,6 @@ function getInstalledAgentCount() {
   return fs.readdirSync(TARGET_AGENTS_DIR).filter(f => f.endsWith('.md') && f !== 'AGENTS.md').length;
 }
 
-function getInstalledSkillCount() {
-  if (!fs.existsSync(TARGET_SKILLS_DIR)) return 0;
-  return fs.readdirSync(TARGET_SKILLS_DIR).filter(e =>
-    fs.statSync(path.join(TARGET_SKILLS_DIR, e)).isDirectory()
-      && fs.existsSync(path.join(TARGET_SKILLS_DIR, e, 'SKILL.md'))
-  ).length;
-}
-
 function semverGt(a, b) {
   const pa = String(a).replace(/^v/, '').split('.').map(Number);
   const pb = String(b).replace(/^v/, '').split('.').map(Number);
@@ -69,10 +61,6 @@ function semverGt(a, b) {
   return false;
 }
 
-/**
- * Checks the npm registry for a newer version. Never throws and never blocks
- * status output for long — offline or slow registries just skip the check.
- */
 /**
  * Checks the npm registry for a newer version. Never throws and never blocks
  * status output for long — offline or slow registries just skip the check.

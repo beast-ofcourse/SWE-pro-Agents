@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `teach-me` skill — adaptive tutoring with explanations, quizzes, exercises, and persistent mastery tracking (`learning_progress_*.md` files)
+- `skill-creator` skill — the craft and workflow for writing great skills: merges Matt Pocock's `writing-great-skills` (predictability, invocation, information hierarchy, leading words, pruning) with Anthropic's `skill-creator` (draft → test → evaluate → iterate → package)
+
 ## [2.1.1] - 2026-08-02
 
 ### Added
