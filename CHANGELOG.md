@@ -7,30 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Changed
-- **Finishing work ceremony** (borrowed from Superpowers' `finishing-a-development-branch`): SWE Pro ends a completed build or fix pass by re-running the full suite on the exact tree to be integrated, confirming the base branch, presenting exactly three options (merge locally / push and open a PR / keep as-is — discard only on explicit user request), and cleaning up only the worktrees it owns
-- **Parallel task dispatch** (borrowed from Superpowers' `dispatching-parallel-agents`): independent tasks in the same phase — no shared files, no ordering dependency — run concurrently, one fresh subagent each, with overlap checks and a full-suite run before integration; Architect's task rules now make file-sharing an explicit sequential dependency
-- **Subagent-driven plan execution** (borrowed from Obra Superpowers): SWE Pro now dispatches each `plans/tasks.md` task to a fresh `swe-implementation` subagent (or layer specialist for layer-specific tasks) with only the task text — killing context drift — then reviews the result in two passes (spec compliance, then code quality; `swe-reviewer` for the second pass on security/migration tasks). `tasks.md` tasks must now pass the **fresh-session bar**: executable from their own text by a context-free subagent; `arch-validator` enforces it (failure = Major, unbuildable = Critical)
-- **Hard gates** added to `AGENTS.md` and SWE Pro: a red test baseline stops implementation before it starts (unless the task is the baseline fix), and unresolved Critical findings in `PR-review.md` or `plans/validation.md` block the next task
-- **Phase checkpoints**: SWE Pro pauses after each `tasks.md` phase for user approval, unless told "auto-pilot"
-- **Red flags** sections added to SWE Pro and PR Reviewer — the rationalization phrases that mean the process is being skipped ("This is just a simple change", "The tests pass, so this is fine", …)
-- **Process announcements** added to the `AGENTS.md` Constitution: agents say the process step they're executing before they execute it
-- `architect` task rules reworded: "SWE Pro only" is now "SWE Pro owns execution" — the fresh subagent executes, SWE Pro orders, dispatches, and reviews; self-check gains the fresh-session bar
-- README Spec-Driven Build workflow updated to describe subagent dispatch + two-stage review + phase checkpoints
+## [2.2.0] - 2026-08-04
 
 ### Added
-- `humanizer-pro` skill — sharp human editor that rewrites drafts to read human or detects AI-slop with quoted evidence. Merges two MIT skills: petergyang/no-ai-slop (edit/detect workflow, banned-word lists, minimum-effective-edit ethos, What changed output) and blader/humanizer (33-pattern catalog from Wikipedia's "Signs of AI writing", voice calibration where a user writing sample outranks the style rules, false-positive guidance, signs-of-human-writing preservation, pasted/file/embedded invocation modes). Pack is now 6 skills
-- `pr-reviewer` — new CodeRabbit-inspired **primary** agent: reviews one or more GitHub PRs end to end (merge readiness, bugs, errors, conflicts, contract mismatches, security, performance, tests), flags every finding as Critical / Major / Minor / Optional with a concrete fix, verifies checkable findings in an isolated worktree, and writes `PR-review.md` before handing off fixes to SWE Pro. Built on the pack's critical-thinking discipline: two-hypotheses testing, forced disconfirmation, self-attack on findings, root-cause-over-symptom fixes, a 10-aspect coverage list (product, UX, correctness, concurrency, security, performance, data, ops, maintainability, future), and anticipation of consequences after merge — not just today's behavior. Pack is now 26 profiles (22 subagents + 4 primary)
-
-### Changed
-- `arch-scalability` + `arch-strategy` merged into new subagent `arch-validator` — its sole mission is attacking Architect's finished plan: it stress-tests every decision, task, and user journey and returns categorized Critical/Major/Minor spec fixes to `plans/validation.md`. Architect now runs the validator before handoff and must address all Critical/Major findings. Pack shrinks to 25 profiles (22 subagents + 3 primary) at this point in the history; README, package.json, and demo SVGs updated accordingly
-- `architect` rebuilt as a spec-driven planner: it now opens with a spec-vs-**yolo** choice (yolo = architect decides the stack and everything else, zero questions), interviews across an 11-area spec checklist, and produces exactly three files in `plans/` — `project-overview.md`, `tasks.md` (phases of small, independent, verifiable tasks executable by SWE Pro alone), and `user-flow.md` (the app from the user's point of view). SWE Pro and `AGENTS.md` updated to make `plans/tasks.md` the source of truth for build work
-- `swe-testing` merged into `swe-reviewer` — the pack's testing discipline (isolation, mocking at boundaries, fixtures, failure paths, coverage-as-finding) now lives in the reviewer's Phase 6 "Testing craft" section, so verification and review are owned by one agent. Pack was 26 profiles (23 subagents + 3 primary) at that point; delegation list, README, package.json, and demo SVG updated accordingly
-
-### Added
+- `humanizer-pro` skill — sharp human editor that rewrites drafts to read human or detects AI-slop with quoted evidence. Merges two MIT skills: petergyang/no-ai-slop and blader/humanizer (33-pattern catalog from Wikipedia's "Signs of AI writing", voice calibration). Pack is now 6 skills
+- `pr-reviewer` — new CodeRabbit-inspired **primary** agent: reviews GitHub PRs end to end, flags every finding as Critical / Major / Minor / Optional with a concrete fix, verifies checkable findings in an isolated worktree, and writes `PR-review.md`. Pack is now 26 profiles (22 subagents + 4 primary)
 - `teach-me` skill — adaptive tutoring with explanations, quizzes, exercises, and persistent mastery tracking (`learning_progress_*.md` files)
-- `skill-creator` skill — the craft and workflow for writing great skills: merges Matt Pocock's `writing-great-skills` (predictability, invocation, information hierarchy, leading words, pruning) with Anthropic's `skill-creator` (draft → test → evaluate → iterate → package)
-- **Verification harness** — `scripts/validate.js` (zero-dependency, run as `npm run validate`) statically validates every agent and skill and fails the build on any violation: frontmatter parseability, required single-line descriptions, valid modes, the exact primary-agent set, permission task refs referencing only known agents, skill name/license/compatibility/trigger-language rules, and count integrity against `package.json` and the README. Wired into CI (Linux + Windows × Node 18/20/22) with 11 self-tests in `test/validate.test.js`; `npm test` now runs both suites. Fixed `svg-hero-generator` missing `compatibility: opencode`.
+- `skill-creator` skill — the craft and workflow for writing great skills (draft → test → evaluate → iterate → package)
+- **Verification harness** — `scripts/validate.js` (zero-dependency, run as `npm run validate`) statically validates every agent and skill and fails the build on any violation. Wired into CI (Linux + Windows × Node 18/20/22) with 18 self-tests in `test/validate.test.js`; `npm test` now runs both suites
+
+### Changed
+- **Finishing work ceremony**: SWE Pro re-runs the full suite on the exact tree to be integrated, confirms the base branch, presents exactly three options (merge locally / push and open a PR / keep as-is), and cleans up only worktrees it owns
+- **Parallel task dispatch**: independent tasks in the same phase run concurrently, one fresh subagent each, with overlap checks and a full-suite run before integration
+- **Subagent-driven plan execution**: SWE Pro dispatches each `plans/tasks.md` task to a fresh subagent with only the task text, then reviews in two passes (spec compliance + code quality). `tasks.md` tasks must pass the **fresh-session bar**
+- **Hard gates**: a red test baseline stops implementation before it starts; unresolved Critical findings block the next task
+- **Phase checkpoints**: SWE Pro pauses after each `tasks.md` phase for user approval, unless told "auto-pilot"
+- **Red flags** sections added to SWE Pro and PR Reviewer
+- **Process announcements** added to the `AGENTS.md` Constitution
+- `architect` rebuilt as a spec-driven planner with spec-vs-yolo choice, 11-area spec checklist, and three plan files (`project-overview.md`, `tasks.md`, `user-flow.md`)
+- `arch-scalability` + `arch-strategy` merged into `arch-validator` — stress-tests every Architect decision and returns categorized spec fixes
+- `swe-testing` merged into `swe-reviewer` — verification and review owned by one agent
+- `svg-hero-generator` now declares `compatibility: opencode`
 
 ## [2.1.1] - 2026-08-02
 
