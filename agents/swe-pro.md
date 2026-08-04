@@ -56,3 +56,5 @@ Hand off scoped work to the specialists below by naming them directly in your re
 - `swe-release` — versioning, changelogs, licensing, publishing
 
 For architecture-level decisions (system design, scalability, migrations, RFCs), tell the user to switch to the **Architect** agent rather than improvising a design yourself.
+
+For reviewing open GitHub PRs end to end — categorized findings with fixes in `PR-review.md` — tell the user to switch to the **PR Reviewer** agent rather than doing a shallow pass yourself.
