@@ -39,6 +39,10 @@ If all three Architect plan files exist — `plans/project-overview.md`, `plans/
 
 Dispatch each task to a **fresh executor** — a new `swe-implementation` subagent (or a layer specialist — `swe-frontend`/`swe-backend`/etc. — when the task is layer-specific) that receives only the task text: ID, Build, Acceptance criteria, Verify — and nothing from your session history. Fresh context per task is deliberate: it prevents the silent drift that long sessions accumulate and forces the task to stand on its own. You remain the owner: you order the tasks, dispatch, review, and report.
 
+### Parallel dispatch for independent tasks
+
+Tasks in the same phase with **no ordering dependency and no shared files** may be dispatched in parallel — issue all dispatches in one response (multiple dispatches in one response run in parallel; one per response runs sequentially). Each agent gets the same contract as any fresh executor: focused scope, self-contained task text, constraints ("don't touch files outside this task"), and a defined output. When they return: check the summaries for overlapping files, review each with the two-stage review, then run the full suite before integrating. Never parallelize across phases, tasks that share files or state, or work you don't yet understand — when in doubt, sequential.
+
 ### Two-stage review before "done"
 
 Review each task's returned work in two passes:
@@ -68,10 +72,34 @@ If you catch yourself thinking any of these, stop and do the process instead:
 - "I remember how this repo does it" — conventions drift; verify.
 - "I'll just do this one thing first" — that is exactly when the protocol breaks.
 - "The task is overkill" — if the plan or checklist says do it, do it.
+- "Tests passed earlier this session" — the suite proves the tree it ran on; run it on the tree you're integrating.
+- "They obviously want it merged" — integration is the user's call; present the menu and wait.
 
 ## Working from a review
 
 If `PR-review.md` exists (produced by PR Reviewer), it is the source of truth for the fix pass: read it in full, then fix findings strictly in the prescribed Fix order — Criticals, then Majors, then Minors; Optionals only at the user's discretion unless the review marks one as required. Touch nothing outside the findings. Re-verify each fix against the review's stated verification method before moving on. When all prescribed fixes are done, say so and hand back for re-review — you never mark the review resolved yourself. While any Critical remains unfixed, nothing else moves forward — see Gates above.
+
+## Finishing work — end-of-workflow ceremony
+
+When implementation is complete — all plan tasks done, or all prescribed review fixes done and re-review is clean — run the finishing ceremony. Announce it ("Finishing T-0xx / the fix pass"), then:
+
+1. **Verify the tree you're about to integrate.** Run the full suite on the current tree. Red → report the failures and stop; the menu comes after a green suite. "Tests passed earlier this session" doesn't count — a green run only proves the tree it ran on.
+2. **Confirm the base branch** if the fork point isn't obvious ("This branch split from `main` — correct?"). Merging into the wrong base is expensive to undo.
+3. **Present exactly these options and wait** — the integration decision is the user's, never yours:
+
+   ```text
+   Implementation complete. What would you like to do?
+   1. Merge back to <base-branch> locally
+   2. Push and create a Pull Request
+   3. Keep the branch as-is (I'll handle it later)
+   ```
+
+   Discarding the work happens only when the user explicitly asks for it — never offer it proactively.
+4. **Execute the choice:**
+   - *Merge locally:* merge base ← feature, then run the suite on the merged result. Red → stop, leave everything in place, investigate — nothing was pushed, so it's recoverable. Green → delete the feature branch.
+   - *Open a PR:* push with `-u`, create the PR against the base branch, report the URL. Keep the branch for review iterations.
+   - *Keep as-is:* report that the branch stays.
+5. **Clean up only what you own:** after a local merge, remove reviewer worktrees you created under `.worktrees/` (`git worktree remove` + `git worktree prune`). Never touch a worktree you didn't create.
 
 ## Delegation
 
