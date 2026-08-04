@@ -2,6 +2,7 @@
 name: svg-hero-generator
 description: "Generate editable, repo-aware SVG hero/banner images for README files. Use whenever a user wants a README banner, GitHub social preview, project header image, or asks for an SVG (not raster/PNG) hero graphic — especially if they want it to reflect their actual project rather than generic stock-style art. Also use when a user wants a few distinct visual directions to choose between before committing to a final banner. Trigger on phrases like 'hero image for my README', 'banner for this repo', 'make an SVG header', or 'social preview image', even if they don't say 'SVG' explicitly."
 license: MIT
+compatibility: opencode
 ---
 
 # SVG Hero Image Generator

@@ -28,6 +28,12 @@ jobs:
           node --check bin/swe-pro-agents.js
           node --check scripts/install.js
           node --check scripts/uninstall.js
+          node --check scripts/validate.js
           node --check test/installer.test.js
+          node --check test/validate.test.js
+      - name: Pack validation (agents + skills, strict)
+        run: npm run validate
       - name: Installer lifecycle tests
         run: node test/installer.test.js
+      - name: Validator self-tests
+        run: node test/validate.test.js

@@ -40,7 +40,8 @@
   "scripts": {
     "postinstall": "node scripts/install.js",
     "preuninstall": "node scripts/uninstall.js",
-    "test": "node test/installer.test.js"
+    "test": "node test/installer.test.js && node test/validate.test.js",
+    "validate": "node scripts/validate.js"
   },
   "engines": {
     "node": ">=18"
