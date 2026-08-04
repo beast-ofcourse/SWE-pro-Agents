@@ -10,10 +10,10 @@
 [![npm downloads](https://img.shields.io/npm/dt/swe-pro-agents?style=flat-square)](https://www.npmjs.com/package/swe-pro-agents)
 [![CI](https://img.shields.io/github/actions/workflow/status/beast-ofcourse/SWE-pro-Agents/ci.yml?style=flat-square)](https://github.com/beast-ofcourse/SWE-pro-Agents/actions)
 [![license](https://img.shields.io/github/license/beast-ofcourse/SWE-pro-Agents?style=flat-square)](LICENSE)
-[![agents](https://img.shields.io/badge/agents-25-success?style=flat-square)](#agents)
+[![agents](https://img.shields.io/badge/agents-26-success?style=flat-square)](#agents)
 [![skills](https://img.shields.io/badge/skills-5-ff69b4?style=flat-square)](#skills)
 
-**25 OpenCode agent profiles (22 subagents + 3 primary) + 5 skills — a full engineering team in your terminal.**
+**26 OpenCode agent profiles (22 subagents + 4 primary) + 5 skills — a full engineering team in your terminal.**
 
 </div>
 
@@ -47,7 +47,7 @@ SWE Pro Agents fixes that. Each agent is a **loaded expert** — a complete syst
 
 ## What You Get
 
-- **25 specialized agent profiles** — 22 subagents plus 3 primary agents (`swe-pro`, `architect`, `swe-reviewer`), each with a focused role, a curated prompt, and explicit tool permissions (read-only roles get deny-lists, implementers get scoped allow-lists).
+- **26 specialized agent profiles** — 22 subagents plus 4 primary agents (`swe-pro`, `architect`, `swe-reviewer`, `pr-reviewer`), each with a focused role, a curated prompt, and explicit tool permissions (read-only roles get deny-lists, implementers get scoped allow-lists).
 - **5 on-demand skills** — token-compression mode, a skill-authoring suite, an adaptive tutoring loop, a repo-evidence-driven README generator, and an SVG hero generator; loadable from any agent via OpenCode's skill tool.
 - **A manifest-based installer** — records exactly what it installs, prunes stale agents/skills from older versions on update, and never guesses ownership.
 - **A safe uninstaller** — removes only files the pack owns; your own skills and merged config are never touched.
@@ -64,7 +64,7 @@ npm install -g swe-pro-agents
 
 The postinstall hook copies:
 
-- all 25 agent profiles to `~/.config/opencode/agents/swe-pro-agents/`,
+- all 26 agent profiles to `~/.config/opencode/agents/swe-pro-agents/`,
 - all 5 skills to `~/.config/opencode/skills/`,
 - this pack's `AGENTS.md` to `~/.config/opencode/agents/swe-pro-agents/AGENTS.md`.
 
@@ -163,6 +163,7 @@ The team is organized into three squads. Each agent has a focused role, explicit
 | `swe-release`        | Versioning, changelogs, licensing, contribution readiness, publishing           |
 | `swe-repository`     | Mapping unfamiliar codebases — structure, conventions, build commands           |
 | `swe-reviewer`       | Read-only code review — correctness, risk, standards enforcement                |
+| `pr-reviewer`        | PR review (CodeRabbit-style) — Critical/Major/Minor/Optional findings with fixes, written to `PR-review.md` |
 | `swe-security`       | Vulnerability auditing, threat modeling, unsafe pattern detection               |
 
 <a name="research-agents"></a>
@@ -185,7 +186,7 @@ The team is organized into three squads. Each agent has a focused role, explicit
 | `arch-migration`           | Incremental migration planning with rollback strategies               |
 | `arch-validator`           | Attacks the plans before the build — Critical/Major/Minor spec fixes |
 
-Three of the 25 profiles are **primary** agents (selectable as your main agent): `swe-pro`, `architect`, and `swe-reviewer`. The rest are subagents, invoked from a primary agent or by name.
+Four of the 26 profiles are **primary** agents (selectable as your main agent): `swe-pro`, `architect`, `swe-reviewer`, and `pr-reviewer`. The rest are subagents, invoked from a primary agent or by name.
 
 ---
 
@@ -207,7 +208,7 @@ Skills auto-install to `~/.config/opencode/skills/` and are picked up by OpenCod
 
 ### Agents vs. skills
 
-Agents are the team; skills are utilities. Invoke an agent directly (`@swe-frontend`, `@swe-backend`, …) when you know exactly which specialist you want and just need it to do that one job. Agents are lean by design: they assume this pack's `AGENTS.md` is already loaded into context (OpenCode does this automatically), and they only state what's specific to their domain — everything else (the Constitution, Definition of Done, Handoff protocol) lives in `AGENTS.md` once, not repeated 25 times. Their behavior depends on `AGENTS.md` being installed — see [Install](#install) if `swe-pro-agents status` reports it as missing.
+Agents are the team; skills are utilities. Invoke an agent directly (`@swe-frontend`, `@swe-backend`, …) when you know exactly which specialist you want and just need it to do that one job. Agents are lean by design: they assume this pack's `AGENTS.md` is already loaded into context (OpenCode does this automatically), and they only state what's specific to their domain — everything else (the Constitution, Definition of Done, Handoff protocol) lives in `AGENTS.md` once, not repeated 26 times. Their behavior depends on `AGENTS.md` being installed — see [Install](#install) if `swe-pro-agents status` reports it as missing.
 
 The five skills are standalone utilities any agent can load on demand — `caveman` for ultra-compressed replies, `skill-creator` for authoring skills with rigor, `teach-me` for adaptive tutoring with persistent progress tracking, `readme-generator` and `svg-hero-generator` for repo-aware document artifacts. They are deliberately self-contained rather than depending on `AGENTS.md`, because a skill can be invoked by any agent in any project — including ones that don't have this pack's `AGENTS.md` installed at all.
 
@@ -250,6 +251,14 @@ architect → swe-pro
 ```
 
 Architect interviews you (or accepts a `yolo` mandate) until the spec is complete, then writes `plans/project-overview.md`, `plans/tasks.md`, and `plans/user-flow.md`. Switch to SWE Pro, which executes `plans/tasks.md` one small task at a time — each task specified with acceptance criteria and a verify step.
+
+### PR Review
+
+```text
+pr-reviewer → swe-pro
+```
+
+Switch to PR Reviewer and name one or more PRs. It reviews each end to end — bugs, errors, conflicts, contract mismatches, security, improvements — categorized Critical / Major / Minor / Optional, every finding with a concrete fix, all written to `PR-review.md`. Switch to SWE Pro to fix in the order the review prescribes — Criticals, then Majors, then Minors; Optionals at your discretion.
 
 ### Production Incident
 
@@ -306,7 +315,7 @@ CI (`.github/workflows/ci.yml`) runs syntax checks (`node --check`) and the test
 
 ```text
 SWE-pro-Agents/
-├── agents/       25 agent profiles (3 primary, 22 subagents)
+├── agents/       26 agent profiles (4 primary, 22 subagents)
 ├── skills/       5 skills: caveman, skill-creator, teach-me, readme-generator, svg-hero-generator
 ├── scripts/      install.js (postinstall), uninstall.js (preuninstall)
 ├── bin/          swe-pro-agents CLI

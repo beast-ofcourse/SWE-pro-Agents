@@ -28,3 +28,6 @@ Thumbs.db
 .worktrees/
 review-report.md
 handoff.md
+
+# pr-reviewer artifacts
+PR-review.md
