@@ -11,7 +11,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/beast-ofcourse/SWE-pro-Agents/ci.yml?style=flat-square)](https://github.com/beast-ofcourse/SWE-pro-Agents/actions)
 [![license](https://img.shields.io/github/license/beast-ofcourse/SWE-pro-Agents?style=flat-square)](LICENSE)
 
-**26 OpenCode agent profiles (22 subagents + 4 primary) + 5 skills — a full engineering team in your terminal.**
+**26 OpenCode agent profiles (22 subagents + 4 primary) + 6 skills — a full engineering team in your terminal.**
 
 </div>
 
@@ -28,7 +28,7 @@ SWE Pro Agents fixes that. Each agent is a **loaded expert** — a complete syst
 ## What You Get
 
 - **26 specialized agent profiles** — 22 subagents plus 4 primary agents (`swe-pro`, `architect`, `swe-reviewer`, `pr-reviewer`), each with a focused role, a curated prompt, and explicit tool permissions (read-only roles get deny-lists, implementers get scoped allow-lists).
-- **5 on-demand skills** — token-compression mode, a skill-authoring suite, an adaptive tutoring loop, a repo-evidence-driven README generator, and an SVG hero generator; loadable from any agent via OpenCode's skill tool.
+- **6 on-demand skills** — token-compression mode, a skill-authoring suite, an adaptive tutoring loop, a repo-evidence-driven README generator, an SVG hero generator, and an anti-AI-slop writing editor; loadable from any agent via OpenCode's skill tool.
 - **A manifest-based installer** — records exactly what it installs, prunes stale agents/skills from older versions on update, and never guesses ownership.
 - **A safe uninstaller** — removes only files the pack owns; your own skills and merged config are never touched.
 - **A status/setup CLI** — checks installation state, shows the config snippet, writes it with a backup, and checks for updates (offline-safe).
@@ -69,7 +69,7 @@ npm install -g swe-pro-agents
 The postinstall hook copies:
 
 - all agent profiles to `~/.config/opencode/agents/swe-pro-agents/`,
-- all 5 skills to `~/.config/opencode/skills/`,
+- all 6 skills to `~/.config/opencode/skills/`,
 - this pack's `AGENTS.md` to `~/.config/opencode/agents/swe-pro-agents/AGENTS.md`.
 
 That last file matters: every agent in `agents/` is intentionally short because it assumes `AGENTS.md`'s Constitution, Definition of Done, and Handoff protocol are already loaded into context. If you don't already have a global `~/.config/opencode/AGENTS.md`, copy the installed one into place:
@@ -207,7 +207,7 @@ Four of the 26 profiles are **primary** agents (selectable as your main agent): 
 
 ## Skills
 
-Beyond agents, SWE Pro Agents ships **5 skills** — a token-compression mode, a skill-authoring suite, an adaptive tutoring loop, a professional README generator, and an SVG hero generator. Each is a self-contained `SKILL.md` loaded on demand via OpenCode's `skill` tool:
+Beyond agents, SWE Pro Agents ships **6 skills** — a token-compression mode, a skill-authoring suite, an adaptive tutoring loop, a professional README generator, an SVG hero generator, and an anti-AI-slop writing editor. Each is a self-contained `SKILL.md` loaded on demand via OpenCode's `skill` tool:
 
 | Skill               | Purpose                                                    |
 | ------------------- | ---------------------------------------------------------- |
@@ -216,6 +216,7 @@ Beyond agents, SWE Pro Agents ships **5 skills** — a token-compression mode, a
 | `teach-me`          | Adaptive tutor — explain, quiz, exercise, track mastery over time |
 | `readme-generator`  | Professional READMEs — create, audit, upgrade from repo evidence |
 | `svg-hero-generator`| Repo-aware SVG hero banners — 3–4 concepts, then final SVG |
+| `humanizer-pro`     | Sharp human editor — edit drafts to read human, or detect AI-slop patterns with quoted evidence |
 
 Skills auto-install to `~/.config/opencode/skills/` and are picked up by OpenCode automatically — no config needed.
 
@@ -311,7 +312,7 @@ The installer prunes agents and skills from older versions automatically (via th
 npm uninstall -g swe-pro-agents
 ```
 
-The preuninstall hook removes everything this pack installed: the agent files, the pack's skills (`caveman`, `skill-creator`, `teach-me`, `readme-generator`, `svg-hero-generator`), and its manifest. Your own skills in `~/.config/opencode/skills/` are never touched.
+The preuninstall hook removes everything this pack installed: the agent files, the pack's skills (`caveman`, `skill-creator`, `teach-me`, `readme-generator`, `svg-hero-generator`, `humanizer-pro`), and its manifest. Your own skills in `~/.config/opencode/skills/` are never touched.
 
 Two things remain, by design — they're your content:
 
@@ -339,7 +340,7 @@ CI (`.github/workflows/ci.yml`) runs syntax checks (`node --check`) and the test
 ```text
 SWE-pro-Agents/
 ├── agents/       26 agent profiles (4 primary, 22 subagents)
-├── skills/       5 skills: caveman, skill-creator, teach-me, readme-generator, svg-hero-generator
+├── skills/       6 skills: caveman, skill-creator, teach-me, readme-generator, svg-hero-generator, humanizer-pro
 ├── scripts/      install.js (postinstall), uninstall.js (preuninstall)
 ├── bin/          swe-pro-agents CLI
 ├── test/         installer lifecycle tests
