@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- `arch-scalability` + `arch-strategy` merged into new subagent `arch-validator` — its sole mission is attacking Architect's finished plan: it stress-tests every decision, task, and user journey and returns categorized Critical/Major/Minor spec fixes to `plans/validation.md`. Architect now runs the validator before handoff and must address all Critical/Major findings. Pack is now 25 profiles (22 subagents + 3 primary); README, package.json, and demo SVGs updated accordingly
+- `architect` rebuilt as a spec-driven planner: it now opens with a spec-vs-**yolo** choice (yolo = architect decides the stack and everything else, zero questions), interviews across an 11-area spec checklist, and produces exactly three files in `plans/` — `project-overview.md`, `tasks.md` (phases of small, independent, verifiable tasks executable by SWE Pro alone), and `user-flow.md` (the app from the user's point of view). SWE Pro and `AGENTS.md` updated to make `plans/tasks.md` the source of truth for build work
 - `swe-testing` merged into `swe-reviewer` — the pack's testing discipline (isolation, mocking at boundaries, fixtures, failure paths, coverage-as-finding) now lives in the reviewer's Phase 6 "Testing craft" section, so verification and review are owned by one agent. Pack is now 26 profiles (23 subagents + 3 primary); delegation list, README, package.json, and demo SVG updated accordingly
 
 ### Added

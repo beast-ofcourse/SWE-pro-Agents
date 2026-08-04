@@ -10,10 +10,10 @@
 [![npm downloads](https://img.shields.io/npm/dt/swe-pro-agents?style=flat-square)](https://www.npmjs.com/package/swe-pro-agents)
 [![CI](https://img.shields.io/github/actions/workflow/status/beast-ofcourse/SWE-pro-Agents/ci.yml?style=flat-square)](https://github.com/beast-ofcourse/SWE-pro-Agents/actions)
 [![license](https://img.shields.io/github/license/beast-ofcourse/SWE-pro-Agents?style=flat-square)](LICENSE)
-[![agents](https://img.shields.io/badge/agents-26-success?style=flat-square)](#agents)
+[![agents](https://img.shields.io/badge/agents-25-success?style=flat-square)](#agents)
 [![skills](https://img.shields.io/badge/skills-5-ff69b4?style=flat-square)](#skills)
 
-**26 OpenCode agent profiles (23 subagents + 3 primary) + 5 skills — a full engineering team in your terminal.**
+**25 OpenCode agent profiles (22 subagents + 3 primary) + 5 skills — a full engineering team in your terminal.**
 
 </div>
 
@@ -47,7 +47,7 @@ SWE Pro Agents fixes that. Each agent is a **loaded expert** — a complete syst
 
 ## What You Get
 
-- **26 specialized agent profiles** — 23 subagents plus 3 primary agents (`swe-pro`, `architect`, `swe-reviewer`), each with a focused role, a curated prompt, and explicit tool permissions (read-only roles get deny-lists, implementers get scoped allow-lists).
+- **25 specialized agent profiles** — 22 subagents plus 3 primary agents (`swe-pro`, `architect`, `swe-reviewer`), each with a focused role, a curated prompt, and explicit tool permissions (read-only roles get deny-lists, implementers get scoped allow-lists).
 - **5 on-demand skills** — token-compression mode, a skill-authoring suite, an adaptive tutoring loop, a repo-evidence-driven README generator, and an SVG hero generator; loadable from any agent via OpenCode's skill tool.
 - **A manifest-based installer** — records exactly what it installs, prunes stale agents/skills from older versions on update, and never guesses ownership.
 - **A safe uninstaller** — removes only files the pack owns; your own skills and merged config are never touched.
@@ -64,7 +64,7 @@ npm install -g swe-pro-agents
 
 The postinstall hook copies:
 
-- all 26 agent profiles to `~/.config/opencode/agents/swe-pro-agents/`,
+- all 25 agent profiles to `~/.config/opencode/agents/swe-pro-agents/`,
 - all 5 skills to `~/.config/opencode/skills/`,
 - this pack's `AGENTS.md` to `~/.config/opencode/agents/swe-pro-agents/AGENTS.md`.
 
@@ -179,14 +179,13 @@ The team is organized into three squads. Each agent has a focused role, explicit
 
 | Agent                      | Role                                                                  |
 | -------------------------- | --------------------------------------------------------------------- |
-| `architect`                | System design — trade-offs, constraints, decisions                    |
+| `architect`                | Spec-driven planning — interviews the user (or takes a "yolo" mandate), writes `plans/` (overview, tasks, user-flow) |
 | `arch-design`              | System and feature architecture, RFC/ADR authoring                    |
 | `arch-distributed-systems` | Consistency, partitioning, consensus, failure modes                   |
 | `arch-migration`           | Incremental migration planning with rollback strategies               |
-| `arch-scalability`         | Load analysis, bottleneck identification, scaling strategy            |
-| `arch-strategy`            | Architecture assessment, technical-debt catalog, roadmap, build-vs-buy |
+| `arch-validator`           | Attacks the plans before the build — Critical/Major/Minor spec fixes |
 
-Three of the 26 profiles are **primary** agents (selectable as your main agent): `swe-pro`, `architect`, and `swe-reviewer`. The rest are subagents, invoked from a primary agent or by name.
+Three of the 25 profiles are **primary** agents (selectable as your main agent): `swe-pro`, `architect`, and `swe-reviewer`. The rest are subagents, invoked from a primary agent or by name.
 
 ---
 
@@ -208,7 +207,7 @@ Skills auto-install to `~/.config/opencode/skills/` and are picked up by OpenCod
 
 ### Agents vs. skills
 
-Agents are the team; skills are utilities. Invoke an agent directly (`@swe-frontend`, `@swe-backend`, …) when you know exactly which specialist you want and just need it to do that one job. Agents are lean by design: they assume this pack's `AGENTS.md` is already loaded into context (OpenCode does this automatically), and they only state what's specific to their domain — everything else (the Constitution, Definition of Done, Handoff protocol) lives in `AGENTS.md` once, not repeated 26 times. Their behavior depends on `AGENTS.md` being installed — see [Install](#install) if `swe-pro-agents status` reports it as missing.
+Agents are the team; skills are utilities. Invoke an agent directly (`@swe-frontend`, `@swe-backend`, …) when you know exactly which specialist you want and just need it to do that one job. Agents are lean by design: they assume this pack's `AGENTS.md` is already loaded into context (OpenCode does this automatically), and they only state what's specific to their domain — everything else (the Constitution, Definition of Done, Handoff protocol) lives in `AGENTS.md` once, not repeated 25 times. Their behavior depends on `AGENTS.md` being installed — see [Install](#install) if `swe-pro-agents status` reports it as missing.
 
 The five skills are standalone utilities any agent can load on demand — `caveman` for ultra-compressed replies, `skill-creator` for authoring skills with rigor, `teach-me` for adaptive tutoring with persistent progress tracking, `readme-generator` and `svg-hero-generator` for repo-aware document artifacts. They are deliberately self-contained rather than depending on `AGENTS.md`, because a skill can be invoked by any agent in any project — including ones that don't have this pack's `AGENTS.md` installed at all.
 
@@ -243,6 +242,14 @@ architect → arch-migration → swe-database → swe-fullstack
 ```
 
 Design the new architecture, plan the migration, update the schema, wire the full stack.
+
+### Spec-Driven Build
+
+```text
+architect → swe-pro
+```
+
+Architect interviews you (or accepts a `yolo` mandate) until the spec is complete, then writes `plans/project-overview.md`, `plans/tasks.md`, and `plans/user-flow.md`. Switch to SWE Pro, which executes `plans/tasks.md` one small task at a time — each task specified with acceptance criteria and a verify step.
 
 ### Production Incident
 
@@ -299,7 +306,7 @@ CI (`.github/workflows/ci.yml`) runs syntax checks (`node --check`) and the test
 
 ```text
 SWE-pro-Agents/
-├── agents/       26 agent profiles (3 primary, 23 subagents)
+├── agents/       25 agent profiles (3 primary, 22 subagents)
 ├── skills/       5 skills: caveman, skill-creator, teach-me, readme-generator, svg-hero-generator
 ├── scripts/      install.js (postinstall), uninstall.js (preuninstall)
 ├── bin/          swe-pro-agents CLI

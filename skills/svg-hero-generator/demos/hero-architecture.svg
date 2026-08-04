@@ -17,7 +17,7 @@
   <!-- title block -->
   <g>
     <text x="60" y="76" fill="#e8ecf4" font-size="34" font-weight="600" letter-spacing="0.5">SWE Pro Agents</text>
-    <text x="60" y="104" fill="#5b6472" font-size="16">26 agent profiles, orchestrated from one AGENTS.md</text>
+    <text x="60" y="104" fill="#5b6472" font-size="16">25 agent profiles, orchestrated from one AGENTS.md</text>
   </g>
 
   <!-- badges -->

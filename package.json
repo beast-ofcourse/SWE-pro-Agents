@@ -1,7 +1,7 @@
 {
   "name": "swe-pro-agents",
   "version": "2.1.1",
-  "description": "26 OpenCode agent profiles (23 subagents + 3 primary) + 5 skills (caveman, skill-creator, teach-me, README & SVG hero generators) — SWE roles, web research, and architecture agents",
+  "description": "25 OpenCode agent profiles (22 subagents + 3 primary) + 5 skills (caveman, skill-creator, teach-me, README & SVG hero generators) — SWE roles, web research, and architecture agents",
   "keywords": [
     "opencode",
     "agents",
