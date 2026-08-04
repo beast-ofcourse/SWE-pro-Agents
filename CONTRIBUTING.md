@@ -36,24 +36,28 @@ npm test
 
 ## Testing
 
-- `npm test` runs `test/installer.test.js` — 6 zero-dependency tests covering the
-  install/uninstall lifecycle: fresh install, idempotent reinstall, stale-file
-  pruning, no-manifest safety, uninstall isolation, and manifest-less uninstall.
-- Every test redirects `HOME`/`USERPROFILE` to a throwaway temp directory, so
+- `npm test` runs both zero-dependency suites: `test/installer.test.js` (6 tests —
+  the install/uninstall lifecycle: fresh install, idempotent reinstall, stale-file
+  pruning, no-manifest safety, uninstall isolation, and manifest-less uninstall)
+  and `test/validate.test.js` (11 tests — the validator's self-tests).
+- `npm run validate` runs `scripts/validate.js`, the **strict** pack validator: it
+  lints every agent and skill and exits 1 on any violation. The validator is wired
+  into CI, so the pack must stay green there too.
+- Installer tests redirect `HOME`/`USERPROFILE` to a throwaway temp directory, so
   your real config is never touched. Temp dirs are cleaned up automatically.
-- CI (`.github/workflows/ci.yml`) runs syntax checks (`node --check`) plus the
-  suite on **Linux + Windows × Node 18/20/22**.
+- CI (`.github/workflows/ci.yml`) runs syntax checks (`node --check`), strict pack
+  validation, and both test suites on **Linux + Windows × Node 18/20/22**.
 - If your change alters what the installer copies or removes, extend the test
   suite to cover it — it must stay green.
 
 ## Project structure
 
 ```text
-agents/        Agent profiles (27: 24 subagents + 3 primary)
-skills/        Skills: caveman, skill-creator, teach-me, readme-generator, svg-hero-generator
-scripts/       install.js (postinstall), uninstall.js (preuninstall)
+agents/        Agent profiles (26: 22 subagents + 4 primary)
+skills/        Skills: caveman, skill-creator, teach-me, readme-generator, svg-hero-generator, humanizer-pro
+scripts/       install.js (postinstall), uninstall.js (preuninstall), validate.js (pack validator)
 bin/           swe-pro-agents CLI
-test/          Installer lifecycle tests
+test/          Installer lifecycle tests + validator self-tests
 AGENTS.md      Shared foundation every agent assumes is loaded
 ```
 
@@ -82,8 +86,10 @@ Rules:
 - **Permissions match the role.** Read-only agents (review, security, research)
   get `edit: deny` and narrow `bash`; implementers get scoped allow-lists.
 - **Keep counts in sync.** The roster appears in `package.json` (description),
-  the README agent tables, and this structure map. Changing the roster means
-  updating all three.
+  the README agent tables, and this structure map — and it is enforced by
+  `npm run validate` (counts are integrity-checked against `package.json` and the
+  README in CI). Changing the roster means updating all three and keeping the
+  validator green.
 - If the change is behavior users rely on, add a CHANGELOG entry (see below).
 
 ## Adding or changing a skill

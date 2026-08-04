@@ -22,6 +22,7 @@
 - [Why This Exists](#why-this-exists)
 - [What You Get](#what-you-get)
 - [How It Works](#how-it-works)
+- [Verified](#verified)
 - [Requirements](#requirements)
 - [Install](#install)
 - [Quick Start](#quick-start)
@@ -69,6 +70,19 @@ Three layers, each with a different job:
 3. **`skills/` — utilities, not team members.** Self-contained `SKILL.md` units any agent can load on demand. They deliberately don't depend on `AGENTS.md`, so they work in any project.
 
 The installer (`scripts/install.js`) copies agents, skills, and `AGENTS.md` into your OpenCode config and records everything in a manifest at `~/.config/swe-pro-agents/manifest.json`. On update it prunes files the pack no longer ships; on uninstall it removes only what the pack owns. Agents chain through the [workflows](#workflows) below — no context is lost between steps because each handoff is a written artifact (`plans/`, `plans/validation.md`, `PR-review.md`, `review-report.md`).
+
+---
+
+## Verified
+
+The pack's quality is **machine-checked, not claimed**. A zero-dependency validator (`scripts/validate.js`, run as `npm run validate`) lints every agent and skill and **fails the build on any violation**:
+
+- every agent parses — valid frontmatter, required single-line description, valid mode, and a permission block that references only known agents (pack subagents, OpenCode built-ins, or wildcards);
+- the primary set is exact — `swe-pro`, `architect`, `swe-reviewer`, `pr-reviewer` — with no duplicate agent names;
+- every skill passes spec validation — `SKILL.md` present, name matches its directory, trigger-rich description, `MIT` license, `opencode` compatibility, no duplicate names;
+- agent and skill counts are integrity-checked against `package.json` and this README.
+
+All of it is enforced in CI (`.github/workflows/ci.yml`) on Linux + Windows × Node 18/20/22. Add a rule that matters and CI goes red until the pack complies — and the validator itself is self-tested (`test/validate.test.js`), so the check can't silently rot.
 
 ---
 
@@ -350,24 +364,29 @@ Two things remain, by design — they're your content:
 Plain Node.js (≥ 18), zero dependencies. There is no build step — the tests are the entry point:
 
 ```bash
-# Run the installer lifecycle suite (6 tests, zero deps)
+# Run the full suite: 6 installer lifecycle tests + 11 validator self-tests
 npm test
 
-# Equivalent, without npm
+# Validate the pack (agents + skills, strict — exits 1 on any violation)
+npm run validate
+
+# Equivalents, without npm
 node test/installer.test.js
+node test/validate.test.js
+node scripts/validate.js
 ```
 
 The tests simulate install/update/uninstall against a **throwaway `HOME`/`USERPROFILE` directory**, so your real `~/.config/opencode` is never touched. Note that a plain `npm install` in this repo triggers the `postinstall` hook — run tests directly (as CI does) if you don't want the installer to run against your real config.
 
-CI (`.github/workflows/ci.yml`) runs syntax checks (`node --check`) and the test suite on **Linux + Windows × Node 18/20/22**.
+CI (`.github/workflows/ci.yml`) runs syntax checks (`node --check`), strict pack validation, and the full test suite on **Linux + Windows × Node 18/20/22**.
 
 ```text
 SWE-pro-Agents/
 ├── agents/       26 agent profiles (4 primary, 22 subagents)
 ├── skills/       6 skills: caveman, skill-creator, teach-me, readme-generator, svg-hero-generator, humanizer-pro
-├── scripts/      install.js (postinstall), uninstall.js (preuninstall)
+├── scripts/      install.js (postinstall), uninstall.js (preuninstall), validate.js (pack validator)
 ├── bin/          swe-pro-agents CLI
-├── test/         installer lifecycle tests
+├── test/         installer lifecycle tests + validator self-tests
 ├── .github/      CI workflow
 ├── AGENTS.md     shared foundation every agent assumes is loaded
 └── package.json
