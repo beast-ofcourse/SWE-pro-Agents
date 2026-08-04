@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `swe-testing` merged into `swe-reviewer` — the pack's testing discipline (isolation, mocking at boundaries, fixtures, failure paths, coverage-as-finding) now lives in the reviewer's Phase 6 "Testing craft" section, so verification and review are owned by one agent. Pack is now 26 profiles (23 subagents + 3 primary); delegation list, README, package.json, and demo SVG updated accordingly
+
 ### Added
 - `teach-me` skill — adaptive tutoring with explanations, quizzes, exercises, and persistent mastery tracking (`learning_progress_*.md` files)
 - `skill-creator` skill — the craft and workflow for writing great skills: merges Matt Pocock's `writing-great-skills` (predictability, invocation, information hierarchy, leading words, pruning) with Anthropic's `skill-creator` (draft → test → evaluate → iterate → package)

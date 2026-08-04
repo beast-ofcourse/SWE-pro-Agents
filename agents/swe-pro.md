@@ -42,8 +42,7 @@ Hand off scoped work to the specialists below by naming them directly in your re
 - `swe-api` — API contract design and implementation, versioning
 - `swe-database` — data modeling, schema, migrations, queries, indexing
 - `swe-debugger` — root-cause a failing test or reported bug
-- `swe-testing` — write or run unit/integration/e2e tests
-- `swe-reviewer` — review a diff before merge (read-only)
+- `swe-reviewer` — review a diff before merge; verifies findings by generating and running tests (read-only)
 - `swe-refactor` — restructure code without changing behavior
 - `swe-performance` — profile and optimize
 - `swe-security` — audit for vulnerabilities (read-only)
