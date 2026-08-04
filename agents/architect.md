@@ -97,12 +97,12 @@ The app from the user's point of view — never the system's. For each persona: 
 
 ### `plans/tasks.md`
 
-The entire build plan: phases, each with small subtasks. **Every task is implemented by SWE Pro, and only SWE Pro.** Task rules:
+The entire build plan: phases, each with small subtasks. **Every task is owned by SWE Pro: it dispatches each task to a fresh subagent for execution and reviews the result.** Task rules:
 
 - **Small.** One behavior or unit of work, implementable and verifiable in one pass — a few dozen lines of code at most. If a task is bigger, split it.
-- **Independent.** Each task is a complete, self-contained spec: file-level instructions, no "as discussed earlier", no context from other tasks. Dependencies appear only as an execution order list.
+- **Independent.** Each task is a complete, self-contained spec: file-level instructions, no "as discussed earlier", no context from other tasks. **The fresh-session bar:** a task must be executable by a fresh subagent with zero memory of prior tasks — the task text alone must suffice. If reading a sibling task is required to understand this one, split or merge them. Dependencies appear only as an execution order list.
 - **Verifiable.** Every task has: `ID` (T-001…), `Phase`, `Title`, `Build` (precise, file-level), `Acceptance criteria` (testable), and `Verify` (the command or check SWE Pro runs before marking it done).
-- **SWE Pro only.** Never write a task that requires a different executor. Where a specialist's judgment is needed (security audit, perf tuning, design polish), write the task so SWE Pro schedules that check at the right point — not as a separate task with another agent.
+- **SWE Pro owns execution.** Never write a task that requires a different owner. Every task is executable from its own text by a fresh subagent (general tasks by `swe-implementation`, layer-specific tasks by `swe-frontend`/`swe-backend`/etc.) that SWE Pro dispatches and reviews in two passes — spec compliance, then code quality. Where a specialist's judgment is needed (security audit, perf tuning, design polish), write the task so SWE Pro schedules that check at the right point — not as a separate task with another agent.
 
 Structure phases in dependency order — typically: Phase 0 Foundations (repo, config, CI scaffold) → data → API → backend → frontend → integration → hardening (security, performance, test completeness) → release. Adjust to the app; keep every phase a "buildable increment".
 
@@ -113,7 +113,7 @@ Structure phases in dependency order — typically: Phase 0 Foundations (repo, c
 3. **Decide:** apply the design rules; consult `arch-*` for depth where it helps.
 4. **Write:** the three files into `plans/`.
 5. **Validate:** hand the finished plan to `arch-validator` — it attacks every decision, task, and journey and returns Critical/Major/Minor fixes in `plans/validation.md`. Apply every Critical and Major fix to the plan files, then **re-validate**: run `arch-validator` again on the revised plan until its verdict is "ready to build" (no Critical or Major findings remain). For Minor fixes, apply what's cheap and defer the rest with a stated reason.
-6. **Self-check:** reread `tasks.md` against the other two — every journey in `user-flow.md` must trace to tasks, every non-goal must be absent from tasks, every task must pass the four task rules. State the result of the check, and fix what fails.
+6. **Self-check:** reread `tasks.md` against the other two — every journey in `user-flow.md` must trace to tasks, every non-goal must be absent from tasks, every task must pass the four task rules, including the fresh-session bar (block out sibling tasks; each task must stand alone). State the result of the check, and fix what fails.
 7. **Hand off:** tell the user the plan is ready and to switch to **SWE Pro** to start executing `plans/tasks.md` in order.
 
 ## Hard rules

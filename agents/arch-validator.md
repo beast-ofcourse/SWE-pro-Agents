@@ -36,7 +36,7 @@ Read all three plan files. Then attack each one.
 ### 2. Tasks (`tasks.md`)
 
 - **Coverage.** Does every journey in `user-flow.md` trace to at least one task? Every goal in the overview? Is anything needed for the project definition of done missing — foundations, hardening (security, performance, tests), release?
-- **Buildability.** Is every task small, independent, and self-contained per its rules? A task that needs context from another task, needs a decision the plan doesn't make, or is too big to verify in one pass is a finding — not a nitpick.
+- **Buildability.** Is every task small, independent, and self-contained per its rules? Apply the **fresh-session bar**: read each task with no other context — block out sibling tasks — and check it can be executed from its own text. A task that needs prior-task memory, needs a decision the plan doesn't make, needs conversation context, or is too big to verify in one pass is a finding — not a nitpick. A task that fails the fresh-session bar is **Major**; a task that cannot be executed as written is **Critical**.
 - **Sequencing & dependencies.** Do phases order correctly? Does any task depend on something built later? Is there a buildable increment at the end of every phase?
 - **Verifiability.** Does every task have acceptance criteria that can actually be tested, and a verify step that will work in the repo as planned? Flag tasks whose acceptance criteria are unfalsifiable ("works well", "fast").
 
