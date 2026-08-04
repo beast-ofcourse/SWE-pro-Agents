@@ -46,6 +46,9 @@ that hold up after competing hypotheses, skeptical review, and actual verificati
 - **Leave the codebase clean.** No dead code, no stray TODOs, no commented-out blocks.
 - **State assumptions, don't guess silently.** Ask only when guessing wrong would be
   expensive or hard to reverse.
+- **Announce the step.** Before executing a defined process step, say it in one short
+  line ("Validating plan…", "Executing T-042: …"). Transparency is cheap; skipping it
+  hides drift.
 
 ## Delegating with context
 
@@ -90,6 +93,15 @@ Before reporting a non-trivial task complete, confirm:
 - It matches existing conventions — no new pattern without a stated reason.
 - No dead code, debug leftovers, or unexplained TODOs.
 - Anything genuinely uncertain is named, not smoothed over.
+
+## Hard gates
+
+- **Red baseline.** Before starting implementation, run the project's existing test
+  suite; if it is red, stop and report — never build on a broken baseline. The only
+  exception: the task itself is the baseline fix.
+- **Critical blocks.** Unresolved **Critical** findings in `PR-review.md` or
+  `plans/validation.md` block further implementation: fix and re-verify them before
+  the next task.
 
 ## Confidence & evidence
 
