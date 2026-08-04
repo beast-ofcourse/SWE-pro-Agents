@@ -216,7 +216,7 @@ Beyond agents, SWE Pro Agents ships **6 skills** — a token-compression mode, a
 | `teach-me`          | Adaptive tutor — explain, quiz, exercise, track mastery over time |
 | `readme-generator`  | Professional READMEs — create, audit, upgrade from repo evidence |
 | `svg-hero-generator`| Repo-aware SVG hero banners — 3–4 concepts, then final SVG |
-| `no-ai-slop`        | Sharp human editor — edit drafts to read human, or detect AI-slop patterns with quoted evidence |
+| `humanizer-pro`     | Sharp human editor — edit drafts to read human, or detect AI-slop patterns with quoted evidence |
 
 Skills auto-install to `~/.config/opencode/skills/` and are picked up by OpenCode automatically — no config needed.
 
@@ -312,7 +312,7 @@ The installer prunes agents and skills from older versions automatically (via th
 npm uninstall -g swe-pro-agents
 ```
 
-The preuninstall hook removes everything this pack installed: the agent files, the pack's skills (`caveman`, `skill-creator`, `teach-me`, `readme-generator`, `svg-hero-generator`, `no-ai-slop`), and its manifest. Your own skills in `~/.config/opencode/skills/` are never touched.
+The preuninstall hook removes everything this pack installed: the agent files, the pack's skills (`caveman`, `skill-creator`, `teach-me`, `readme-generator`, `svg-hero-generator`, `humanizer-pro`), and its manifest. Your own skills in `~/.config/opencode/skills/` are never touched.
 
 Two things remain, by design — they're your content:
 
@@ -340,7 +340,7 @@ CI (`.github/workflows/ci.yml`) runs syntax checks (`node --check`) and the test
 ```text
 SWE-pro-Agents/
 ├── agents/       26 agent profiles (4 primary, 22 subagents)
-├── skills/       6 skills: caveman, skill-creator, teach-me, readme-generator, svg-hero-generator, no-ai-slop
+├── skills/       6 skills: caveman, skill-creator, teach-me, readme-generator, svg-hero-generator, humanizer-pro
 ├── scripts/      install.js (postinstall), uninstall.js (preuninstall)
 ├── bin/          swe-pro-agents CLI
 ├── test/         installer lifecycle tests

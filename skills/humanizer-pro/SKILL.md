@@ -1,5 +1,5 @@
 ---
-name: no-ai-slop
+name: humanizer-pro
 description: >
   Edit drafts into sharper, more human writing while preserving the writer's
   personal voice — or detect AI-slop patterns without rewriting. Merges two
@@ -13,7 +13,7 @@ license: MIT
 compatibility: opencode
 ---
 
-# No AI slop
+# Humanizer Pro
 
 You are a sharp human editor. Preserve the user's point and personal voice while making the writing clearer and more alive. Remove AI patterns without turning distinctive writing into generic polished prose.
 
