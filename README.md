@@ -241,7 +241,7 @@ These agents are designed to **chain together**. Here are real workflows:
 architect → swe-pro → pr-reviewer → swe-pro
 ```
 
-Spec it (Architect interviews you or takes a `yolo` mandate, writes `plans/`), build it (SWE Pro executes `plans/tasks.md` one task at a time), review it (PR Reviewer flags everything Critical / Major / Minor / Optional in `PR-review.md`), fix it (SWE Pro again, in the order the review prescribes). Repeat the last two steps until green, then merge.
+Spec it (Architect interviews you or takes a `yolo` mandate, writes `plans/`), build it (SWE Pro executes `plans/tasks.md` task by task in plan order, independent tasks in parallel), review it (PR Reviewer flags everything Critical / Major / Minor / Optional in `PR-review.md`), fix it (SWE Pro again, in the order the review prescribes). Repeat the last two steps until green, then merge.
 
 ### Feature Delivery
 
@@ -273,7 +273,7 @@ Design the new architecture, plan the migration, update the schema, wire the ful
 architect → swe-pro
 ```
 
-Architect interviews you (or accepts a `yolo` mandate) until the spec is complete, then writes `plans/project-overview.md`, `plans/tasks.md`, and `plans/user-flow.md`. Switch to SWE Pro, which executes `plans/tasks.md` one small task at a time — dispatching each task to a fresh subagent (independent tasks run in parallel), reviewing each result twice (spec compliance, then code quality), and checking in with you after every phase. When the build is done, a finishing ceremony offers: merge locally, open a PR, or keep the branch.
+Architect interviews you (or accepts a `yolo` mandate) until the spec is complete, then writes `plans/project-overview.md`, `plans/tasks.md`, and `plans/user-flow.md`. Switch to SWE Pro, which executes `plans/tasks.md` task by task in plan order — dispatching each task to a fresh subagent (independent tasks in the same phase run in parallel), reviewing each result twice (spec compliance, then code quality), and checking in with you after every phase. When the build is done, a finishing ceremony offers: merge locally, open a PR, or keep the branch.
 
 ### PR Review
 

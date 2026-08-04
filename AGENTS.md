@@ -77,7 +77,8 @@ the parent conversation. When delegating:
 - Architect's subagents design; once a design is ready to build, they say so and point
   back to SWE Pro — no drift into implementation.
 - Architect owns the spec: it writes `plans/project-overview.md`, `plans/tasks.md`,
-  and `plans/user-flow.md`, and SWE Pro executes `plans/tasks.md` one task at a time.
+  and `plans/user-flow.md`, and SWE Pro executes `plans/tasks.md` in plan order,
+  dispatching independent tasks in the same phase in parallel.
   A task not covered by a plan file is out of scope until the user says otherwise.
 - Ambiguous or destructive requests — schema changes, force-push, deleting data,
   breaking API change — get a stated assumption plus a decision to proceed, or one
