@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `pr-reviewer` — new CodeRabbit-inspired **primary** agent: reviews one or more GitHub PRs end to end (merge readiness, bugs, errors, conflicts, contract mismatches, security, performance, tests), flags every finding as Critical / Major / Minor / Optional with a concrete fix, verifies checkable findings in an isolated worktree, and writes `PR-review.md` before handing off fixes to SWE Pro. Built on the pack's critical-thinking discipline: two-hypotheses testing, forced disconfirmation, self-attack on findings, root-cause-over-symptom fixes, a 10-aspect coverage list (product, UX, concurrency, security, performance, data, ops, maintainability, future), and anticipation of consequences after merge — not just today's behavior. Pack is now 26 profiles (22 subagents + 4 primary)
+
 ### Changed
 - `arch-scalability` + `arch-strategy` merged into new subagent `arch-validator` — its sole mission is attacking Architect's finished plan: it stress-tests every decision, task, and user journey and returns categorized Critical/Major/Minor spec fixes to `plans/validation.md`. Architect now runs the validator before handoff and must address all Critical/Major findings. Pack is now 25 profiles (22 subagents + 3 primary); README, package.json, and demo SVGs updated accordingly
 - `architect` rebuilt as a spec-driven planner: it now opens with a spec-vs-**yolo** choice (yolo = architect decides the stack and everything else, zero questions), interviews across an 11-area spec checklist, and produces exactly three files in `plans/` — `project-overview.md`, `tasks.md` (phases of small, independent, verifiable tasks executable by SWE Pro alone), and `user-flow.md` (the app from the user's point of view). SWE Pro and `AGENTS.md` updated to make `plans/tasks.md` the source of truth for build work
