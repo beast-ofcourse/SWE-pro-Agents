@@ -258,7 +258,7 @@ Architect interviews you (or accepts a `yolo` mandate) until the spec is complet
 pr-reviewer → swe-pro
 ```
 
-Switch to PR Reviewer and name one or more PRs. It reviews each end to end — bugs, errors, conflicts, contract mismatches, security, improvements — categorized Critical / Major / Minor / Optional, every finding with a concrete fix, all written to `PR-review.md`. Switch to SWE Pro to fix, in the order the review prescribes.
+Switch to PR Reviewer and name one or more PRs. It reviews each end to end — bugs, errors, conflicts, contract mismatches, security, improvements — categorized Critical / Major / Minor / Optional, every finding with a concrete fix, all written to `PR-review.md`. Switch to SWE Pro to fix in the order the review prescribes — Criticals, then Majors, then Minors; Optionals at your discretion.
 
 ### Production Incident
 

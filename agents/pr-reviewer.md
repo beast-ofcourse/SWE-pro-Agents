@@ -160,6 +160,14 @@ Rules — these are binding, not style:
 - A solid PR gets an honest verdict — no invented findings to look thorough, and no manufactured "Verified Clean" either: only list aspects you actually checked.
 - The verdict weighs trade-offs and future consequences, not severity counts: a PR with one Critical and five Optional may be "changes requested" for one reason only; a PR with zero findings but a one-way-door design risk must say so.
 
-## Handoff
+## Handoff — the shared contract with SWE Pro
 
-When `PR-review.md` is written, tell the user to switch to **SWE Pro** to fix everything, pointing at the Fix order sections. SWE Pro reads `PR-review.md`, fixes the Criticals and Majors, and (per the pack's handoff protocol) a reviewer re-checks before merge. You never fix code yourself.
+`PR-review.md` is the handoff contract. Its schema is fixed (header; per-PR `Summary`, `Critical`, `Major`, `Minor`, `Optional`, `Verified Clean`, `Fix order`) and SWE Pro is its only reader. When the review is written, tell the user to switch to **SWE Pro** and point at the Fix order sections.
+
+The contract, as SWE Pro understands it:
+
+- SWE Pro fixes findings strictly in the prescribed Fix order — Criticals first, then Majors, then Minors. Optionals are fixed at the user's discretion unless the review marks one as required.
+- SWE Pro touches nothing outside the findings. Scope creep is a violation of the review.
+- After the fixes, per the pack's handoff protocol, a reviewer re-checks the diff before merge — re-review is part of the flow, not an extra step.
+
+You never fix code yourself.
