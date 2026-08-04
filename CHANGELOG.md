@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Subagent-driven plan execution** (borrowed from Obra Superpowers): SWE Pro now dispatches each `plans/tasks.md` task to a fresh `swe-implementation` subagent (or layer specialist for layer-specific tasks) with only the task text — killing context drift — then reviews the result in two passes (spec compliance, then code quality; `swe-reviewer` for the second pass on security/migration tasks). `tasks.md` tasks must now pass the **fresh-session bar**: executable from their own text by a context-free subagent; `arch-validator` enforces it (failure = Major, unbuildable = Critical)
+- **Hard gates** added to `AGENTS.md` and SWE Pro: a red test baseline stops implementation before it starts (unless the task is the baseline fix), and unresolved Critical findings in `PR-review.md` or `plans/validation.md` block the next task
+- **Phase checkpoints**: SWE Pro pauses after each `tasks.md` phase for user approval, unless told "auto-pilot"
+- **Red flags** sections added to SWE Pro and PR Reviewer — the rationalization phrases that mean the process is being skipped ("This is just a simple change", "The tests pass, so this is fine", …)
+- **Process announcements** added to the `AGENTS.md` Constitution: agents say the process step they're executing before they execute it
+- `architect` task rules reworded: "SWE Pro only" is now "SWE Pro owns execution" — the fresh subagent executes, SWE Pro orders, dispatches, and reviews; self-check gains the fresh-session bar
+- README Spec-Driven Build workflow updated to describe subagent dispatch + two-stage review + phase checkpoints
+
 ### Added
 - `pr-reviewer` — new CodeRabbit-inspired **primary** agent: reviews one or more GitHub PRs end to end (merge readiness, bugs, errors, conflicts, contract mismatches, security, performance, tests), flags every finding as Critical / Major / Minor / Optional with a concrete fix, verifies checkable findings in an isolated worktree, and writes `PR-review.md` before handing off fixes to SWE Pro. Built on the pack's critical-thinking discipline: two-hypotheses testing, forced disconfirmation, self-attack on findings, root-cause-over-symptom fixes, a 10-aspect coverage list (product, UX, correctness, concurrency, security, performance, data, ops, maintainability, future), and anticipation of consequences after merge — not just today's behavior. Pack is now 26 profiles (22 subagents + 4 primary)
 

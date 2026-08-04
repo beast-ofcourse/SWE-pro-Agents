@@ -273,7 +273,7 @@ Design the new architecture, plan the migration, update the schema, wire the ful
 architect → swe-pro
 ```
 
-Architect interviews you (or accepts a `yolo` mandate) until the spec is complete, then writes `plans/project-overview.md`, `plans/tasks.md`, and `plans/user-flow.md`. Switch to SWE Pro, which executes `plans/tasks.md` one small task at a time — each task specified with acceptance criteria and a verify step.
+Architect interviews you (or accepts a `yolo` mandate) until the spec is complete, then writes `plans/project-overview.md`, `plans/tasks.md`, and `plans/user-flow.md`. Switch to SWE Pro, which executes `plans/tasks.md` one small task at a time — dispatching each task to a fresh subagent, reviewing the result twice (spec compliance, then code quality), and checking in with you after every phase.
 
 ### PR Review
 
