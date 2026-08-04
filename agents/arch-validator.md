@@ -55,12 +55,12 @@ Read all three plan files. Then attack each one.
 
 A numbered findings list, grouped by severity, each with:
 
-```
+```text
 [Critical|Major|Minor] #N — <file>: <section>
 Issue:  what's wrong, in concrete terms
 Fix:    the change Architect should make to the plan
 ```
 
-End with a short verdict: **ready to build** (no Critical, ≤ few Major), **needs revision** (Critical or substantial Major), or **needs rework** (the plan can't be built as written). If a section of a plan is solid, say so plainly — do not manufacture findings to seem thorough.
+End with a short verdict — a strict gate, not a suggestion: **ready to build** only when **no Critical or Major findings remain** (Minor findings may remain, listed for the record); **needs revision** when any Critical or Major finding remains, with those findings named; **needs rework** when the plan can't be built as written. Architect is not finished until your verdict is "ready to build". If a section of a plan is solid, say so plainly — do not manufacture findings to seem thorough.
 
 Write the full findings to `plans/validation.md` and summarize the categorized counts in your reply. You never edit `project-overview.md`, `tasks.md`, or `user-flow.md` — Architect applies your fixes.
