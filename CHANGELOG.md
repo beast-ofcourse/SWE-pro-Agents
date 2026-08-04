@@ -30,8 +30,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - `teach-me` skill — adaptive tutoring with explanations, quizzes, exercises, and persistent mastery tracking (`learning_progress_*.md` files)
 - `skill-creator` skill — the craft and workflow for writing great skills: merges Matt Pocock's `writing-great-skills` (predictability, invocation, information hierarchy, leading words, pruning) with Anthropic's `skill-creator` (draft → test → evaluate → iterate → package)
-
-### Added
 - **Verification harness** — `scripts/validate.js` (zero-dependency, run as `npm run validate`) statically validates every agent and skill and fails the build on any violation: frontmatter parseability, required single-line descriptions, valid modes, the exact primary-agent set, permission task refs referencing only known agents, skill name/license/compatibility/trigger-language rules, and count integrity against `package.json` and the README. Wired into CI (Linux + Windows × Node 18/20/22) with 11 self-tests in `test/validate.test.js`; `npm test` now runs both suites. Fixed `svg-hero-generator` missing `compatibility: opencode`.
 
 ## [2.1.1] - 2026-08-02

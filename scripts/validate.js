@@ -4,13 +4,13 @@
  * Static validation harness for the SWE Pro Agents pack.
  *
  * Zero dependencies (node:fs + node:path only). Lints every agent profile and
- * skill against the rules in plans/phase-1-verification-harness.md and fails
- * (exit 1) on any violation. Wired into CI as `npm run validate`.
+ * skill against the rules below and fails (exit 1) on any violation. Wired into
+ * CI as `npm run validate`.
  *
- * Run directly:   node scripts/validate.js
+ * Run directly:   node scripts/validate.js [repoDir]
  * Via npm:        npm run validate
  *
- * Rule reference (see the plan for the full spec):
+ * The full rule spec (this is the source of truth; it ships with the code):
  *   Agents  A1 frontmatter parseable · A2 description required/single-line/≤1024
  *           A3 mode valid · A4 primary set exact · A5 subagents not primary
  *           A6 permission task refs known · A7 frontmatter name matches filename
@@ -149,17 +149,21 @@ function parseFrontmatter(content) {
  */
 function parseTaskRefs(frontmatterLines) {
   const refs = [];
-  let inTask = false;
+  let taskIndent = -1;
   for (const line of frontmatterLines) {
+    const indent = line.match(/^[ \t]*/)[0].length;
     const trimmed = line.trim();
     if (trimmed === 'task:') {
-      inTask = true;
+      taskIndent = indent;
       continue;
     }
-    if (inTask) {
-      // A task entry is indented deeper than `task:`; a non-indented line ends the block.
-      if (!line.startsWith(' ') && !line.startsWith('\t')) {
-        inTask = false;
+    if (taskIndent >= 0) {
+      // A task entry is indented deeper than `task:`; any line at or above
+      // `task:`'s indent ends the block (a sibling permission key, or a
+      // column-0 key). Without this, a key placed after the task block would
+      // be swallowed as a bogus task ref and fail A6.
+      if (indent <= taskIndent) {
+        taskIndent = -1;
         continue;
       }
       const m = trimmed.match(/^(['"]?)([^:]+)\1:\s*(allow|deny)\s*$/);
@@ -297,18 +301,6 @@ function validateSkillDir(dirPath) {
   return violations;
 }
 
-/** Number of agent .md files in the pack. */
-function getAgentCount(repoDir) {
-  return fs.readdirSync(path.join(repoDir, 'agents')).filter((f) => f.endsWith('.md')).length;
-}
-
-/** Number of skill directories (with SKILL.md) in the pack. */
-function getSkillCount(repoDir) {
-  return fs
-    .readdirSync(path.join(repoDir, 'skills'), { withFileTypes: true })
-    .filter((e) => e.isDirectory() && fs.existsSync(path.join(repoDir, 'skills', e.name, 'SKILL.md'))).length;
-}
-
 /**
  * Validate the whole pack. Returns { violations, agentCount, skillCount }.
  * `violations` is an array of { rule, file, detail }.
@@ -347,15 +339,12 @@ function validatePack(repoDir) {
     declaredNames.add(name);
   }
 
-  // A4 — the primary set must be exactly PRIMARY_AGENTS, each declaring primary.
+  // A4 — every PRIMARY_AGENT must declare mode: primary. (The inverse — no
+  // other agent declaring primary — is enforced per-file by A5, so it is not
+  // repeated here.)
   for (const p of PRIMARY_AGENTS) {
     if (!primaryDeclared.has(p)) {
       violations.push({ rule: 'A4', file: p, detail: `primary agent '${p}' must declare mode: primary` });
-    }
-  }
-  for (const p of primaryDeclared) {
-    if (!PRIMARY_AGENTS.has(p)) {
-      violations.push({ rule: 'A4', file: p, detail: `unexpected primary agent '${p}'` });
     }
   }
 
@@ -404,23 +393,29 @@ function validatePack(repoDir) {
     violations.push({ rule: 'C1', file: 'skills', detail: `expected ${EXPECTED_SKILL_COUNT} skills, found ${skillCount}` });
   }
 
-  // C1 — counts claimed in package.json description and README.
+  // C1 — counts claimed in package.json description and README. Word-anchored
+  // so a substring like "26" can't satisfy the "6" check (or a version/year
+  // satisfy either).
+  const agentCountRe = new RegExp(`\\b${EXPECTED_AGENT_COUNT}\\b`);
+  const skillCountRe = new RegExp(`\\b${EXPECTED_SKILL_COUNT}\\b`);
+  const skillPhraseRe = new RegExp(`\\b${EXPECTED_SKILL_COUNT}\\s+skills\\b`);
+
   const pkg = JSON.parse(fs.readFileSync(path.join(repoDir, 'package.json'), 'utf8'));
   const desc = pkg.description || '';
-  if (!desc.includes(String(EXPECTED_AGENT_COUNT))) {
+  if (!agentCountRe.test(desc)) {
     violations.push({ rule: 'C1', file: 'package.json', detail: `description does not mention ${EXPECTED_AGENT_COUNT} agents` });
   }
-  if (!desc.includes(String(EXPECTED_SKILL_COUNT))) {
+  if (!skillCountRe.test(desc)) {
     violations.push({ rule: 'C1', file: 'package.json', detail: `description does not mention ${EXPECTED_SKILL_COUNT} skills` });
   }
 
   const readmePath = path.join(repoDir, 'README.md');
   if (fs.existsSync(readmePath)) {
     const readme = fs.readFileSync(readmePath, 'utf8');
-    if (!readme.includes(String(EXPECTED_AGENT_COUNT))) {
+    if (!agentCountRe.test(readme)) {
       violations.push({ rule: 'C1', file: 'README.md', detail: `README does not mention ${EXPECTED_AGENT_COUNT} agents` });
     }
-    if (!readme.includes(`${EXPECTED_SKILL_COUNT} skills`)) {
+    if (!skillPhraseRe.test(readme)) {
       violations.push({ rule: 'C1', file: 'README.md', detail: `README does not mention ${EXPECTED_SKILL_COUNT} skills` });
     }
   }
@@ -430,7 +425,8 @@ function validatePack(repoDir) {
 
 // --- CLI entry point ---
 if (require.main === module) {
-  const repoDir = path.resolve(__dirname, '..');
+  // Optional positional arg: the pack root to validate. Defaults to the repo root.
+  const repoDir = process.argv[2] ? path.resolve(process.argv[2]) : path.resolve(__dirname, '..');
   const { violations, agentCount, skillCount } = validatePack(repoDir);
 
   for (const v of violations) {
@@ -453,8 +449,6 @@ module.exports = {
   isValidTaskRef,
   validateAgentFile,
   validateSkillDir,
-  getAgentCount,
-  getSkillCount,
   validatePack,
   PRIMARY_AGENTS,
   EXPECTED_AGENT_COUNT,
