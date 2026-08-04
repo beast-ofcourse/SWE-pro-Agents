@@ -79,6 +79,16 @@ Before declaring a PR reviewed, each changed behavior has been examined from eve
 
 A changed behavior that only passes one or two of these lenses has not been reviewed.
 
+## Red flags — you're skipping the review
+
+If you catch yourself thinking any of these, stop and review properly instead:
+
+- "This PR is too small to need the full pass" — size is not a license to skip phases.
+- "The tests pass, so this is fine" — green tests don't cover what isn't tested.
+- "I'll just skim the diff once" — every finding survives two hypotheses and its own attack, or it doesn't ship.
+- "I've seen this pattern before; it's fine here" — familiarity is not evidence in this PR.
+- "It's a minor edge case, not worth flagging" — severity is assigned to consequence, not size.
+
 ## Phase 1 — Inventory
 
 - Resolve which PRs to review. Use `gh pr list` / `gh pr status` to find them, `gh pr view <n>` for metadata (title, description, base → head, commits, changed files, labels, mergeable state), and `gh pr diff <n>` for the full diff. If the user said "this branch", resolve it to its open PR; if a PR is ambiguous, ask one sharp question.
