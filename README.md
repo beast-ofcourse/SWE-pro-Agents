@@ -44,20 +44,20 @@
 
 ## Why This Exists
 
-Most AI coding assistants start blank. No domain expertise, no engineering discipline, no architectural judgment — just a raw model and your prompt. Every session is ground zero.
+Most AI coding assistants start blank — no domain expertise, no engineering discipline, just a raw model and your prompt. Every session is ground zero.
 
-SWE Pro Agents fixes that. Each agent is a **loaded expert** — a complete system prompt with tool permissions, behavioral rules, and error-handling conventions baked in. You don't ask a model to "review this PR"; you invoke `swe-reviewer`, an agent that already knows how to assess blast radius, flag security issues, and enforce your team's standards.
+SWE Pro Agents fixes that. Each agent is a **loaded expert**: a complete system prompt with tool permissions, behavioral rules, and error-handling conventions baked in. You don't ask a model to "review this PR"; you invoke `swe-reviewer`, an agent that already knows how to assess blast radius, flag security issues, and enforce your standards.
 
 ---
 
 ## What You Get
 
 - **26 specialized agent profiles** — 22 subagents plus 4 primary agents (`swe-pro`, `architect`, `swe-reviewer`, `pr-reviewer`), each with a focused role, a curated prompt, and explicit tool permissions (read-only roles get deny-lists, implementers get scoped allow-lists).
-- **6 on-demand skills** — token-compression mode, a skill-authoring suite, an adaptive tutoring loop, a repo-evidence-driven README generator, an SVG hero generator, and an anti-AI-slop writing editor; loadable from any agent via OpenCode's skill tool.
-- **A manifest-based installer** — records exactly what it installs, prunes stale agents/skills from older versions on update, and never guesses ownership.
-- **A safe uninstaller** — removes only files the pack owns; your own skills and merged config are never touched.
-- **A status/setup CLI** — checks installation state, shows the config snippet, writes it with a backup, and checks for updates (offline-safe).
-- **Zero runtime dependencies** — Node ≥ 18, plain stdlib. Nothing to install besides the package itself.
+- **6 on-demand skills** — token compression, skill authoring, adaptive tutoring, README generation, SVG heroes, and an anti-AI-slop editor; loadable from any agent via OpenCode's skill tool.
+- **A manifest-based installer** — records what it installs, prunes stale agents/skills on update, never guesses ownership.
+- **A safe uninstaller** — removes only files the pack owns; your own skills and merged config are untouched.
+- **A status/setup CLI** — checks install state, shows the config snippet, writes it with a backup, checks for updates (offline-safe).
+- **Zero runtime dependencies** — Node ≥ 18, plain stdlib.
 
 ---
 
@@ -65,24 +65,24 @@ SWE Pro Agents fixes that. Each agent is a **loaded expert** — a complete syst
 
 Three layers, each with a different job:
 
-1. **`agents/` — the team.** One Markdown file per agent: a frontmatter block with tool permissions (read-only roles get deny-lists, implementers get scoped allow-lists) plus a curated system prompt. OpenCode loads these files directly.
-2. **`AGENTS.md` — the shared foundation.** Every agent file is deliberately short because each assumes one shared rulebook — Constitution, Definition of Done, Handoff protocol — is already in context. Cross-cutting rules live here once, not repeated per agent.
-3. **`skills/` — utilities, not team members.** Self-contained `SKILL.md` units any agent can load on demand. They deliberately don't depend on `AGENTS.md`, so they work in any project.
+1. **`agents/` — the team.** One Markdown file per agent: a frontmatter block with tool permissions (read-only roles get deny-lists, implementers get scoped allow-lists) plus a curated system prompt. OpenCode loads these directly.
+2. **`AGENTS.md` — the shared foundation.** Agent files stay short because each assumes one shared rulebook — Constitution, Definition of Done, Handoff protocol — is already in context. Cross-cutting rules live here once, not repeated per agent.
+3. **`skills/` — utilities, not team members.** Self-contained `SKILL.md` units any agent can load on demand. They don't depend on `AGENTS.md`, so they work in any project.
 
-The installer (`scripts/install.js`) copies agents, skills, and `AGENTS.md` into your OpenCode config and records everything in a manifest at `~/.config/swe-pro-agents/manifest.json`. On update it prunes files the pack no longer ships; on uninstall it removes only what the pack owns. Agents chain through the [workflows](#workflows) below — no context is lost between steps because each handoff is a written artifact (`plans/`, `plans/validation.md`, `PR-review.md`, `review-report.md`).
+The installer (`scripts/install.js`) copies agents, skills, and `AGENTS.md` into your OpenCode config and records everything in a manifest at `~/.config/swe-pro-agents/manifest.json`. On update it prunes files the pack no longer ships; on uninstall it removes only what the pack owns. Agents chain through the [workflows](#workflows) below — each handoff is a written artifact (`plans/`, `plans/validation.md`, `PR-review.md`, `review-report.md`), so no context is lost between steps.
 
 ---
 
 ## Verified
 
-The pack's quality is **machine-checked, not claimed**. A zero-dependency validator (`scripts/validate.js`, run as `npm run validate`) lints every agent and skill and **fails the build on any violation**:
+Quality is **machine-checked, not claimed**. A zero-dependency validator (`scripts/validate.js`, run as `npm run validate`) lints every agent and skill and **fails the build on any violation**:
 
-- every agent parses — valid frontmatter, required single-line description, valid mode, and a permission block that references only known agents (pack subagents, OpenCode built-ins, or wildcards);
-- the primary set is exact — `swe-pro`, `architect`, `swe-reviewer`, `pr-reviewer` — with no duplicate agent names;
-- every skill passes spec validation — `SKILL.md` present, name matches its directory, trigger-rich description, `MIT` license, `opencode` compatibility, no duplicate names;
+- every agent parses — valid frontmatter, single-line description, valid mode, permission refs limited to known agents (pack subagents, OpenCode built-ins, or wildcards);
+- the primary set is exact — `swe-pro`, `architect`, `swe-reviewer`, `pr-reviewer` — with no duplicates;
+- every skill passes spec validation — `SKILL.md` present, name matches its directory, trigger-rich description, `MIT` license, `opencode` compatibility;
 - agent and skill counts are integrity-checked against `package.json` and this README.
 
-All of it is enforced in CI (`.github/workflows/ci.yml`) on Linux + Windows × Node 18/20/22. Add a rule that matters and CI goes red until the pack complies — and the validator itself is self-tested (`test/validate.test.js`), so the check can't silently rot.
+All of it is enforced in CI (`.github/workflows/ci.yml`) on Linux + Windows × Node 18/20/22: a violation goes red until the pack complies, and the validator is self-tested (`test/validate.test.js`) so the check can't silently rot.
 
 ---
 
@@ -94,7 +94,7 @@ All of it is enforced in CI (`.github/workflows/ci.yml`) on Linux + Windows × N
 | OpenCode | A recent release; agents are defined as standard OpenCode agent files |
 | npm | Any current version (`npm i -g` is the supported install path) |
 
-Windows is supported end to end: the installer derives paths from your home directory, and CI runs the full suite on `windows-latest`.
+Windows is supported end to end: paths derive from your home directory, and CI runs the full suite on `windows-latest`.
 
 ---
 
@@ -134,25 +134,16 @@ Or let the CLI do it — it backs up your config first, then adds the entry:
 swe-pro-agents setup --apply
 ```
 
-**That's it.** Restart OpenCode and your entire agent team is ready.
-
-The installer keeps a manifest at `~/.config/swe-pro-agents/manifest.json` recording exactly what it installed. On every install or update it prunes previously installed agents and skills the pack no longer ships — so upgrading never leaves stale files behind — and on uninstall it removes only what the pack owns, never your own skills.
+**That's it.** Restart OpenCode and your entire agent team is ready. The manifest at `~/.config/swe-pro-agents/manifest.json` records exactly what was installed; on every install or update it prunes previously installed agents and skills the pack no longer ships — so upgrading never leaves stale files — and uninstall removes only what the pack owns, never your own skills.
 
 ---
 
 ## Quick Start
 
-Install (one time):
-
 ```bash
-npm install -g swe-pro-agents
-```
-
-Register the agents with OpenCode and verify:
-
-```bash
-swe-pro-agents setup --apply   # adds the agents path to opencode.json (backs up first)
-swe-pro-agents status          # verify: agents installed, config referenced, AGENTS.md in place
+npm install -g swe-pro-agents            # one time
+swe-pro-agents setup --apply             # adds the agents path to opencode.json (backs up first)
+swe-pro-agents status                    # verify: agents installed, config referenced, AGENTS.md in place
 ```
 
 If `status` warns that no global `AGENTS.md` is loaded, copy the pack's shared foundation into place (the agents are lean by design and assume it):
@@ -170,7 +161,7 @@ Restart OpenCode, then use any agent — you're set:
 @swe-reviewer  Review the last commit for security issues
 ```
 
-The expected result: OpenCode lists the agents, and the one you invoke loads a focused system prompt with scoped tool permissions — not a blank-slate session.
+The invoked agent loads a focused system prompt with scoped tool permissions — not a blank-slate session.
 
 ---
 
@@ -245,7 +236,7 @@ Four of the 26 profiles are **primary** agents (selectable as your main agent): 
 
 ## Skills
 
-Beyond agents, SWE Pro Agents ships **6 skills** — a token-compression mode, a skill-authoring suite, an adaptive tutoring loop, a professional README generator, an SVG hero generator, and an anti-AI-slop writing editor. Each is a self-contained `SKILL.md` loaded on demand via OpenCode's `skill` tool:
+Beyond agents, the pack ships **6 skills** — a token-compression mode, a skill-authoring suite, an adaptive tutoring loop, a professional README generator, an SVG hero generator, and an anti-AI-slop writing editor. Each is a self-contained `SKILL.md` loaded on demand via OpenCode's `skill` tool:
 
 | Skill               | Purpose                                                    |
 | ------------------- | ---------------------------------------------------------- |
@@ -256,17 +247,17 @@ Beyond agents, SWE Pro Agents ships **6 skills** — a token-compression mode, a
 | `svg-hero-generator`| Repo-aware SVG hero banners — 3–4 concepts, then final SVG |
 | `humanizer-pro`     | Sharp human editor — edit drafts to read human, or detect AI-slop patterns with quoted evidence |
 
-Skills auto-install to `~/.config/opencode/skills/` and are picked up by OpenCode automatically — no config needed.
+Skills auto-install to `~/.config/opencode/skills/` and are picked up automatically — no config needed.
 
 <a name="agents-vs-skills"></a>
 
 ### Agents vs. skills
 
-Agents are the team; skills are utilities. Invoke an agent directly (`@swe-frontend`, `@swe-backend`, …) when you know exactly which specialist you want and just need it to do that one job. Agents are lean by design: they assume this pack's `AGENTS.md` is already loaded into context (OpenCode does this automatically), and they only state what's specific to their domain — everything else (the Constitution, Definition of Done, Handoff protocol) lives in `AGENTS.md` once, not repeated per agent. Their behavior depends on `AGENTS.md` being installed — see [Install](#install) if `swe-pro-agents status` reports it as missing.
+Agents are the team; skills are utilities. Invoke an agent directly (`@swe-frontend`, `@swe-backend`, …) when you know exactly which specialist you want. Agents are lean by design: they assume this pack's `AGENTS.md` is already loaded into context (OpenCode does this automatically) and only state what's specific to their domain — everything else (the Constitution, Definition of Done, Handoff protocol) lives in `AGENTS.md` once, not repeated per agent. Their behavior depends on `AGENTS.md` being installed — see [Install](#install) if `swe-pro-agents status` reports it as missing.
 
-The six skills are standalone utilities any agent can load on demand — `caveman` for ultra-compressed replies, `skill-creator` for authoring skills with rigor, `teach-me` for adaptive tutoring with persistent progress tracking, `readme-generator` and `svg-hero-generator` for repo-aware document artifacts, and `humanizer-pro` for making prose read human. They are deliberately self-contained rather than depending on `AGENTS.md`, because a skill can be invoked by any agent in any project — including ones that don't have this pack's `AGENTS.md` installed at all.
+The six skills are standalone utilities any agent can load on demand — `caveman` for compressed replies, `skill-creator` for authoring skills with rigor, `teach-me` for adaptive tutoring with persistent progress tracking, `readme-generator` and `svg-hero-generator` for repo-aware document artifacts, and `humanizer-pro` for prose that reads human. They are deliberately self-contained rather than `AGENTS.md`-dependent, because a skill can be invoked by any agent in any project — including ones that don't have this pack's `AGENTS.md` installed at all.
 
-If you're not sure which to reach for: a single, well-scoped implementation task with a clear owner → an agent. A communication-mode or document-artifact need → the matching skill. Don't run both for the same task — that's redundant effort, not extra rigor.
+Not sure which to reach for? A single, well-scoped implementation task with a clear owner → an agent. A communication-mode or document-artifact need → the matching skill. Don't run both for the same task — that's redundant effort, not extra rigor.
 
 ---
 
@@ -312,7 +303,7 @@ Design the new architecture, plan the migration, update the schema, wire the ful
 architect → swe-pro
 ```
 
-Architect interviews you (or accepts a `yolo` mandate) until the spec is complete, then writes `plans/project-overview.md`, `plans/tasks.md`, and `plans/user-flow.md`. Switch to SWE Pro, which executes `plans/tasks.md` task by task in plan order — dispatching each task to a fresh subagent (independent tasks in the same phase run in parallel), reviewing each result twice (spec compliance, then code quality), and checking in with you after every phase. When the build is done, a finishing ceremony offers: merge locally, open a PR, or keep the branch.
+Architect interviews you (or accepts a `yolo` mandate) until the spec is complete, then writes `plans/project-overview.md`, `plans/tasks.md`, and `plans/user-flow.md`. SWE Pro executes `plans/tasks.md` task by task in plan order — dispatching each task to a fresh subagent (independent tasks in the same phase run in parallel), reviewing each result twice (spec compliance, then code quality), and checking in with you after every phase. When done, a finishing ceremony offers: merge locally, open a PR, or keep the branch.
 
 ### PR Review
 
@@ -333,8 +324,6 @@ Diagnose the issue, profile the bottleneck, deploy the fix.
 ---
 
 ## Updating
-
-Agents are actively improved — new roles added, prompts refined, permissions tuned.
 
 ```bash
 npm update -g swe-pro-agents
@@ -396,7 +385,7 @@ SWE-pro-Agents/
 
 ## Contributing
 
-Bug reports, feature requests, and PRs go through the [GitHub repository](https://github.com/beast-ofcourse/SWE-pro-Agents) — the [issues page](https://github.com/beast-ofcourse/SWE-pro-Agents/issues) is the place to start. The main thing to keep in mind: every agent file is short *because* it assumes the shared `AGENTS.md` foundation — keep new agents lean and put cross-cutting rules in `AGENTS.md`, not in each prompt.
+Bug reports, feature requests, and PRs go through the [GitHub repository](https://github.com/beast-ofcourse/SWE-pro-Agents) — the [issues page](https://github.com/beast-ofcourse/SWE-pro-Agents/issues) is the place to start. Keep new agents lean: every agent file is short *because* it assumes the shared `AGENTS.md` foundation — put cross-cutting rules there, not in each prompt.
 
 ---
 
