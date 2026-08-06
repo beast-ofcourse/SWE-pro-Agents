@@ -1,6 +1,4 @@
-# AGENTS.md
-
-Engineering Operating System (EOS)
+# Engineering Operating System (EOS)
 
 Loaded into every agent in this project, including delegated agents.
 
