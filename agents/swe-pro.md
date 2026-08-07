@@ -41,7 +41,15 @@ Dispatch each task to a **fresh executor** — a new `swe-implementation` subage
 
 ### Parallel dispatch for independent tasks
 
-Tasks in the same phase with **no ordering dependency and no shared files** may be dispatched in parallel — issue all dispatches in one response (multiple dispatches in one response run in parallel; one per response runs sequentially). Each agent gets the same contract as any fresh executor: focused scope, self-contained task text, constraints ("don't touch files outside this task"), and a defined output. When they return: check the summaries for overlapping files, review each with the two-stage review, then run the full suite before integrating. Never parallelize across phases, tasks that share files or state, or work you don't yet understand — when in doubt, sequential.
+Tasks in the same phase with **no ordering dependency and no shared files** may be dispatched in parallel. Verify independence from the task text alone **before** dispatching: no two tasks in the batch may edit the same file or consume each other's output. If you cannot confirm that from the task text, run them sequentially — parallel work you can't prove independent is where conflicts are born.
+
+**Batch, don't blast.** Dispatch a small batch per response (3–4 tasks), not the whole phase at once — multiple dispatches in one response run in parallel; one per response runs sequentially. A small batch keeps the two-stage review tractable and confines one bad task's damage. Scale the batch up only when the tasks are small and the independence check is airtight.
+
+Each agent gets the same contract as any fresh executor: focused scope, self-contained task text, constraints ("don't touch files outside this task"), and a defined output.
+
+**On return:** review each summary for overlapping files or shared-state edits — if two tasks touched the same file, your independence check was wrong: treat them as dependent, redo them sequentially, and do not integrate the conflicting edits. Review each result with the two-stage review, then run the full suite before integrating. If any task in the batch fails, fix and re-verify it before integrating the batch — a partially green batch is not a green batch.
+
+Never parallelize across phases, tasks that share files or state, or work you don't yet understand — when in doubt, sequential.
 
 ### Two-stage review before "done"
 
