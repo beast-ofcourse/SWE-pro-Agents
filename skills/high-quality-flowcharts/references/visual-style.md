@@ -37,17 +37,19 @@ Use these CSS variables to maintain a consistent "Roadmap" look:
 
 ### Section Header (Spine Node)
 ```svg
-<rect x="700" y="200" width="200" height="40" rx="4" fill="var(--section-fill)" stroke="var(--section-border)" stroke-width="2"/>
+<rect x="700" y="200" width="200" height="40" rx="4" fill="#f3df58" stroke="#b29a10" stroke-width="2"/>
 <text x="800" y="225" text-anchor="middle" font-weight="bold">Section Title</text>
 ```
 
 ### Subtopic Node
 ```svg
-<rect x="400" y="200" width="180" height="30" rx="4" fill="var(--node-fill)" stroke="var(--node-border)" stroke-width="1"/>
+<rect x="400" y="200" width="180" height="30" rx="4" fill="#f8e39c" stroke="#9a7b24" stroke-width="1"/>
 <text x="490" y="220" text-anchor="middle">Subtopic Name</text>
 ```
 
 ### Connector (Curved)
 ```svg
-<path d="M 600 220 C 650 220, 650 220, 700 220" fill="none" stroke="var(--connector)" stroke-width="2" stroke-dasharray="2,2"/>
+<path d="M 600 220 C 650 220, 650 220, 700 220" fill="none" stroke="#5a78ff" stroke-width="2" stroke-dasharray="2,2"/>
 ```
+
+> **PDF export note:** these examples use literal `fill`/`stroke` values (matching the `--section-fill`, `--node-fill`, `--connector`, etc. tokens defined above) because CSS custom properties (`var(--…)`) do not reliably resolve during PDF export. If you prefer `var()` for on-screen styling, keep the literal values in a separate PDF-export variant — see the troubleshooting table in `SKILL.md`.

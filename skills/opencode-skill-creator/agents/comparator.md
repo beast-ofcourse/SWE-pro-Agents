@@ -16,6 +16,7 @@ You receive these parameters in your prompt:
 - **output_b_path**: Path to the second output file or directory
 - **eval_prompt**: The original task/prompt that was executed
 - **expectations**: List of expectations to check (optional - may be empty)
+- **output_path**: Required path where the comparison result JSON is saved
 
 ## Process
 
@@ -84,9 +85,11 @@ Compare A and B based on (in priority order):
 
 Be decisive - ties should be rare. One output is usually better, even if marginally.
 
+**TIE contract:** When you declare a TIE, set `"winner": "TIE"` and explain in `reasoning` why the outputs are equivalent. Downstream steps (the analyzer and the workflow) treat `"winner": "TIE"` as "no winner" — the post-hoc winner analysis is skipped for ties, and the user is told the comparison was inconclusive rather than being directed to analyze why a winner won.
+
 ### Step 7: Write Comparison Results
 
-Save results to a JSON file at the path specified (or `comparison.json` if not specified).
+Save results to the JSON file at `output_path` (required). Do not fall back to a default filename or the current directory.
 
 ## Output Format
 

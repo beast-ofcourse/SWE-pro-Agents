@@ -4,8 +4,9 @@ Generate a PDF from an HTML file, trying multiple backends.
 Usage:
     python scripts/generate_pdf.py input.html output.pdf [--landscape] [--paper-size A4]
 
-Tries these methods in order:
-  1. Playwright (via npx @playwright/test) — best quality
+Tries these methods in order (all must be preinstalled — the script never
+installs packages at runtime):
+  1. Playwright (via npx --no-install @playwright/test) — best quality
   2. weasyprint (pip install weasyprint)
   3. pdfkit (pip install pdfkit, needs wkhtmltopdf installed separately)
 """
@@ -17,13 +18,14 @@ import os
 import shutil
 import tempfile
 import json
+import pathlib
 
 
 def check_npx_tool(package: str) -> bool:
-    """Check if an npx package is available."""
+    """Check if an npx package is available (without auto-installing it)."""
     try:
         result = subprocess.run(
-            ["npx", "--yes", package, "--version"],
+            ["npx", "--no-install", package, "--version"],
             capture_output=True, text=True, timeout=30
         )
         return result.returncode == 0
@@ -33,15 +35,21 @@ def check_npx_tool(package: str) -> bool:
 
 def try_playwright(html_path: str, pdf_path: str, landscape: bool, paper_size: str) -> bool:
     """Use Playwright to print HTML to PDF."""
+    # Resolve to absolute paths and build a valid file URI + JSON-escaped
+    # strings so relative inputs and quotes/special chars can't break the
+    # generated JavaScript.
+    html_abs = os.path.abspath(html_path)
+    pdf_abs = os.path.abspath(pdf_path)
+    html_uri = pathlib.Path(html_abs).as_uri()
     script = f"""
 const {{ chromium }} = require('playwright');
 (async () => {{
     const browser = await chromium.launch();
     const page = await browser.newPage();
-    await page.goto('file:///{html_path.replace(chr(92), '/')}', {{ waitUntil: 'networkidle' }});
+    await page.goto({json.dumps(html_uri)}, {{ waitUntil: 'networkidle' }});
     await page.pdf({{
-        path: '{pdf_path.replace(chr(92), '/')}',
-        format: '{paper_size}',
+        path: {json.dumps(pdf_abs)},
+        format: {json.dumps(paper_size)},
         landscape: {'true' if landscape else 'false'},
         printBackground: true,
         margin: {{ top: '0.4in', right: '0.4in', bottom: '0.4in', left: '0.4in' }}
@@ -56,7 +64,7 @@ const {{ chromium }} = require('playwright');
 
     try:
         result = subprocess.run(
-            ["npx", "--yes", "playwright", "run", script_path],
+            ["npx", "--no-install", "playwright", "run", script_path],
             capture_output=True, text=True, timeout=60,
             cwd=tmpdir
         )
@@ -84,22 +92,17 @@ def try_playwright_mcp(html_path: str, pdf_path: str, landscape: bool, paper_siz
 
 
 def try_weasyprint(html_path: str, pdf_path: str, landscape: bool, paper_size: str) -> bool:
-    """Use weasyprint library."""
-    try:
-        subprocess.run(
-            [sys.executable, "-m", "pip", "install", "weasyprint"],
-            capture_output=True, text=True, timeout=60
-        )
-    except subprocess.TimeoutExpired:
-        return False
-
+    """Use weasyprint library (must be preinstalled)."""
     try:
         from weasyprint import HTML as WeasyprintHTML
-        kwargs = {}
-        if landscape:
-            # WeasyPrint doesn't directly support landscape via CSS @page well
-            pass
-        WeasyprintHTML(filename=html_path).write_pdf(pdf_path, **kwargs)
+        from weasyprint import CSS
+        # Apply page size/orientation through a CSS @page override so the
+        # fallback honors the requested orientation (WeasyPrint has no
+        # write_pdf() page-size argument).
+        page_css = f"@page {{ size: {paper_size}{' landscape' if landscape else ''}; margin: 0.4in; }}"
+        WeasyprintHTML(filename=html_path).write_pdf(
+            pdf_path, stylesheets=[CSS(string=page_css)]
+        )
         return os.path.exists(pdf_path) and os.path.getsize(pdf_path) > 0
     except Exception as e:
         print(f"  WeasyPrint error: {e}")
@@ -107,15 +110,7 @@ def try_weasyprint(html_path: str, pdf_path: str, landscape: bool, paper_size: s
 
 
 def try_pdfkit(html_path: str, pdf_path: str, landscape: bool, paper_size: str) -> bool:
-    """Use pdfkit (wkhtmltopdf wrapper)."""
-    try:
-        subprocess.run(
-            [sys.executable, "-m", "pip", "install", "pdfkit"],
-            capture_output=True, text=True, timeout=60
-        )
-    except subprocess.TimeoutExpired:
-        return False
-
+    """Use pdfkit (wkhtmltopdf wrapper; both must be preinstalled)."""
     try:
         import pdfkit
         options = {
@@ -174,8 +169,10 @@ def main():
         return
 
     print("  ✗ All PDF generation methods failed.")
-    print("  Suggestion: Install playwright with: npx playwright install chromium")
-    print("  Or install weasyprint with: pip install weasyprint")
+    print("  Prerequisites (install once, pinned versions):")
+    print("    - Playwright:  npm install -D playwright && npx playwright install chromium")
+    print("    - WeasyPrint:  pip install weasyprint")
+    print("    - pdfkit:      pip install pdfkit  (also needs wkhtmltopdf installed separately)")
     sys.exit(1)
 
 

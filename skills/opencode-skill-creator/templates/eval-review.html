@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Eval Set Review - __SKILL_NAME_PLACEHOLDER__</title>
+  <title>Eval Set Review</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;600&family=Lora:wght@400;500&display=swap" rel="stylesheet">
@@ -38,8 +38,8 @@
   </style>
 </head>
 <body>
-  <h1>Eval Set Review: <span id="skill-name">__SKILL_NAME_PLACEHOLDER__</span></h1>
-  <p class="description">Current description: <span id="skill-desc">__SKILL_DESCRIPTION_PLACEHOLDER__</span></p>
+  <h1>Eval Set Review: <span id="skill-name"></span></h1>
+  <p class="description">Current description: <span id="skill-desc"></span></p>
 
   <div class="controls">
     <button class="btn btn-add" onclick="addRow()">+ Add Query</button>
@@ -60,9 +60,19 @@
   <p class="summary" id="summary"></p>
 
   <script>
-    const EVAL_DATA = __EVAL_DATA_PLACEHOLDER__;
+    // __EVAL_DATA_PLACEHOLDER__ is a script-safe JSON object:
+    // { "skill_name": "...", "skill_description": "...", "items": [ {query, should_trigger}, ... ] }
+    // It must be serialized so no value can terminate this script element or
+    // inject HTML (escape `</script>`, `<`, `>`, `&`, and quotes).
+    const PAGE_DATA = __EVAL_DATA_PLACEHOLDER__;
 
-    let evalItems = [...EVAL_DATA];
+    // Set name/description via textContent — never by interpolating raw input
+    // into HTML — so user-controlled values can't inject markup or script.
+    document.getElementById('skill-name').textContent = PAGE_DATA.skill_name || '';
+    document.getElementById('skill-desc').textContent = PAGE_DATA.skill_description || '';
+    document.title = 'Eval Set Review' + (PAGE_DATA.skill_name ? ' - ' + PAGE_DATA.skill_name : '');
+
+    let evalItems = [...(PAGE_DATA.items || [])];
 
     function render() {
       const tbody = document.getElementById('eval-body');
@@ -90,7 +100,7 @@
           <td><textarea class="query-input" onchange="updateQuery(${idx}, this.value)">${escapeHtml(item.query)}</textarea></td>
           <td>
             <label class="toggle">
-              <input type="checkbox" ${item.should_trigger ? 'checked' : ''} onchange="updateTrigger(${idx}, this.checked)">
+              <input type="checkbox" aria-label="Should trigger" ${item.should_trigger ? 'checked' : ''} onchange="updateTrigger(${idx}, this.checked)">
               <span class="slider"></span>
             </label>
             <span style="margin-left:8px;font-size:0.8rem;color:#b0aea5">${item.should_trigger ? 'Yes' : 'No'}</span>

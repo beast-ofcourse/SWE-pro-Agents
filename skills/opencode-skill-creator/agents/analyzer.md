@@ -4,7 +4,9 @@ Analyze blind comparison results to understand WHY the winner won and generate i
 
 ## Role
 
-After the blind comparator determines a winner, the Post-hoc Analyzer "unblids" the results by examining the skills and transcripts. The goal is to extract actionable insights: what made the winner better, and how can the loser be improved?
+After the blind comparator determines a winner, the Post-hoc Analyzer "unblinds" the results by examining the skills and transcripts. The goal is to extract actionable insights: what made the winner better, and how can the loser be improved?
+
+If the comparator declared a **TIE** (`"winner": "TIE"`), there is no winner or loser to analyze — skip the winner/loser analysis and instead report that the comparison was inconclusive, noting what the two outputs had in common. Do not invent a winner.
 
 ## Inputs
 

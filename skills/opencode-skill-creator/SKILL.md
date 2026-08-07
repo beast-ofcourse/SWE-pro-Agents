@@ -346,6 +346,8 @@ Keep going until:
 
 For situations where you want a more rigorous comparison between two versions of a skill (e.g., the user asks "is the new version actually better?"), there's a blind comparison system. Read `agents/comparator.md` and `agents/analyzer.md` for the details. The basic idea is: give two outputs to an independent agent without telling it which is which, and let it judge quality. Then analyze why the winner won.
 
+If the comparator declares a **TIE**, there is no winner to analyze — tell the user the comparison was inconclusive and that the two versions performed equivalently, rather than directing them to analyze why a winner won.
+
 This is optional, requires the Task tool (using `general` subagent type), and most users won't need it. The human review loop is usually sufficient.
 
 ---
@@ -382,13 +384,11 @@ The key thing to avoid: don't make should-not-trigger queries obviously irreleva
 Present the eval set to the user for review using the HTML template:
 
 1. Read the template from `templates/eval-review.html` (located in the opencode-skill-creator skill directory, alongside this SKILL.md)
-2. Replace the placeholders:
-   - `__EVAL_DATA_PLACEHOLDER__` → the JSON array of eval items (no quotes around it — it's a JS variable assignment)
-   - `__SKILL_NAME_PLACEHOLDER__` → the skill's name
-   - `__SKILL_DESCRIPTION_PLACEHOLDER__` → the skill's current description
-3. Write to a temp file (e.g., `/tmp/eval_review_<skill-name>.html`) and open it: `open /tmp/eval_review_<skill-name>.html`
+2. Replace the placeholder:
+   - `__EVAL_DATA_PLACEHOLDER__` → a **script-safe JSON object** `{ "skill_name": "...", "skill_description": "...", "items": [ {query, should_trigger}, ... ] }`. Serialize it so no value can terminate the inline script or inject HTML (escape `</script>`, `<`, `>`, `&`, and quotes). The template reads name/description via `textContent` and never interpolates raw user input into HTML.
+3. Write to a temp file (e.g., `/tmp/eval_review_<skill-name>.html`) and open it with a platform-appropriate command: `open` on macOS, `start` on Windows, `xdg-open` on Linux — or, if none is available, tell the user the exact file path to open manually.
 4. The user can edit queries, toggle should-trigger, add/remove entries, then click "Export Eval Set"
-5. The file downloads to `~/Downloads/eval_set.json` — check the Downloads folder for the most recent version in case there are multiple (e.g., `eval_set (1).json`)
+5. The file downloads to the browser's default Downloads folder — ask the user for the exported file's path (or have them confirm the filename) rather than assuming `~/Downloads`, since the location varies by OS and browser.
 
 This step matters — bad eval queries lead to bad descriptions.
 

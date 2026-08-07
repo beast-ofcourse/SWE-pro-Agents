@@ -32,27 +32,24 @@ def verify_pdf(pdf_path: str) -> bool:
     except Exception as e:
         print(f"  pdf2image error: {e}")
 
-    # Fallback: use PIL to create a placeholder + instructions
+    # Fallback: use PIL to render the PDF's first page. If PIL can't render
+    # PDF content either, verification has NOT succeeded — a placeholder image
+    # or a bare "file exists" message is not a verified preview and would hide
+    # a broken PDF.
     try:
-        from PIL import Image, ImageDraw, ImageFont
+        from PIL import Image
         output_image = pdf_path.replace('.pdf', '_verify.png')
-        img = Image.new('RGB', (1200, 800), color=(255, 255, 255))
-        draw = ImageDraw.Draw(img)
-        draw.text((50, 50), f"PDF Verification: {os.path.basename(pdf_path)}", fill=(0, 0, 0))
-        draw.text((50, 100), f"PDF Size: {os.path.getsize(pdf_path)} bytes", fill=(80, 80, 80))
-        draw.text((50, 150), "To view: open the PDF directly in a reader.", fill=(80, 80, 80))
-        draw.text((50, 200), "", fill=(0, 0, 0))
-        draw.text((50, 250), "Install pdf2image for proper preview:", fill=(0, 0, 0))
-        draw.text((50, 280), "  pip install pdf2image", fill=(100, 100, 200))
-        draw.text((50, 330), "Requires poppler: https://github.com/Belval/pdf2image", fill=(100, 100, 200))
+        img = Image.open(pdf_path)
+        img.load()
         img.save(output_image, 'PNG')
-        print(f"⚠ Basic verification image saved: {output_image}")
-        print(f"  Install 'pdf2image' + poppler for full PDF previews.")
+        print(f"✓ Verification image saved: {output_image}")
+        print(f"  Dimensions: {img.width}x{img.height}px")
         return True
-    except ImportError:
-        print("Warning: Neither pdf2image nor PIL available for verification.")
-        print(f"PDF file exists at: {os.path.abspath(pdf_path)} ({os.path.getsize(pdf_path)} bytes)")
-        return True  # PDF exists even if we can't preview it
+    except Exception as e:
+        print(f"  PIL could not render the PDF: {e}")
+        print(f"  Install 'pdf2image' + poppler for full PDF previews.")
+        print(f"  PDF file exists at: {os.path.abspath(pdf_path)} ({os.path.getsize(pdf_path)} bytes)")
+        return False
 
 
 if __name__ == "__main__":

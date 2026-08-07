@@ -212,7 +212,7 @@ These are defaults. Adjust to match template dimensions if they differ.
 | PDF has no content (blank) | The viewBox or SVG dimensions are wrong | Set explicit viewBox="0 0 W H" and ensure elements are within bounds |
 | Text is clipped | Node too small for text, or margins too tight | Increase node width by 20-40px first, then font size |
 | Connectors don't reach their target | Source/target coordinates don't match actual element positions | Use element centers, not edges, for connector endpoints |
-| PDF generation hangs or fails | Missing backend tool | Install playwright: `npx playwright install chromium` |
+| PDF generation hangs or fails | Missing backend tool | Install once (pinned): `npm install -D playwright && npx playwright install chromium`, or `pip install weasyprint`, or `pip install pdfkit` + wkhtmltopdf |
 | Colors look wrong in PDF | CSS custom properties not resolving in SVG | Use inline `fill="#xxxxxx"` directly in SVG instead of CSS var() |
 | Landscape doesn't work | @page orientation missing | Add `size: A4 landscape` to @page rule |
 | Diagram feels cramped | Too much content for one page | Increase paper size, use larger viewBox, or split into multiple pages |
