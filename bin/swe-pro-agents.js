@@ -133,8 +133,9 @@ function cmdSetup() {
   const globalExists = fs.existsSync(GLOBAL_AGENTS_MD);
   const packAgentsMdExists = fs.existsSync(TARGET_AGENTS_MD);
   console.log(`  This pack's agents/ files are intentionally short — they rely on`);
-  console.log(`  a shared AGENTS.md (Constitution, Definition of Done, Handoff`);
-  console.log(`  protocol) being loaded into context for every agent.\n`);
+  console.log(`  a shared AGENTS.md (Engineering Operating System: Core priorities,`);
+  console.log(`  Engineering rules, Completion checklist, Reporting format) being`);
+  console.log(`  loaded into context for every agent.\n`);
   if (!packAgentsMdExists) {
     console.log(`  Warning: the pack's AGENTS.md wasn't found at ${TARGET_AGENTS_MD}.`);
     console.log(`  Try reinstalling: npm update -g ${PACKAGE_NAME}\n`);
@@ -185,7 +186,7 @@ function cmdStatus() {
   console.log(`  AGENTS.md:  ${packAgentsMdExists ? 'Installed (package copy present)' : 'MISSING — run npm update'}`);
   if (packAgentsMdExists && !globalAgentsMdExists) {
     console.log(`              Warning: no global AGENTS.md found — agents are missing`);
-    console.log(`              their shared Constitution/Definition-of-Done. Run 'swe-pro-agents setup'.`);
+    console.log(`              their shared Engineering Operating System. Run 'swe-pro-agents setup'.`);
   }
 
   console.log();

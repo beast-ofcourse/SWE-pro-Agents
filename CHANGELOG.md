@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- `AGENTS.md` restructured into the **Engineering Operating System (EOS)**: titled and sectioned by Core priorities, Prime directive, Cost-efficiency rules, Reasoning protocol, Engineering rules, Execution protocol, Verification standard, Delegation protocol, Architecture boundary, Planning contract, Hard gates, Completion checklist, Reporting format, Stop conditions, Project notes. Old section names (Constitution, Critical Thinking Framework, Definition of Done, Handoff protocol) removed. README, installer, CLI, CONTRIBUTING, and changelog references updated to point at the new structure.
+
 ## [2.2.0] - 2026-08-04
 
 ### Added
@@ -23,7 +26,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Hard gates**: a red test baseline stops implementation before it starts; unresolved Critical findings block the next task
 - **Phase checkpoints**: SWE Pro pauses after each `tasks.md` phase for user approval, unless told "auto-pilot"
 - **Red flags** sections added to SWE Pro and PR Reviewer
-- **Process announcements** added to the `AGENTS.md` Constitution
+- **Process announcements** added to the shared `AGENTS.md` foundation (now the Engineering Operating System)
 - `architect` rebuilt as a spec-driven planner with spec-vs-yolo choice, 11-area spec checklist, and three plan files (`project-overview.md`, `tasks.md`, `user-flow.md`)
 - `arch-scalability` + `arch-strategy` merged into `arch-validator` — stress-tests every Architect decision and returns categorized spec fixes
 - `swe-testing` merged into `swe-reviewer` — verification and review owned by one agent
@@ -40,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `CONTRIBUTING.md` and this changelog
 
 ### Changed
-- `swe-reviewer` promoted from subagent to primary agent; `AGENTS.md` condensed (Critical Thinking Framework, Constitution, Definition of Done, Handoff protocol)
+- `swe-reviewer` promoted from subagent to primary agent; `AGENTS.md` condensed (the shared foundation that later became the Engineering Operating System)
 - `svg-hero-generator` restructured from a single packaged file to a directory skill (install.js compatible) with 3 demo hero banners, an SVG template, and construction rules
 - README refactored: accurate agent counts (24 subagents + 3 primary), tightened structure, verified badges
 - `package.json` description aligned with the 24 + 3 agent layout

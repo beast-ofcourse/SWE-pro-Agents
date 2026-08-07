@@ -66,7 +66,7 @@ SWE Pro Agents fixes that. Each agent is a **loaded expert**: a complete system 
 Three layers, each with a different job:
 
 1. **`agents/` — the team.** One Markdown file per agent: a frontmatter block with tool permissions (read-only roles get deny-lists, implementers get scoped allow-lists) plus a curated system prompt. OpenCode loads these directly.
-2. **`AGENTS.md` — the shared foundation.** Agent files stay short because each assumes one shared rulebook — Constitution, Definition of Done, Handoff protocol — is already in context. Cross-cutting rules live here once, not repeated per agent.
+2. **`AGENTS.md` — the shared foundation.** Agent files stay short because each assumes one shared rulebook — the Engineering Operating System (Core priorities, Engineering rules, Completion checklist, Reporting format) — is already in context. Cross-cutting rules live here once, not repeated per agent.
 3. **`skills/` — utilities, not team members.** Self-contained `SKILL.md` units any agent can load on demand. They don't depend on `AGENTS.md`, so they work in any project.
 
 The installer (`scripts/install.js`) copies agents, skills, and `AGENTS.md` into your OpenCode config and records everything in a manifest at `~/.config/swe-pro-agents/manifest.json`. On update it prunes files the pack no longer ships; on uninstall it removes only what the pack owns. Agents chain through the [workflows](#workflows) below — each handoff is a written artifact (`plans/`, `plans/validation.md`, `PR-review.md`, `review-report.md`), so no context is lost between steps.
@@ -110,7 +110,7 @@ The postinstall hook copies:
 - all 6 skills to `~/.config/opencode/skills/`,
 - this pack's `AGENTS.md` to `~/.config/opencode/agents/swe-pro-agents/AGENTS.md`.
 
-That last file matters: every agent in `agents/` is intentionally short because it assumes `AGENTS.md`'s Constitution, Definition of Done, and Handoff protocol are already loaded into context. If you don't already have a global `~/.config/opencode/AGENTS.md`, copy the installed one into place:
+That last file matters: every agent in `agents/` is intentionally short because it assumes `AGENTS.md`'s Engineering Operating System (Core priorities, Engineering rules, Completion checklist, Reporting format) is already loaded into context. If you don't already have a global `~/.config/opencode/AGENTS.md`, copy the installed one into place:
 
 ```bash
 cp ~/.config/opencode/agents/swe-pro-agents/AGENTS.md ~/.config/opencode/AGENTS.md
@@ -253,7 +253,7 @@ Skills auto-install to `~/.config/opencode/skills/` and are picked up automatica
 
 ### Agents vs. skills
 
-Agents are the team; skills are utilities. Invoke an agent directly (`@swe-frontend`, `@swe-backend`, …) when you know exactly which specialist you want. Agents are lean by design: they assume this pack's `AGENTS.md` is already loaded into context (OpenCode does this automatically) and only state what's specific to their domain — everything else (the Constitution, Definition of Done, Handoff protocol) lives in `AGENTS.md` once, not repeated per agent. Their behavior depends on `AGENTS.md` being installed — see [Install](#install) if `swe-pro-agents status` reports it as missing.
+Agents are the team; skills are utilities. Invoke an agent directly (`@swe-frontend`, `@swe-backend`, …) when you know exactly which specialist you want. Agents are lean by design: they assume this pack's `AGENTS.md` is already loaded into context (OpenCode does this automatically) and only state what's specific to their domain — everything else (the Engineering Operating System: Core priorities, Engineering rules, Completion checklist, Reporting format) lives in `AGENTS.md` once, not repeated per agent. Their behavior depends on `AGENTS.md` being installed — see [Install](#install) if `swe-pro-agents status` reports it as missing.
 
 The six skills are standalone utilities any agent can load on demand — `caveman` for compressed replies, `skill-creator` for authoring skills with rigor, `teach-me` for adaptive tutoring with persistent progress tracking, `readme-generator` and `svg-hero-generator` for repo-aware document artifacts, and `humanizer-pro` for prose that reads human. They are deliberately self-contained rather than `AGENTS.md`-dependent, because a skill can be invoked by any agent in any project — including ones that don't have this pack's `AGENTS.md` installed at all.
 

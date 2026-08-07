@@ -81,8 +81,9 @@ permission:               # scoped tool access; deny by default where it matters
 Rules:
 
 - **Keep agents lean.** Agent files state only domain-specific behavior. The
-  shared Constitution, Definition of Done, and Handoff protocol live once in
-  `AGENTS.md` — do not repeat them in every agent.
+  shared Engineering Operating System — Core priorities, Engineering rules,
+  Completion checklist, Reporting format — lives once in `AGENTS.md`; do not
+  repeat it in every agent.
 - **Permissions match the role.** Read-only agents (review, security, research)
   get `edit: deny` and narrow `bash`; implementers get scoped allow-lists.
 - **Keep counts in sync.** The roster appears in `package.json` (description),

@@ -4,8 +4,9 @@
  * postinstall — copies agent files to ~/.config/opencode/agents/swe-pro-agents/,
  *                skill files to ~/.config/opencode/skills/, and this pack's
  *                AGENTS.md (the shared foundation every lean agent file in
- *                agents/ depends on for its Constitution, Definition of Done,
- *                and Handoff protocol) to a package-scoped location.
+ *                agents/ depends on — Core priorities, Engineering rules,
+ *                Completion checklist, Reporting format) to a package-scoped
+ *                location.
  *
  * Runs automatically after `npm install -g swe-pro-agents`.
  *
@@ -210,7 +211,8 @@ function main() {
     const agentsMdResult = installAgentsMd();
     if (agentsMdResult.copied) {
       console.log(`[${PACKAGE_NAME}] Installed this pack's AGENTS.md (shared`);
-      console.log(`  Constitution, Definition of Done, and Handoff protocol that`);
+      console.log(`  Engineering Operating System — Core priorities, Engineering`);
+      console.log(`  rules, Completion checklist, Reporting format — that`);
       console.log(`  every agent in this pack assumes is loaded) to:`);
       console.log(`  ${PACK_AGENTS_MD_DEST}`);
       console.log();
@@ -223,8 +225,8 @@ function main() {
         console.log(`    See: @${PACK_AGENTS_MD_DEST}`);
       } else {
         console.log(`  No global AGENTS.md was found at ${GLOBAL_AGENTS_MD}.`);
-        console.log(`  Without one, these agents lose their shared Constitution,`);
-        console.log(`  Definition of Done, and Handoff protocol — copy the file`);
+        console.log(`  Without one, these agents lose their shared Engineering`);
+        console.log(`  Operating System — copy the file`);
         console.log(`  above to that path (or your project's AGENTS.md) so`);
         console.log(`  OpenCode loads it automatically:`);
         console.log(`    cp "${PACK_AGENTS_MD_DEST}" "${GLOBAL_AGENTS_MD}"`);
