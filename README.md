@@ -17,6 +17,22 @@
 
 ---
 
+## News
+
+Short highlights of what's changed recently. Full detail lives in [CHANGELOG.md](CHANGELOG.md).
+
+**Unreleased**
+- Pack grew from 6 to **9 skills**: `flowchart-html`, `high-quality-flowcharts`, and `opencode-skill-creator`.
+- `AGENTS.md` restructured into the **Engineering Operating System (EOS)** — Core priorities, Engineering rules, Completion checklist, Reporting format, and more.
+
+**2.2.0**
+- New **`pr-reviewer`** primary agent — CodeRabbit-style end-to-end PR review (Critical/Major/Minor/Optional findings with fixes, written to `PR-review.md`). Pack is now 26 profiles.
+- New skills: `humanizer-pro` (anti-AI-slop editor), `teach-me` (adaptive tutor), `skill-creator`.
+- **Verification harness** — `npm run validate` statically checks every agent and skill and fails the build on any violation; wired into CI with 18 self-tests.
+- SWE Pro hardened: finishing-work ceremony, parallel task dispatch, subagent-driven plan execution, hard gates, phase checkpoints.
+
+---
+
 ## What It Is
 
 Most AI coding assistants start blank — no domain expertise, no engineering discipline. SWE Pro Agents fixes that: each agent is a **loaded expert** with a curated system prompt, tool permissions, and behavioral rules baked in. You don't ask a model to "review this PR"; you invoke `swe-reviewer`, which already knows how to assess blast radius and enforce your standards.
