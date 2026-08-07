@@ -236,7 +236,7 @@ const PRIMARY_NAMES = ['swe-pro', 'architect', 'swe-reviewer', 'pr-reviewer'];
  *  - dupSkillName:   one skill declares the same name as another (S7)
  * Returns the pack root path (tracked for cleanup).
  */
-function buildPack({ agentCount = 26, skillCount = 6, extraPrimary = false, dupAgentName = false, dupSkillName = false } = {}) {
+function buildPack({ agentCount = 26, skillCount = 9, extraPrimary = false, dupAgentName = false, dupSkillName = false } = {}) {
   const dir = tempDir('validate-pack-');
   const agentsDir = path.join(dir, 'agents');
   const skillsDir = path.join(dir, 'skills');
@@ -283,7 +283,7 @@ function buildPack({ agentCount = 26, skillCount = 6, extraPrimary = false, dupA
   return dir;
 }
 
-test('validatePack passes a healthy 26-agent / 6-skill pack with zero violations', () => {
+test('validatePack passes a healthy 26-agent / 9-skill pack with zero violations', () => {
   const { violations } = validatePack(buildPack());
   assert.deepStrictEqual(violations, []);
 });

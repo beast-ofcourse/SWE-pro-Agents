@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `flowchart-html` skill — professional flowcharts, process diagrams, decision trees, and org charts as a single self-contained HTML file on a large SVG canvas
+- `high-quality-flowcharts` skill — publication-grade, print-ready PDF flowcharts/roadmaps via HTML/CSS shells with inline SVG geometry, PDF export, and a verification preview
+- `opencode-skill-creator` skill — create, test, evaluate, optimize, and package OpenCode skills (evals, benchmarks, description tuning)
+- Pack is now **9 skills** (was 6); validator, package.json, README, and uninstall docs updated to match
+
 ### Changed
 - `AGENTS.md` restructured into the **Engineering Operating System (EOS)**: titled and sectioned by Core priorities, Prime directive, Cost-efficiency rules, Reasoning protocol, Engineering rules, Execution protocol, Verification standard, Delegation protocol, Architecture boundary, Planning contract, Hard gates, Completion checklist, Reporting format, Stop conditions, Project notes. Old section names (Constitution, Critical Thinking Framework, Definition of Done, Handoff protocol) removed. README, installer, CLI, CONTRIBUTING, and changelog references updated to point at the new structure.
 

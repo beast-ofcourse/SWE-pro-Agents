@@ -11,7 +11,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/beast-ofcourse/SWE-pro-Agents/ci.yml?style=flat-square)](https://github.com/beast-ofcourse/SWE-pro-Agents/actions)
 [![license](https://img.shields.io/github/license/beast-ofcourse/SWE-pro-Agents?style=flat-square)](LICENSE)
 
-**26 OpenCode agent profiles (22 subagents + 4 primary) + 6 skills — a full engineering team in your terminal.**
+**26 OpenCode agent profiles (22 subagents + 4 primary) + 9 skills — a full engineering team in your terminal.**
 
 </div>
 
@@ -53,7 +53,7 @@ SWE Pro Agents fixes that. Each agent is a **loaded expert**: a complete system 
 ## What You Get
 
 - **26 specialized agent profiles** — 22 subagents plus 4 primary agents (`swe-pro`, `architect`, `swe-reviewer`, `pr-reviewer`), each with a focused role, a curated prompt, and explicit tool permissions (read-only roles get deny-lists, implementers get scoped allow-lists).
-- **6 on-demand skills** — token compression, skill authoring, adaptive tutoring, README generation, SVG heroes, and an anti-AI-slop editor; loadable from any agent via OpenCode's skill tool.
+- **9 on-demand skills** — token compression, skill authoring, adaptive tutoring, README generation, SVG heroes, an anti-AI-slop editor, flowchart generation, and OpenCode skill creation; loadable from any agent via OpenCode's skill tool.
 - **A manifest-based installer** — records what it installs, prunes stale agents/skills on update, never guesses ownership.
 - **A safe uninstaller** — removes only files the pack owns; your own skills and merged config are untouched.
 - **A status/setup CLI** — checks install state, shows the config snippet, writes it with a backup, checks for updates (offline-safe).
@@ -107,7 +107,7 @@ npm install -g swe-pro-agents
 The postinstall hook copies:
 
 - all agent profiles to `~/.config/opencode/agents/swe-pro-agents/`,
-- all 6 skills to `~/.config/opencode/skills/`,
+- all 9 skills to `~/.config/opencode/skills/`,
 - this pack's `AGENTS.md` to `~/.config/opencode/agents/swe-pro-agents/AGENTS.md`.
 
 That last file matters: every agent in `agents/` is intentionally short because it assumes `AGENTS.md`'s Engineering Operating System (Core priorities, Engineering rules, Completion checklist, Reporting format) is already loaded into context. If you don't already have a global `~/.config/opencode/AGENTS.md`, copy the installed one into place:
@@ -236,7 +236,7 @@ Four of the 26 profiles are **primary** agents (selectable as your main agent): 
 
 ## Skills
 
-Beyond agents, the pack ships **6 skills** — a token-compression mode, a skill-authoring suite, an adaptive tutoring loop, a professional README generator, an SVG hero generator, and an anti-AI-slop writing editor. Each is a self-contained `SKILL.md` loaded on demand via OpenCode's `skill` tool:
+Beyond agents, the pack ships **9 skills** — a token-compression mode, a skill-authoring suite, an adaptive tutoring loop, a professional README generator, an SVG hero generator, an anti-AI-slop writing editor, two flowchart generators, and an OpenCode skill-creation suite. Each is a self-contained `SKILL.md` loaded on demand via OpenCode's `skill` tool:
 
 | Skill               | Purpose                                                    |
 | ------------------- | ---------------------------------------------------------- |
@@ -246,6 +246,9 @@ Beyond agents, the pack ships **6 skills** — a token-compression mode, a skill
 | `readme-generator`  | Professional READMEs — create, audit, upgrade from repo evidence |
 | `svg-hero-generator`| Repo-aware SVG hero banners — 3–4 concepts, then final SVG |
 | `humanizer-pro`     | Sharp human editor — edit drafts to read human, or detect AI-slop patterns with quoted evidence |
+| `flowchart-html`    | Professional flowcharts as a single self-contained HTML file on a large SVG canvas |
+| `high-quality-flowcharts` | Publication-grade PDF flowcharts/roadmaps — HTML+SVG source, PDF export, verification preview |
+| `opencode-skill-creator` | Create, test, evaluate, and optimize OpenCode skills — evals, benchmarks, description tuning |
 
 Skills auto-install to `~/.config/opencode/skills/` and are picked up automatically — no config needed.
 
@@ -255,7 +258,7 @@ Skills auto-install to `~/.config/opencode/skills/` and are picked up automatica
 
 Agents are the team; skills are utilities. Invoke an agent directly (`@swe-frontend`, `@swe-backend`, …) when you know exactly which specialist you want. Agents are lean by design: they assume this pack's `AGENTS.md` is already loaded into context (OpenCode does this automatically) and only state what's specific to their domain — everything else (the Engineering Operating System: Core priorities, Engineering rules, Completion checklist, Reporting format) lives in `AGENTS.md` once, not repeated per agent. Their behavior depends on `AGENTS.md` being installed — see [Install](#install) if `swe-pro-agents status` reports it as missing.
 
-The six skills are standalone utilities any agent can load on demand — `caveman` for compressed replies, `skill-creator` for authoring skills with rigor, `teach-me` for adaptive tutoring with persistent progress tracking, `readme-generator` and `svg-hero-generator` for repo-aware document artifacts, and `humanizer-pro` for prose that reads human. They are deliberately self-contained rather than `AGENTS.md`-dependent, because a skill can be invoked by any agent in any project — including ones that don't have this pack's `AGENTS.md` installed at all.
+The nine skills are standalone utilities any agent can load on demand — `caveman` for compressed replies, `skill-creator` for authoring skills with rigor, `teach-me` for adaptive tutoring with persistent progress tracking, `readme-generator` and `svg-hero-generator` for repo-aware document artifacts, `humanizer-pro` for prose that reads human, `flowchart-html` and `high-quality-flowcharts` for diagram generation, and `opencode-skill-creator` for building and tuning OpenCode skills. They are deliberately self-contained rather than `AGENTS.md`-dependent, because a skill can be invoked by any agent in any project — including ones that don't have this pack's `AGENTS.md` installed at all.
 
 Not sure which to reach for? A single, well-scoped implementation task with a clear owner → an agent. A communication-mode or document-artifact need → the matching skill. Don't run both for the same task — that's redundant effort, not extra rigor.
 
@@ -339,7 +342,7 @@ The installer prunes agents and skills from older versions automatically (via th
 npm uninstall -g swe-pro-agents
 ```
 
-The preuninstall hook removes everything this pack installed: the agent files, the pack's skills (`caveman`, `skill-creator`, `teach-me`, `readme-generator`, `svg-hero-generator`, `humanizer-pro`), and its manifest. Your own skills in `~/.config/opencode/skills/` are never touched.
+The preuninstall hook removes everything this pack installed: the agent files, the pack's skills (`caveman`, `skill-creator`, `teach-me`, `readme-generator`, `svg-hero-generator`, `humanizer-pro`, `flowchart-html`, `high-quality-flowcharts`, `opencode-skill-creator`), and its manifest. Your own skills in `~/.config/opencode/skills/` are never touched.
 
 Two things remain, by design — they're your content:
 
@@ -372,7 +375,7 @@ CI (`.github/workflows/ci.yml`) runs syntax checks (`node --check`), strict pack
 ```text
 SWE-pro-Agents/
 ├── agents/       26 agent profiles (4 primary, 22 subagents)
-├── skills/       6 skills: caveman, skill-creator, teach-me, readme-generator, svg-hero-generator, humanizer-pro
+├── skills/       9 skills: caveman, skill-creator, teach-me, readme-generator, svg-hero-generator, humanizer-pro, flowchart-html, high-quality-flowcharts, opencode-skill-creator
 ├── scripts/      install.js (postinstall), uninstall.js (preuninstall), validate.js (pack validator)
 ├── bin/          swe-pro-agents CLI
 ├── test/         installer lifecycle tests + validator self-tests
