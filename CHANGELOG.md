@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-08-08
+
 ### Added
 - `flowchart-html` skill — professional flowcharts, process diagrams, decision trees, and org charts as a single self-contained HTML file on a large SVG canvas
 - `high-quality-flowcharts` skill — publication-grade, print-ready PDF flowcharts/roadmaps via HTML/CSS shells with inline SVG geometry, PDF export, and a verification preview
@@ -15,6 +17,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - `AGENTS.md` restructured into the **Engineering Operating System (EOS)**: titled and sectioned by Core priorities, Prime directive, Cost-efficiency rules, Reasoning protocol, Engineering rules, Execution protocol, Verification standard, Delegation protocol, Architecture boundary, Planning contract, Hard gates, Completion checklist, Reporting format, Stop conditions, Project notes. Old section names (Constitution, Critical Thinking Framework, Definition of Done, Handoff protocol) removed. README, installer, CLI, CONTRIBUTING, and changelog references updated to point at the new structure.
+- `swe-frontend` restructured into phases with a **Playwright MCP browser verification loop** — builds, then navigates, screenshots, clicks, resizes, and breaks the running app in a real browser (failure paths included), and never claims a UI is done on a passing typecheck. New dependencies now require approval first (pinned, with lockfile/license/advisory checks)
+- `swe-pro` now routes **all UI work to `swe-frontend`** — never `swe-implementation` and never itself; mixed UI/non-UI tasks are split so the UI part is owned by `swe-frontend`
+- **Parallel dispatch hardened**: independence verified from the full plan, repo file set, and generated outputs (not task text alone); batches of 3–4 tasks per response; overlapping results discarded/reconciled and rerun sequentially
+- **CodeRabbit fixes** (17 findings on PR #14): dependency-approval flow, Playwright MCP network capability documented, flowchart skills hardened (system fonts only, keyboard-accessible pan/zoom, literal SVG colors for PDF export, no runtime package installs)
+- README condensed for scannability with a News section mirroring the changelog
 
 ## [2.2.0] - 2026-08-04
 

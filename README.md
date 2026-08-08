@@ -21,7 +21,7 @@
 
 Short highlights of what's changed recently. Full detail lives in [CHANGELOG.md](CHANGELOG.md).
 
-**Unreleased**
+**2.3.0**
 - Pack grew from 6 to **9 skills**: `flowchart-html`, `high-quality-flowcharts`, and `opencode-skill-creator`.
 - `AGENTS.md` restructured into the **Engineering Operating System (EOS)** — Core priorities, Engineering rules, Completion checklist, Reporting format, and more.
 
