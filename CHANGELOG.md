@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- 13 new design/image-generation skills — pack is now **22 skills** (was 9):
+  - `brandkit` — premium brand-kit image generation (guidelines boards, logo systems, identity decks)
+  - `design-taste-frontend` — anti-slop frontend skill for landing pages, portfolios, and redesigns
+  - `design-taste-frontend-v1` — original v1 taste-skill, preserved for exact backward compatibility
+  - `full-output-enforcement` — overrides LLM truncation; complete code, no placeholders
+  - `gpt-taste` — Awwwards-level UX/UI with GSAP motion (randomization, AIDA structure, ScrollTriggers)
+  - `high-end-visual-design` — high-end agency design rules (fonts, spacing, shadows, animations)
+  - `image-to-code` — image-first website design-to-code workflow
+  - `imagegen-frontend-mobile` — premium mobile app screen concepts and flows (images only)
+  - `imagegen-frontend-web` — premium website design references, one horizontal image per section
+  - `industrial-brutalist-ui` — raw mechanical interfaces (Swiss print × military terminal)
+  - `minimalist-ui` — clean editorial-style interfaces
+  - `redesign-existing-projects` — upgrade existing sites/apps to premium quality
+  - `stitch-design-taste` — semantic design system for Google Stitch (`DESIGN.md` files)
+  - `mcp-builder` — build high-quality MCP servers: tool design, TypeScript/Python SDKs, MCP Inspector testing, and evaluation creation (adapted from Anthropic's MIT-licensed mcp-builder skill)
+- Validator, package.json, README, and CONTRIBUTING updated to match (23 skills)
+
 ## [2.3.0] - 2026-08-08
 
 ### Added

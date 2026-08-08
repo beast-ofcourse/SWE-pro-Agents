@@ -11,7 +11,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/beast-ofcourse/SWE-pro-Agents/ci.yml?style=flat-square)](https://github.com/beast-ofcourse/SWE-pro-Agents/actions)
 [![license](https://img.shields.io/github/license/beast-ofcourse/SWE-pro-Agents?style=flat-square)](LICENSE)
 
-**26 OpenCode agent profiles (22 subagents + 4 primary) + 9 skills — a full engineering team in your terminal.**
+**26 OpenCode agent profiles (22 subagents + 4 primary) + 23 skills — a full engineering team in your terminal.**
 
 </div>
 
@@ -20,6 +20,9 @@
 ## News
 
 Short highlights of what's changed recently. Full detail lives in [CHANGELOG.md](CHANGELOG.md).
+
+**Unreleased**
+- Pack grew from 9 to **23 skills**: 13 new design/image-generation skills — `brandkit`, `design-taste-frontend` (+ `-v1`), `full-output-enforcement`, `gpt-taste`, `high-end-visual-design`, `image-to-code`, `imagegen-frontend-mobile`, `imagegen-frontend-web`, `industrial-brutalist-ui`, `minimalist-ui`, `redesign-existing-projects`, `stitch-design-taste` — plus `mcp-builder` for building MCP servers.
 
 **2.3.0**
 - Pack grew from 6 to **9 skills**: `flowchart-html`, `high-quality-flowcharts`, and `opencode-skill-creator`.
@@ -38,7 +41,7 @@ Short highlights of what's changed recently. Full detail lives in [CHANGELOG.md]
 Most AI coding assistants start blank — no domain expertise, no engineering discipline. SWE Pro Agents fixes that: each agent is a **loaded expert** with a curated system prompt, tool permissions, and behavioral rules baked in. You don't ask a model to "review this PR"; you invoke `swe-reviewer`, which already knows how to assess blast radius and enforce your standards.
 
 - **26 agent profiles** — 22 subagents + 4 primary (`swe-pro`, `architect`, `swe-reviewer`, `pr-reviewer`), each with a focused role and scoped tool permissions.
-- **9 on-demand skills** — token compression, skill authoring, tutoring, README/SVG/flowchart generation, an anti-AI-slop editor, and OpenCode skill creation.
+- **23 on-demand skills** — token compression, skill authoring, tutoring, README/SVG/flowchart generation, an anti-AI-slop editor, OpenCode skill creation, MCP server building, and a full design-taste suite (brand kits, image-to-code, mobile/web image direction, UI styles, redesigns).
 - **Manifest-based installer & safe uninstaller** — records what it installs, prunes stale files on update, removes only what it owns.
 - **Status/setup CLI** — checks install state, writes the config with a backup, checks for updates (offline-safe).
 - **Zero runtime dependencies** — Node ≥ 18, plain stdlib.
@@ -73,7 +76,7 @@ Windows is supported end to end.
 npm install -g swe-pro-agents
 ```
 
-The postinstall hook copies agents to `~/.config/opencode/agents/swe-pro-agents/`, all 9 skills to `~/.config/opencode/skills/`, and this pack's `AGENTS.md` to the agents dir. That last file matters: every agent is intentionally short because it assumes the Engineering Operating System is loaded. If you have no global `~/.config/opencode/AGENTS.md`, copy the installed one into place:
+The postinstall hook copies agents to `~/.config/opencode/agents/swe-pro-agents/`, all 23 skills to `~/.config/opencode/skills/`, and this pack's `AGENTS.md` to the agents dir. That last file matters: every agent is intentionally short because it assumes the Engineering Operating System is loaded. If you have no global `~/.config/opencode/AGENTS.md`, copy the installed one into place:
 
 ```bash
 cp ~/.config/opencode/agents/swe-pro-agents/AGENTS.md ~/.config/opencode/AGENTS.md
@@ -179,7 +182,7 @@ Four of the 26 profiles are **primary** agents (selectable as your main agent): 
 
 ## Skills
 
-The pack ships **9 skills**, each a self-contained `SKILL.md` loaded on demand via OpenCode's `skill` tool:
+The pack ships **23 skills**, each a self-contained `SKILL.md` loaded on demand via OpenCode's `skill` tool:
 
 | Skill | Purpose |
 | --- | --- |
@@ -192,6 +195,20 @@ The pack ships **9 skills**, each a self-contained `SKILL.md` loaded on demand v
 | `flowchart-html` | Professional flowcharts as a single self-contained HTML file on a large SVG canvas |
 | `high-quality-flowcharts` | Publication-grade PDF flowcharts/roadmaps — HTML+SVG source, PDF export, verification preview |
 | `opencode-skill-creator` | Create, test, evaluate, and optimize OpenCode skills — evals, benchmarks, description tuning |
+| `brandkit` | Premium brand-kit image generation — guidelines boards, logo systems, identity decks |
+| `design-taste-frontend` | Anti-slop frontend skill — landing pages, portfolios, redesigns that don't look templated |
+| `design-taste-frontend-v1` | Original v1 taste-skill, preserved for exact backward compatibility |
+| `full-output-enforcement` | Overrides LLM truncation — complete code, no placeholders, clean token-limit splits |
+| `gpt-taste` | Awwwards-level UX/UI + GSAP motion — randomization, AIDA structure, ScrollTriggers |
+| `high-end-visual-design` | High-end agency design rules — fonts, spacing, shadows, animations that feel expensive |
+| `image-to-code` | Image-first website design-to-code — generate, analyze, then implement to match |
+| `imagegen-frontend-mobile` | Premium mobile app screen concepts and flows (images only, no code) |
+| `imagegen-frontend-web` | Premium website design references — one horizontal image per section |
+| `industrial-brutalist-ui` | Raw mechanical interfaces — Swiss print × military terminal aesthetics |
+| `mcp-builder` | Build high-quality MCP servers — tool design, TypeScript/Python SDKs, testing, evals |
+| `minimalist-ui` | Clean editorial-style interfaces — warm monochrome, typographic contrast |
+| `redesign-existing-projects` | Upgrade existing sites/apps to premium quality without breaking them |
+| `stitch-design-taste` | Semantic design system for Google Stitch — agent-friendly `DESIGN.md` files |
 
 Skills auto-install to `~/.config/opencode/skills/` and are picked up automatically — no config needed.
 
@@ -245,7 +262,7 @@ The tests simulate install/update/uninstall against a **throwaway `HOME`/`USERPR
 ```text
 SWE-pro-Agents/
 ├── agents/       26 agent profiles (4 primary, 22 subagents)
-├── skills/       9 skills
+├── skills/       23 skills
 ├── scripts/      install.js (postinstall), uninstall.js (preuninstall), validate.js (pack validator)
 ├── bin/          swe-pro-agents CLI
 ├── test/         installer lifecycle tests + validator self-tests
