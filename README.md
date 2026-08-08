@@ -21,7 +21,7 @@
 
 Short highlights of what's changed recently. Full detail lives in [CHANGELOG.md](CHANGELOG.md).
 
-**Unreleased**
+**2.4.0**
 - Pack grew from 9 to **23 skills**: 13 new design/image-generation skills — `brandkit`, `design-taste-frontend` (+ `-v1`), `full-output-enforcement`, `gpt-taste`, `high-end-visual-design`, `image-to-code`, `imagegen-frontend-mobile`, `imagegen-frontend-web`, `industrial-brutalist-ui`, `minimalist-ui`, `redesign-existing-projects`, `stitch-design-taste` — plus `mcp-builder` for building MCP servers.
 
 **2.3.0**

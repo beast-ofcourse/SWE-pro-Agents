@@ -5,10 +5,10 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [2.4.0] - 2026-08-08
 
 ### Added
-- 13 new design/image-generation skills — pack is now **22 skills** (was 9):
+- 14 new skills — pack is now **23 skills** (was 9):
   - `brandkit` — premium brand-kit image generation (guidelines boards, logo systems, identity decks)
   - `design-taste-frontend` — anti-slop frontend skill for landing pages, portfolios, and redesigns
   - `design-taste-frontend-v1` — original v1 taste-skill, preserved for exact backward compatibility
@@ -24,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `stitch-design-taste` — semantic design system for Google Stitch (`DESIGN.md` files)
   - `mcp-builder` — build high-quality MCP servers: tool design, TypeScript/Python SDKs, MCP Inspector testing, and evaluation creation (adapted from Anthropic's MIT-licensed mcp-builder skill)
 - Validator, package.json, README, and CONTRIBUTING updated to match (23 skills)
+
+### Changed
+- All 14 CodeRabbit review findings on PR #15 fixed: reduced-motion/accessibility hardening, pinned shadcn CLI version, deterministic (not "true random") layout selection, dependency-check-before-assume guidance, complexity-dependent component counts, WCAG AA accent contrast, mock-vs-source-backed content boundary
 
 ## [2.3.0] - 2026-08-08
 
