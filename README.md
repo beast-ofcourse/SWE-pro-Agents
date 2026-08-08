@@ -1,8 +1,11 @@
-# SWE Pro Agents
-
 <!-- markdownlint-disable MD033 -->
 
 <div align="center">
+
+<h1>
+  <img src="assets/favicon.svg" alt="SWE Pro Agents" width="28" height="28" style="vertical-align: middle; margin-right: 8px" />
+  SWE Pro Agents
+</h1>
 
 <img src="assets/banner.png" alt="SWE Pro Agents — a full engineering team in your terminal" width="100%" />
 
