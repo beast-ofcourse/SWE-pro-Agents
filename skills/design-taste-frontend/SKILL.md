@@ -94,11 +94,11 @@ Once you have the design read (Section 0) and dials (Section 1), pick the right 
 | Shopify app surfaces | `polaris.js` web components / Polaris React | Required for Shopify admin UI |
 | Atlassian / Jira-style product | `@atlaskit/*` + `@atlaskit/tokens` | Official Atlassian DS |
 | GitHub-style devtool / community page | `@primer/css` or `@primer/react-brand` | Official Primer; Brand variant for marketing |
-| Public-sector UK service | `govuk-frontend` | Legally / regulatorily expected |
-| US public-sector / trust-first | `uswds` | Same |
+| Public-sector UK service | `govuk-frontend` | UK Service Manual guidance; legal accessibility obligations apply per applicable regulations/WCAG — confirm applicability for your project |
+| US public-sector / trust-first | `uswds` | Guidance for qualifying US federal public-facing services under relevant federal/OMB requirements — not universally required; confirm applicability for your project |
 | Fast local-business / agency MVP | Bootstrap 5.3 | Boring, fast, works |
 | Modern accessible React foundation | `@radix-ui/themes` | Primitives + polished theme |
-| Modern SaaS where you own the components | shadcn/ui (`npx shadcn@latest add ...`) | You own the code, easy to customise; never ship default state |
+| Modern SaaS where you own the components | shadcn/ui (`npx shadcn@4.16.2 add ...`) | You own the code, easy to customise; never ship default state |
 | Tailwind-based modern SaaS / AI marketing | Tailwind v4 utilities + `dark:` variant | Default for indie + small team builds |
 
 **Honesty rule:** if the brief reads as one of the systems above, install and use the **official** package. Do not recreate its CSS by hand. Do not import a system's tokens but then override 90% of them.
@@ -1004,9 +1004,9 @@ npm install @carbon/react @carbon/styles
 # Radix Themes
 npm install @radix-ui/themes
 
-# shadcn/ui (open code, owned components)
-npx shadcn@latest init
-npx shadcn@latest add button card badge separator input
+# shadcn/ui (open code, owned components) — pin the CLI version for reproducible output
+npx shadcn@4.16.2 init
+npx shadcn@4.16.2 add button card badge separator input
 
 # Primer CSS (GitHub product/devtool UI)
 npm install --save @primer/css

@@ -828,7 +828,7 @@ Choose 1:
 8. desaturated premium palette with one bold hit
 
 ### Signature Component Set
-Choose exactly 4:
+Choose up to 4:
 - large hero metric card
 - compact stat strip
 - modular collection grid
@@ -849,7 +849,7 @@ Choose exactly 4:
 - achievement tile row
 
 ### Decorative Asset Set
-Choose exactly 2:
+Choose as needed:
 - minimal line icon cluster
 - abstract orbit lines
 - dotted arc accents
@@ -862,7 +862,7 @@ Choose exactly 2:
 - mini geometric markers
 
 ### Motion-Implied Language
-Choose exactly 2:
+Choose as needed:
 - springy card lift energy
 - sheet rise energy
 - tab transition calmness

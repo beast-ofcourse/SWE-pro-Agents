@@ -14,8 +14,8 @@ compatibility: opencode
 
 ## 2. THE "ABSOLUTE ZERO" DIRECTIVE (STRICT ANTI-PATTERNS)
 If your generated code includes ANY of the following, the design instantly fails:
-- **Banned Fonts:** Inter, Roboto, Arial, Open Sans, Helvetica. (Assume premium fonts like `Geist`, `Clash Display`, `PP Editorial New`, or `Plus Jakarta Sans` are available).
-- **Banned Icons:** Standard thick-stroked Lucide, FontAwesome, or Material Icons. Use only ultra-light, precise lines (e.g., Phosphor Light, Remix Line).
+- **Banned Fonts:** Inter, Roboto, Arial, Open Sans, Helvetica. Before recommending or using premium fonts (e.g., `Geist`, `Clash Display`, `PP Editorial New`, `Plus Jakarta Sans`), check which fonts are actually installed or licensed in the target project and fall back to available alternatives instead of assuming those specific assets exist.
+- **Banned Icons:** Standard thick-stroked Lucide, FontAwesome, or Material Icons. Use only ultra-light, precise lines (e.g., Phosphor Light, Remix Line) — but first check the project for an installed icon library and use what is available; fall back to inline SVG if no suitable icon library is installed.
 - **Banned Borders & Shadows:** Generic 1px solid gray borders. Harsh, dark drop shadows (`shadow-md`, `rgba(0,0,0,0.3)`). 
 - **Banned Layouts:** Edge-to-edge sticky navbars glued to the top. Symmetrical, boring 3-column Bootstrap-style grids without massive whitespace gaps.
 - **Banned Motion:** Standard `linear` or `ease-in-out` transitions. Instant state changes without interpolation.

@@ -202,11 +202,12 @@ When generating modern SaaS dashboards or feature sections, you MUST utilize the
 * **Labels:** Titles and descriptions must be placed **outside and below** the cards to maintain a clean, gallery-style presentation.
 * **Pixel-Perfection:** Use generous `p-8` or `p-10` padding inside cards.
 
-### B. The Animation Engine Specs (Perpetual Motion)
-All cards must contain **"Perpetual Micro-Interactions."** Use the following Framer Motion principles:
+### B. The Animation Engine Specs (Opt-In Motion)
+Motion is **opt-in**, never a blanket requirement. Only elements explicitly marked for motion (e.g., a `data-motion` attribute or a dedicated `MotionCard` component) get animated; every other card renders a static, fully functional state. Use the following Framer Motion principles:
 * **Spring Physics:** No linear easing. Use `type: "spring", stiffness: 100, damping: 20` for a premium, weighty feel.
 * **Layout Transitions:** Heavily utilize the `layout` and `layoutId` props to ensure smooth re-ordering, resizing, and shared element state transitions.
-* **Infinite Loops:** Every card must have an "Active State" that loops infinitely (Pulse, Typewriter, Float, or Carousel) to ensure the dashboard feels "alive".
+* **Infinite Loops (opt-in only):** Only elements explicitly marked for motion may have an "Active State" that loops (Pulse, Typewriter, Float, or Carousel). Every animated element MUST have a static fallback that renders the same content without animation.
+* **Reduced Motion:** Respect `prefers-reduced-motion` — when the user prefers reduced motion, disable looping animations and render the static fallback (e.g., via `useReducedMotion` from Motion or a `@media (prefers-reduced-motion: reduce)` guard).
 * **Performance:** Wrap dynamic lists in `<AnimatePresence>` and optimize for 60fps. **PERFORMANCE CRITICAL:** Any perpetual motion or infinite loop MUST be memoized (React.memo) and completely isolated in its own microscopic Client Component. Never trigger re-renders in the parent layout.
 
 ### C. The 5-Card Archetypes (Micro-Animation Specs)

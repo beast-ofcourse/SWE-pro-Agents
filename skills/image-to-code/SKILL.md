@@ -463,7 +463,7 @@ Choose 1:
 6. asymmetric premium marketing flow
 
 ### Signature Component Set
-Choose exactly 4 unique components:
+Choose up to 4 unique components:
 - diagonal staggered square masonry
 - 3D cascading card deck
 - hover-accordion slice layout
@@ -477,7 +477,7 @@ Choose exactly 4 unique components:
 - layered image crop frames
 
 ### Motion-Implied Language
-Choose exactly 2:
+Choose as needed:
 - scrubbing text reveal energy
 - pinned narrative section energy
 - staggered float-up energy

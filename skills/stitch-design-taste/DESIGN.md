@@ -30,10 +30,12 @@ A restrained, gallery-airy interface with confident asymmetric layouts and fluid
 - **Diffused Shadow** (rgba(0,0,0,0.05)) — Card elevation. Wide-spreading, 40px blur, -15px offset. Never harsh
 
 ### Accent Selection (Pick ONE per project)
-- **Emerald Signal** (#10B981) — For growth, success, positive data dashboards
-- **Electric Blue** (#3B82F6) — For productivity, SaaS, developer tools
-- **Deep Rose** (#E11D48) — For creative, editorial, fashion-adjacent projects
-- **Amber Warmth** (#F59E0B) — For community, social, warm-toned products
+- **Emerald Signal** (#10B981) — For growth, success, positive data dashboards. Button label: dark ink (Charcoal Ink #18181B)
+- **Electric Blue** (#3B82F6) — For productivity, SaaS, developer tools. Button label: dark ink (Charcoal Ink #18181B)
+- **Deep Rose** (#E11D48) — For creative, editorial, fashion-adjacent projects. Button label: white
+- **Amber Warmth** (#F59E0B) — For community, social, warm-toned products. Button label: dark ink (Charcoal Ink #18181B)
+
+Verify each accent's button text and focus-ring combination meets WCAG AA contrast (≥ 4.5:1) for normal-sized text.
 
 ### Banned Colors
 - Purple/Violet neon gradients — the "AI Purple" aesthetic
@@ -52,7 +54,7 @@ A restrained, gallery-airy interface with confident asymmetric layouts and fluid
 - Generic serif fonts (`Times New Roman`, `Georgia`, `Garamond`, `Palatino`) — BANNED. If serif is needed for editorial/creative, use only distinctive modern serifs like `Fraunces`, `Gambarino`, `Editorial New`, or `Instrument Serif`. Never use default browser serif stacks. Serif is always BANNED in dashboards or software UIs regardless
 
 ## 4. Component Stylings
-* **Buttons:** Flat surface, no outer glow. Primary: accent fill with white text. Secondary: ghost/outline. Active state: `-1px translateY` or `scale(0.98)` for tactile push. Hover: subtle background shift, never glow
+* **Buttons:** Flat surface, no outer glow. Primary: accent fill with the accent's assigned label color (see Accent Selection — dark ink for Emerald, Electric Blue, and Amber; white for Deep Rose). Secondary: ghost/outline. Active state: `-1px translateY` or `scale(0.98)` for tactile push. Hover: subtle background shift, never glow
 * **Cards/Containers:** Generously rounded corners (`2.5rem`). Pure white fill. Whisper border (`1px`, semi-transparent). Diffused shadow (`0 20px 40px -15px rgba(0,0,0,0.05)`). Internal padding `2rem–2.5rem`. Used ONLY when elevation communicates hierarchy — high-density layouts replace cards with `border-top` dividers or negative space
 * **Inputs/Forms:** Label positioned above input. Helper text optional. Error text below in Deep Rose. Focus ring in accent color, `2px` offset. No floating labels. Standard `0.5rem` gap between label-input-error stack
 * **Navigation:** Sleek, sticky. Icons scale on hover (Dock Magnification optional). No hamburger on desktop. Clean horizontal with generous spacing
@@ -74,7 +76,7 @@ The Hero is the first impression — it must be striking, creative, and never ge
 - **Feature Sections:** The "3 equal cards in a row" pattern is BANNED. Use 2-column Zig-Zag, asymmetric Bento grids (2fr 1fr 1fr), or horizontal scroll galleries
 - **Containment:** All content within `max-width: 1400px`, centered. Generous horizontal padding (`1rem` mobile, `2rem` tablet, `4rem` desktop)
 - **Full-Height:** Use `min-height: 100dvh` — never `height: 100vh` (iOS Safari address bar jump)
-- **Bento Architecture:** For feature grids, use Row 1: 3 columns | Row 2: 2 columns (70/30 split). Each tile contains a perpetual micro-animation
+- **Bento Architecture:** For feature grids, use Row 1: 3 columns | Row 2: 2 columns (70/30 split). Tiles may contain micro-animations, applied conditionally — only where the motion communicates state (e.g., live data), never a perpetual animation on every tile
 
 ## 7. Responsive Rules
 Every screen must work flawlessly across all viewports. **Responsive is not optional — it is a hard requirement. Every single element must be tested at 375px, 768px, and 1440px.**
@@ -92,11 +94,12 @@ Every screen must work flawlessly across all viewports. **Responsive is not opti
 > **Note:** Stitch generates static screens — it does not animate. This section documents the **intended motion behavior** so that the coding agent (Antigravity, Cursor, etc.) knows exactly how to implement animations when building the exported design into a live product.
 
 - **Physics Engine:** Spring-based exclusively. `stiffness: 100, damping: 20`. No linear easing anywhere. Premium, weighty feel on all interactive elements
-- **Perpetual Micro-Loops:** Every active dashboard component has an infinite-loop state — Pulse on status dots, Typewriter on search bars, Float on feature icons, Shimmer on loading states
+- **Conditional Micro-Loops:** Active dashboard components may have an infinite-loop state — Pulse on status dots, Typewriter on search bars, Float on feature icons, Shimmer on loading states — applied only where the loop communicates state. Never loop purely decorative elements
+- **Reduced Motion:** Honor `prefers-reduced-motion` — disable all loops and entrance choreography, replacing them with static, instant states. Motion is an enhancement, never a requirement
 - **Staggered Orchestration:** Lists and grids mount with cascaded delays (`animation-delay: calc(var(--index) * 100ms)`). Waterfall reveals, never instant mount
 - **Layout Transitions:** Smooth re-ordering via shared element IDs. Items swap positions with physics, simulating real-time intelligence
 - **Hardware Rules:** Animate ONLY `transform` and `opacity`. Never `top`, `left`, `width`, `height`. Grain/noise filters on fixed, pointer-events-none pseudo-elements only
-- **Performance:** CPU-heavy perpetual animations isolated in microscopic leaf components. Never trigger parent re-renders. Target 60fps minimum
+- **Performance:** CPU-heavy animations isolated in microscopic leaf components. Never trigger parent re-renders. Target 60fps minimum
 
 ## 9. Anti-Patterns (Banned)
 - No emojis — anywhere in UI, code, or alt text

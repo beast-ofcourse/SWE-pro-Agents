@@ -23,7 +23,7 @@ Generate a `DESIGN.md` file that encodes:
 3. **Typographic architecture** — font stacks, scale hierarchy, and anti-patterns
 4. **Component behaviors** — buttons, cards, inputs with interaction states
 5. **Layout principles** — grid systems, spacing philosophy, responsive strategy
-6. **Motion philosophy** — animation engine specs, spring physics, perpetual micro-interactions
+6. **Motion philosophy** — animation engine specs, spring physics, conditional micro-interactions
 7. **Anti-patterns** — explicit list of banned AI design clichés
 
 ## Analysis & Synthesis Instructions
@@ -91,7 +91,7 @@ Every design must work across all viewports:
 
 ### 8. Encode Motion Philosophy
 - **Spring Physics default:** `stiffness: 100, damping: 20` — premium, weighty feel. No linear easing
-- **Perpetual Micro-Interactions:** Every active component should have an infinite loop state (Pulse, Typewriter, Float, Shimmer)
+- **Conditional Micro-Interactions:** Active components may have an infinite loop state (Pulse, Typewriter, Float, Shimmer) — apply loops only where they communicate state, never on every element. Honor `prefers-reduced-motion`: disable all loops and replace them with static states
 - **Staggered Orchestration:** Never mount lists instantly — use cascade delays for waterfall reveals
 - **Performance:** Animate exclusively via `transform` and `opacity`. Never animate `top`, `left`, `width`, `height`. Grain/noise filters on fixed pseudo-elements only
 
@@ -154,7 +154,8 @@ No flexbox percentage math. Generous internal padding.)
 
 ## 6. Motion & Interaction
 (Spring physics for all interactive elements. Staggered cascade reveals.
-Perpetual micro-loops on active dashboard components. Hardware-accelerated
+Conditional micro-loops on active dashboard components — only where they
+communicate state, disabled under prefers-reduced-motion. Hardware-accelerated
 transforms only. Isolated Client Components for CPU-heavy animations.)
 
 ## 7. Anti-Patterns (Banned)

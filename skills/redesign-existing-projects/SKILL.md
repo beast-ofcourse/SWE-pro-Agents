@@ -78,6 +78,7 @@ Check for these problems and fix them:
 
 ### Content
 
+- **Mock vs. source-backed boundary.** The realistic-value guidance below applies ONLY to clearly labeled mock data (placeholders, demo content, seed data). Preserve existing names, metrics, dates, and other source-backed values exactly as they are — never "realize" or randomize real content.
 - **Generic names like "John Doe" or "Jane Smith".** Use diverse, realistic-sounding names.
 - **Fake round numbers like `99.99%`, `50%`, `$100.00`.** Use organic, messy data: `47.2%`, `$99.00`, `+1 (312) 847-1928`.
 - **Placeholder company names like "Acme Corp", "Nexus", "SmartFlow".** Invent contextual, believable brand names.
@@ -85,7 +86,7 @@ Check for these problems and fix them:
 - **Exclamation marks in success messages.** Remove them. Be confident, not loud.
 - **"Oops!" error messages.** Be direct: "Connection failed. Please try again."
 - **Passive voice.** Use active voice: "We couldn't save your changes" instead of "Mistakes were made."
-- **All blog post dates identical.** Randomize dates to appear real.
+- **All blog post dates identical (in mock data).** Randomize dates to appear real — never touch real publication dates.
 - **Same avatar image for multiple users.** Use unique assets for every distinct person.
 - **Lorem Ipsum.** Never use placeholder latin text. Write real draft copy.
 - **Title Case On Every Header.** Use sentence case instead.

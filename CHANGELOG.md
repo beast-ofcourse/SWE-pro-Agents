@@ -22,7 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `minimalist-ui` — clean editorial-style interfaces
   - `redesign-existing-projects` — upgrade existing sites/apps to premium quality
   - `stitch-design-taste` — semantic design system for Google Stitch (`DESIGN.md` files)
-- Validator, package.json, README, and CONTRIBUTING updated to match (22 skills)
+  - `mcp-builder` — build high-quality MCP servers: tool design, TypeScript/Python SDKs, MCP Inspector testing, and evaluation creation (adapted from Anthropic's MIT-licensed mcp-builder skill)
+- Validator, package.json, README, and CONTRIBUTING updated to match (23 skills)
 
 ## [2.3.0] - 2026-08-08
 
