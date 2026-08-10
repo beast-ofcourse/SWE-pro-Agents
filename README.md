@@ -24,14 +24,21 @@
 
 Short highlights of what's changed recently. Full detail lives in [CHANGELOG.md](CHANGELOG.md).
 
+**2.5.0**
+
+- `web-researcher` replaced by **`deep-researcher`** — multi-step research planning, question decomposition, cross-checking load-bearing claims against independent sources, surfacing contradictions, full URL citations.
+
 **2.4.0**
+
 - Pack grew from 9 to **23 skills**: 13 new design/image-generation skills — `brandkit`, `design-taste-frontend` (+ `-v1`), `full-output-enforcement`, `gpt-taste`, `high-end-visual-design`, `image-to-code`, `imagegen-frontend-mobile`, `imagegen-frontend-web`, `industrial-brutalist-ui`, `minimalist-ui`, `redesign-existing-projects`, `stitch-design-taste` — plus `mcp-builder` for building MCP servers.
 
 **2.3.0**
+
 - Pack grew from 6 to **9 skills**: `flowchart-html`, `high-quality-flowcharts`, and `opencode-skill-creator`.
 - `AGENTS.md` restructured into the **Engineering Operating System (EOS)** — Core priorities, Engineering rules, Completion checklist, Reporting format, and more.
 
 **2.2.0**
+
 - New **`pr-reviewer`** primary agent — CodeRabbit-style end-to-end PR review (Critical/Major/Minor/Optional findings with fixes, written to `PR-review.md`). Pack is now 26 profiles.
 - New skills: `humanizer-pro` (anti-AI-slop editor), `teach-me` (adaptive tutor), `skill-creator`.
 - **Verification harness** — `npm run validate` statically checks every agent and skill and fails the build on any violation; wired into CI with 18 self-tests.
@@ -167,7 +174,7 @@ The team is organized into three squads. Each agent has a focused role, explicit
 
 | Agent | Role |
 | --- | --- |
-| `web-researcher` | Real-time web research for current information |
+| `deep-researcher` | Plans and executes multi-step research across external web sources — decomposes broad questions, cross-checks load-bearing claims, surfaces contradictions, cites URLs |
 
 <a name="architecture-agents"></a>
 

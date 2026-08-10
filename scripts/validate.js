@@ -23,14 +23,14 @@
  * Two rules are implemented more narrowly than the plan's literal wording,
  * because the pack itself does not follow the literal form:
  *   - A7: the plan's "else the # <name> heading" fallback is not enforceable —
- *     several agents (swe-reviewer, web-researcher) have no identity H1, and 19
+ *     several agents (swe-reviewer, deep-researcher) have no identity H1, and 19
  *     have no H1 at all. We enforce the frontmatter `name` ↔ filename check only.
  *   - A6: task allow/deny lists legitimately reference OpenCode built-ins
  *     (general, explore) and wildcards (swe-*, arch-*), so those are allowed in
  *     addition to known pack subagents.
  */
 
-'use strict';
+
 
 const fs = require('fs');
 const path = require('path');
