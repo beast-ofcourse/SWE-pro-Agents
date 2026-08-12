@@ -19,6 +19,22 @@
 </div>
 
 ---
+# Recommended tools and stuff From my own configs.
+
+**MCP tools**
+- Context7
+- Sequential-thinking
+- codebase memory mcp
+- playwright
+- mempalace -- it gives your AI agent a memory which dynamically auto updates.
+
+**SKILLS**
+- taste skills -- my pack alreay includes this skill
+- Cloudflare skills -- Highly recommended for deployment on cloudflare 
+- mattpocock skills -- "optional" my pack already Covers all the engineering and SWE skill/principles/rule-sets
+
+**Tools**
+- Graphifiy  --to index your large codebase as a knowledge graph   
 
 ## News
 
