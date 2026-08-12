@@ -106,10 +106,10 @@ Windows is supported end to end.
 npm install -g swe-pro-agents
 ```
 
-The postinstall hook copies agents to `~/.config/opencode/agents/swe-pro-agents/`, all 24 skills to `~/.config/opencode/skills/`, and this pack's `AGENTS.md` to the agents dir. That last file matters: every agent is intentionally short because it assumes the Engineering Operating System is loaded. If you have no global `~/.config/opencode/AGENTS.md`, copy the installed one into place:
+The postinstall hook copies agents to `~/.config/opencode/agents/swe-pro-agents/`, all 24 skills to `~/.config/opencode/skills/`, and this pack's `AGENTS.md` to the pack's own config dir (`~/.config/swe-pro-agents/` — deliberately *not* the agents dir, where OpenCode would load it as a phantom agent). That last file matters: every agent is intentionally short because it assumes the Engineering Operating System is loaded. If you have no global `~/.config/opencode/AGENTS.md`, copy the installed one into place:
 
 ```bash
-cp ~/.config/opencode/agents/swe-pro-agents/AGENTS.md ~/.config/opencode/AGENTS.md
+cp ~/.config/swe-pro-agents/AGENTS.md ~/.config/opencode/AGENTS.md
 ```
 
 If you already have one, merge in what you want — the installer never overwrites a global `AGENTS.md` automatically. `swe-pro-agents status` tells you which state you're in.
@@ -277,7 +277,7 @@ The installer prunes agents and skills from older versions automatically (via th
 npm uninstall -g swe-pro-agents
 ```
 
-The preuninstall hook removes everything this pack installed: the agent files, the pack's skills, and its manifest. Your own skills in `~/.config/opencode/skills/` are never touched. Two things remain by design — they're your content: the `opencode.json` entry referencing the agents path, and any AGENTS.md sections you merged into your global config.
+The preuninstall hook removes everything this pack installed: the agent files, the pack's skills, its `AGENTS.md` copy, and its manifest. Your own skills in `~/.config/opencode/skills/` are never touched. Two things remain by design — they're your content: the `opencode.json` entry referencing the agents path, and any AGENTS.md sections you merged into your global config.
 
 ## Development
 

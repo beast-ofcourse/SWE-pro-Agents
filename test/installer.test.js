@@ -44,7 +44,9 @@ const SKILL_NAMES = fs
 
 const agentsDir = (home) => path.join(home, '.config', 'opencode', 'agents', PACKAGE_NAME);
 const skillsDir = (home) => path.join(home, '.config', 'opencode', 'skills');
-const manifestPath = (home) => path.join(home, '.config', 'swe-pro-agents', 'manifest.json');
+const packConfigDir = (home) => path.join(home, '.config', 'swe-pro-agents');
+const manifestPath = (home) => path.join(packConfigDir(home), 'manifest.json');
+const packAgentsMd = (home) => path.join(packConfigDir(home), 'AGENTS.md');
 
 /** Temp HOME directories created during this run, removed at process exit. */
 const tempHomes = [];
@@ -131,8 +133,11 @@ test('fresh install copies agents, skills, AGENTS.md and writes the manifest', (
   const home = tempHome();
   run(INSTALL, home);
 
+  // The agents dir must contain ONLY agent profiles — AGENTS.md is shared
+  // foundation, and OpenCode would load it as a phantom agent if it lived here.
   const agents = listDirFiles(agentsDir(home));
-  assert.deepStrictEqual(agents, [...AGENT_FILES, 'AGENTS.md'].sort(), 'agents dir content');
+  assert.deepStrictEqual(agents, AGENT_FILES, 'agents dir content (no AGENTS.md)');
+  assert.ok(fs.existsSync(packAgentsMd(home)), 'AGENTS.md copy installed to pack config dir');
 
   for (const name of SKILL_NAMES) {
     assert.ok(fs.existsSync(path.join(skillsDir(home), name, 'SKILL.md')), `skill ${name} installed`);
@@ -145,6 +150,20 @@ test('fresh install copies agents, skills, AGENTS.md and writes the manifest', (
 });
 
 // ---------------------------------------------------------------------------
+// 1b. Legacy AGENTS.md inside the agents dir is cleaned up (phantom agent fix)
+// ---------------------------------------------------------------------------
+test('install removes a legacy AGENTS.md from the agents dir (phantom agent fix)', () => {
+  const home = tempHome();
+  fs.mkdirSync(agentsDir(home), { recursive: true });
+  fs.writeFileSync(path.join(agentsDir(home), 'AGENTS.md'), '# legacy\n');
+
+  run(INSTALL, home);
+
+  assert.ok(!fs.existsSync(path.join(agentsDir(home), 'AGENTS.md')), 'legacy AGENTS.md removed from agents dir');
+  assert.ok(fs.existsSync(packAgentsMd(home)), 'AGENTS.md copy present in pack config dir');
+});
+
+// ---------------------------------------------------------------------------
 // 2. Idempotent reinstall
 // ---------------------------------------------------------------------------
 test('reinstall is idempotent — no duplicates, same layout', () => {
@@ -152,7 +171,7 @@ test('reinstall is idempotent — no duplicates, same layout', () => {
   run(INSTALL, home);
   run(INSTALL, home);
 
-  assert.strictEqual(listDirFiles(agentsDir(home)).length, AGENT_FILES.length + 1);
+  assert.strictEqual(listDirFiles(agentsDir(home)).length, AGENT_FILES.length);
   for (const name of SKILL_NAMES) {
     const installed = listTreeFiles(path.join(skillsDir(home), name));
     const expected = listTreeFiles(path.join(REPO, 'skills', name));

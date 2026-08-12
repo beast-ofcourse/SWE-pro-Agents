@@ -20,7 +20,7 @@ const AGENTS_DIR = path.join(__dirname, '..', 'agents');
 const SKILLS_DIR = path.join(__dirname, '..', 'skills');
 const TARGET_AGENTS_DIR = path.join(os.homedir(), '.config', 'opencode', 'agents', PACKAGE_NAME);
 const TARGET_SKILLS_DIR = path.join(os.homedir(), '.config', 'opencode', 'skills');
-const TARGET_AGENTS_MD = path.join(TARGET_AGENTS_DIR, 'AGENTS.md');
+const PACK_AGENTS_MD = path.join(os.homedir(), '.config', 'swe-pro-agents', 'AGENTS.md');
 const GLOBAL_AGENTS_MD = path.join(os.homedir(), '.config', 'opencode', 'AGENTS.md');
 const OPENCODE_CONFIG = path.join(os.homedir(), '.config', 'opencode', 'opencode.json');
 
@@ -46,8 +46,9 @@ function getSkillCount() {
 
 function getInstalledAgentCount() {
   if (!fs.existsSync(TARGET_AGENTS_DIR)) return 0;
-  // AGENTS.md now lives alongside the agent files (see installAgentsMd in
-  // install.js) — it's shared foundation, not an agent, so exclude it.
+  // AGENTS.md lives in the pack's config dir, not here (see installAgentsMd in
+  // install.js) — but a legacy copy from <= 2.5.x may linger; it's shared
+  // foundation, not an agent, so exclude it.
   return fs.readdirSync(TARGET_AGENTS_DIR).filter(f => f.endsWith('.md') && f !== 'AGENTS.md').length;
 }
 
@@ -131,21 +132,21 @@ function cmdSetup() {
   console.log(`  Skills are auto-discovered from ~/.config/opencode/skills/ — no config needed.\n`);
 
   const globalExists = fs.existsSync(GLOBAL_AGENTS_MD);
-  const packAgentsMdExists = fs.existsSync(TARGET_AGENTS_MD);
+  const packAgentsMdExists = fs.existsSync(PACK_AGENTS_MD);
   console.log(`  This pack's agents/ files are intentionally short — they rely on`);
   console.log(`  a shared AGENTS.md (Engineering Operating System: Core priorities,`);
   console.log(`  Engineering rules, Completion checklist, Reporting format) being`);
   console.log(`  loaded into context for every agent.\n`);
   if (!packAgentsMdExists) {
-    console.log(`  Warning: the pack's AGENTS.md wasn't found at ${TARGET_AGENTS_MD}.`);
+    console.log(`  Warning: the pack's AGENTS.md wasn't found at ${PACK_AGENTS_MD}.`);
     console.log(`  Try reinstalling: npm update -g ${PACKAGE_NAME}\n`);
   } else if (globalExists) {
     console.log(`  You have a global AGENTS.md at ${GLOBAL_AGENTS_MD}.`);
-    console.log(`  Merge in whatever you want from:\n  ${TARGET_AGENTS_MD}\n`);
+    console.log(`  Merge in whatever you want from:\n  ${PACK_AGENTS_MD}\n`);
   } else {
     console.log(`  No global AGENTS.md found. Without one, these agents lose their`);
     console.log(`  shared foundation. Copy it into place:\n`);
-    console.log(`    cp "${TARGET_AGENTS_MD}" "${GLOBAL_AGENTS_MD}"\n`);
+    console.log(`    cp "${PACK_AGENTS_MD}" "${GLOBAL_AGENTS_MD}"\n`);
   }
 }
 
@@ -181,7 +182,7 @@ function cmdStatus() {
   }
 
   // Check AGENTS.md — the shared foundation every agent file assumes is loaded
-  const packAgentsMdExists = fs.existsSync(TARGET_AGENTS_MD);
+  const packAgentsMdExists = fs.existsSync(PACK_AGENTS_MD);
   const globalAgentsMdExists = fs.existsSync(GLOBAL_AGENTS_MD);
   console.log(`  AGENTS.md:  ${packAgentsMdExists ? 'Installed (package copy present)' : 'MISSING — run npm update'}`);
   if (packAgentsMdExists && !globalAgentsMdExists) {

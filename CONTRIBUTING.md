@@ -119,6 +119,9 @@ form a contract:
   inviolable.
 - The pack's `AGENTS.md` is deliberately never written over a user's global
   `~/.config/opencode/AGENTS.md` — don't "fix" that.
+- The pack's `AGENTS.md` copy lives in `~/.config/swe-pro-agents/`, never
+  inside the agents dir — OpenCode loads every `.md` in a registered agents
+  path as an agent profile, so an `AGENTS.md` there becomes a phantom agent.
 - Every lifecycle change needs corresponding coverage in `test/installer.test.js`.
 
 ## Commit conventions
