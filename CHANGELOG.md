@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `youtube-to-skill` — converts a YouTube video into a reusable, installable skill: fetches the transcript via a connected YouTube MCP server, identifies the demonstrated process shape (procedural walkthrough, decision framework, code-along, or nothing repeatable at all), and writes a `SKILL.md` following `skill-creator` conventions (attribution + known-gaps sections included)
 - Pack is now **24 skills** (was 23); validator, package.json, README, and validator self-tests updated to match
 
+### Fixed
+
+- `AGENTS.md` is no longer installed inside `~/.config/opencode/agents/swe-pro-agents/` — OpenCode was loading it as a phantom "AGENTS" agent. The pack's copy now lives in `~/.config/swe-pro-agents/AGENTS.md`, and installs remove the legacy copy from the agents dir.
+
 ## [2.5.0] - 2026-08-10
 
 ### Changed

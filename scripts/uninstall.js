@@ -6,11 +6,12 @@
  * Runs automatically before `npm uninstall -g swe-pro-agents`.
  *
  * Uses the manifest written by install.js (~/.config/swe-pro-agents/manifest.json):
- *   1. removes the package-scoped agents directory (including the package's
- *      own AGENTS.md copy),
+ *   1. removes the package-scoped agents directory,
  *   2. removes exactly the skill directories the manifest records as
  *      pack-owned (user skills in the shared skills dir are never touched),
- *   3. removes the manifest itself.
+ *   3. removes the manifest dir — including the pack's own AGENTS.md copy,
+ *      which lives there (never inside the agents dir, where OpenCode would
+ *      load it as an agent).
  *
  * If no manifest is found, the agents directory is still removed (it is
  * package-scoped by contract) and the user is told that pack skills could not
@@ -50,8 +51,7 @@ function main() {
   // 1. Agents directory — package-scoped by path, safe to remove wholesale.
   if (fs.existsSync(TARGET_DIR)) {
     fs.rmSync(TARGET_DIR, { recursive: true, force: true });
-    console.log(`[${PACKAGE_NAME}] Removed agent files (including the package's own`);
-    console.log(`  AGENTS.md copy) from:`);
+    console.log(`[${PACKAGE_NAME}] Removed agent files from:`);
     console.log(`  ${TARGET_DIR}`);
     removedAnything = true;
   }

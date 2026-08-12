@@ -5,8 +5,15 @@
  *                skill files to ~/.config/opencode/skills/, and this pack's
  *                AGENTS.md (the shared foundation every lean agent file in
  *                agents/ depends on — Core priorities, Engineering rules,
- *                Completion checklist, Reporting format) to a package-scoped
- *                location.
+ *                Completion checklist, Reporting format) to the pack's own
+ *                config dir (~/.config/swe-pro-agents/).
+ *
+ *                AGENTS.md must NEVER be placed inside the agents directory:
+ *                OpenCode loads every .md file in a registered agents path as
+ *                an agent profile, so an AGENTS.md there shows up as a phantom
+ *                "AGENTS" agent. The pack's copy lives outside that path and
+ *                the user is told to copy/merge it into their global
+ *                ~/.config/opencode/AGENTS.md.
  *
  * Runs automatically after `npm install -g swe-pro-agents`.
  *
@@ -39,10 +46,14 @@ const os = require('os');
 const PACKAGE_NAME = 'swe-pro-agents';
 const AGENTS_DIR = path.join(os.homedir(), '.config', 'opencode', 'agents', PACKAGE_NAME);
 const SKILLS_DIR = path.join(os.homedir(), '.config', 'opencode', 'skills');
-const PACK_AGENTS_MD_DEST = path.join(AGENTS_DIR, 'AGENTS.md');
 const GLOBAL_AGENTS_MD = path.join(os.homedir(), '.config', 'opencode', 'AGENTS.md');
 const MANIFEST_DIR = path.join(os.homedir(), '.config', 'swe-pro-agents');
 const MANIFEST_PATH = path.join(MANIFEST_DIR, 'manifest.json');
+// The pack's AGENTS.md copy — deliberately OUTSIDE the agents dir (see header).
+const PACK_AGENTS_MD_DEST = path.join(MANIFEST_DIR, 'AGENTS.md');
+// Legacy location from versions <= 2.5.x: inside the agents dir, where OpenCode
+// loaded it as a phantom agent. Removed on install (see installAgentsMd).
+const LEGACY_AGENTS_MD = path.join(AGENTS_DIR, 'AGENTS.md');
 
 const pkg = require(path.join(__dirname, '..', 'package.json'));
 
@@ -156,20 +167,31 @@ function copySkills() {
   return count;
 }
 
-// Copies this pack's AGENTS.md to a package-scoped path so it's always
-// available, and separately reports whether the user has a *global*
-// AGENTS.md already — since every lean agent in agents/ assumes something
-// like this pack's AGENTS.md is loaded into context, and silently having
-// none is worse than the agents relying on content that was never installed.
+// Copies this pack's AGENTS.md to the pack's own config dir (never the agents
+// dir — OpenCode would load it as an agent), and separately reports whether
+// the user has a *global* AGENTS.md already — since every lean agent in
+// agents/ assumes something like this pack's AGENTS.md is loaded into
+// context, and silently having none is worse than the agents relying on
+// content that was never installed.
 function installAgentsMd() {
   const src = path.join(pkgDir(), 'AGENTS.md');
   if (!fs.existsSync(src)) {
-    return { copied: false, globalExists: false };
+    return { copied: false, globalExists: false, legacyRemoved: false };
   }
 
+  fs.mkdirSync(MANIFEST_DIR, { recursive: true });
   fs.copyFileSync(src, PACK_AGENTS_MD_DEST);
+
+  // Clean up the legacy copy inside the agents dir (<= 2.5.x behavior) — it
+  // was pack-owned by contract, and leaving it would keep the phantom agent.
+  let legacyRemoved = false;
+  if (fs.existsSync(LEGACY_AGENTS_MD)) {
+    fs.rmSync(LEGACY_AGENTS_MD, { force: true });
+    legacyRemoved = true;
+  }
+
   const globalExists = fs.existsSync(GLOBAL_AGENTS_MD);
-  return { copied: true, globalExists };
+  return { copied: true, globalExists, legacyRemoved };
 }
 
 function main() {
@@ -215,6 +237,10 @@ function main() {
       console.log(`  rules, Completion checklist, Reporting format — that`);
       console.log(`  every agent in this pack assumes is loaded) to:`);
       console.log(`  ${PACK_AGENTS_MD_DEST}`);
+      if (agentsMdResult.legacyRemoved) {
+        console.log(`  Removed the legacy copy from the agents dir (it was being`);
+        console.log(`  loaded as a phantom agent): ${LEGACY_AGENTS_MD}`);
+      }
       console.log();
       if (agentsMdResult.globalExists) {
         console.log(`  You already have a global AGENTS.md at:`);
