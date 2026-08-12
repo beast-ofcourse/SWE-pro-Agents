@@ -5,6 +5,13 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.6.0] - 2026-08-12
+
+### Added
+
+- `youtube-to-skill` — converts a YouTube video into a reusable, installable skill: fetches the transcript via a connected YouTube MCP server, identifies the demonstrated process shape (procedural walkthrough, decision framework, code-along, or nothing repeatable at all), and writes a `SKILL.md` following `skill-creator` conventions (attribution + known-gaps sections included)
+- Pack is now **24 skills** (was 23); validator, package.json, README, and validator self-tests updated to match
+
 ## [2.5.0] - 2026-08-10
 
 ### Changed

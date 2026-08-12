@@ -40,7 +40,7 @@ const PRIMARY_AGENTS = new Set(['swe-pro', 'architect', 'swe-reviewer', 'pr-revi
 
 /** Expected pack size. Bump when the pack grows. */
 const EXPECTED_AGENT_COUNT = 26;
-const EXPECTED_SKILL_COUNT = 23;
+const EXPECTED_SKILL_COUNT = 24;
 
 /** OpenCode built-in agents that may appear in task allow/deny lists. */
 const OPENCODE_BUILTINS = new Set(['general', 'explore', 'build', 'plan']);
