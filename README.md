@@ -19,7 +19,7 @@
 </div>
 
 ---
-# Recommended tools and stuff From my own configs.
+## Recommended tools and stuff From my own configs.
 
 **MCP tools**
 - Context7
@@ -29,7 +29,7 @@
 - mempalace -- it gives your AI agent a memory which dynamically auto updates.
 
 **SKILLS**
-- taste skills -- my pack alreay includes this skill
+- taste skills -- my pack already includes this skill
 - Cloudflare skills -- Highly recommended for deployment on cloudflare 
 - mattpocock skills -- "optional" my pack already Covers all the engineering and SWE skill/principles/rule-sets
 
