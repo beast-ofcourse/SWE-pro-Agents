@@ -9,13 +9,15 @@
  *   1. removes the package-scoped agents directory,
  *   2. removes exactly the skill directories the manifest records as
  *      pack-owned (user skills in the shared skills dir are never touched),
- *   3. removes the manifest dir — including the pack's own AGENTS.md copy,
+ *   3. removes the pack's plugin files from the shared plugin dir — only
+ *      swe-pro-agents-* prefixed files, so user plugins are never touched,
+ *   4. removes the manifest dir — including the pack's own AGENTS.md copy,
  *      which lives there (never inside the agents dir, where OpenCode would
  *      load it as an agent).
  *
  * If no manifest is found, the agents directory is still removed (it is
- * package-scoped by contract) and the user is told that pack skills could not
- * be determined automatically.
+ * package-scoped by contract) and the user is told that pack skills and
+ * plugins could not be determined automatically.
  *
  * What is NOT touched — deliberately, because it is user-owned content:
  *   - the opencode.json entry referencing the agents path,
@@ -29,6 +31,11 @@ const os = require('os');
 const PACKAGE_NAME = 'swe-pro-agents';
 const TARGET_DIR = path.join(os.homedir(), '.config', 'opencode', 'agents', PACKAGE_NAME);
 const SKILLS_DIR = path.join(os.homedir(), '.config', 'opencode', 'skills');
+// OpenCode's global plugin dir — doc-verified in plugins/continuation.js header:
+// https://opencode.ai/docs/plugins/ ("Use a plugin — From local files"); loader
+// scan glob `{plugin,plugins}/*.{ts,js}` confirmed in
+// packages/opencode/src/config/plugin.ts.
+const PLUGIN_DIR = path.join(os.homedir(), '.config', 'opencode', 'plugins');
 const MANIFEST_DIR = path.join(os.homedir(), '.config', 'swe-pro-agents');
 const MANIFEST_PATH = path.join(MANIFEST_DIR, 'manifest.json');
 
@@ -71,12 +78,25 @@ function main() {
       }
     }
   } else {
-    console.log(`  No manifest found — could not determine which skills this pack`);
-    console.log(`  owns, so nothing was removed from ${SKILLS_DIR}.`);
-    console.log(`  If this pack's skills are still there, remove them manually.`);
+    console.log(`  No manifest found — could not determine which skills and plugins`);
+    console.log(`  this pack owns, so nothing was removed from ${SKILLS_DIR} or`);
+    console.log(`  ${PLUGIN_DIR}.`);
+    console.log(`  If this pack's skills or plugins are still there, remove them manually.`);
   }
 
-  // 3. Manifest itself.
+  // 3. Pack-owned plugins — only swe-pro-agents-* prefixed files in the shared
+  //    plugin dir, and only when a manifest proves this pack was installed.
+  //    Non-prefixed user plugins are never touched.
+  if (manifest && fs.existsSync(PLUGIN_DIR)) {
+    for (const entry of fs.readdirSync(PLUGIN_DIR, { withFileTypes: true })) {
+      if (!entry.isFile() || !entry.name.startsWith('swe-pro-agents-')) continue;
+      fs.rmSync(path.join(PLUGIN_DIR, entry.name), { force: true });
+      console.log(`  Removed plugin: ${entry.name}`);
+      removedAnything = true;
+    }
+  }
+
+  // 4. Manifest itself.
   if (fs.existsSync(MANIFEST_DIR)) {
     fs.rmSync(MANIFEST_DIR, { recursive: true, force: true });
     console.log(`  Removed manifest: ${MANIFEST_DIR}`);

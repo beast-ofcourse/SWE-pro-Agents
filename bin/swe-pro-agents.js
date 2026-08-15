@@ -1,19 +1,39 @@
 #!/usr/bin/env node
 
 /**
- * CLI for managing SWE Pro Agents installation.
+ * CLI for SWE Pro Agents.
  *
- * Usage:
+ * Commands:
+ *   swe-pro-agents run [result] [--plan <dir>] [--dry-run]
+ *                      [--max-iterations <n>] [--no-continue] [--json]
+ *       — Drive the plan-execution loop (see cmdRun below).
  *   swe-pro-agents setup [--apply]   — Show the opencode.json config snippet
  *                                      (--apply writes it, with a .bak backup)
  *   swe-pro-agents status            — Show installation status + update check
  *   swe-pro-agents version           — Show version
  *   swe-pro-agents help              — Show this help
+ *
+ * Exit codes: 0 success, 1 runtime error, 2 usage error.
  */
+
+'use strict';
 
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+
+const {
+  initState,
+  tasksFromMarkdown,
+  loadState,
+  saveState,
+  nextTask,
+  markInProgress,
+  applyAttemptResult,
+  buildContinuationMessage,
+  summary,
+  shouldContinue,
+} = require('../scripts/loop-logic.js');
 
 const PACKAGE_NAME = 'swe-pro-agents';
 const AGENTS_DIR = path.join(__dirname, '..', 'agents');
@@ -23,6 +43,10 @@ const TARGET_SKILLS_DIR = path.join(os.homedir(), '.config', 'opencode', 'skills
 const PACK_AGENTS_MD = path.join(os.homedir(), '.config', 'swe-pro-agents', 'AGENTS.md');
 const GLOBAL_AGENTS_MD = path.join(os.homedir(), '.config', 'opencode', 'AGENTS.md');
 const OPENCODE_CONFIG = path.join(os.homedir(), '.config', 'opencode', 'opencode.json');
+
+const DEFAULT_PLAN_DIR = 'plans';
+const LEDGER_FILE = 'state.json';
+const PLAN_FILE = 'tasks.md';
 
 const pkg = require(path.join(__dirname, '..', 'package.json'));
 
@@ -197,29 +221,264 @@ function cmdVersion() {
   console.log(pkg.version);
 }
 
+// ---------------------------------------------------------------------------
+// run — plan-execution loop driver
+// ---------------------------------------------------------------------------
+
+/**
+ * The "CLI-driven run" directive sentence emitted by buildContinuationMessage
+ * in cliMode (mirrors scripts/loop-logic.js). --no-continue strips it so the
+ * message still carries the cliMode dispatch instructions without the
+ * "the caller records results" line.
+ */
+const CLI_DIRECTIVE = ' CLI-driven run: do NOT modify plans/state.json — the caller records results. ';
+
+/** Strip the CLI-driven-run directive sentence from a cliMode message. */
+function stripCliDirective(message) {
+  return message.replace(CLI_DIRECTIVE, ' ');
+}
+
+/**
+ * Why shouldContinue() returned false. Presentation only — the gate itself
+ * lives in scripts/loop-logic.js.
+ */
+function stopReason(state) {
+  if (state.status !== 'running') return `ledger status is '${state.status}'`;
+  if (state.iterations >= state.budget.max_iterations_per_run) return 'iteration budget exhausted';
+  if (state.tasks.some((t) => t.status === 'blocked')) return 'a task is blocked';
+  return 'no next task';
+}
+
+/**
+ * Parse the arguments after `run`. Returns { ok: true, args } or
+ * { ok: false, error }.
+ */
+function parseRunArgs(argv) {
+  const args = {
+    plan: DEFAULT_PLAN_DIR,
+    dryRun: false,
+    maxIterations: null,
+    noContinue: false,
+    json: false,
+    result: null,
+  };
+  const positionals = [];
+  for (let i = 0; i < argv.length; i++) {
+    const arg = argv[i];
+    if (arg === '--dry-run') {
+      args.dryRun = true;
+    } else if (arg === '--no-continue') {
+      args.noContinue = true;
+    } else if (arg === '--json') {
+      args.json = true;
+    } else if (arg === '--plan') {
+      const value = argv[++i];
+      if (value === undefined) return { ok: false, error: '--plan requires a directory argument' };
+      args.plan = value;
+    } else if (arg === '--max-iterations') {
+      const value = argv[++i];
+      if (value === undefined || !/^\d+$/.test(value) || Number(value) < 1) {
+        return { ok: false, error: '--max-iterations requires a positive integer' };
+      }
+      args.maxIterations = Number(value);
+    } else if (arg.startsWith('-')) {
+      return { ok: false, error: `unknown flag '${arg}'` };
+    } else {
+      positionals.push(arg);
+    }
+  }
+  if (positionals.length > 1) {
+    return { ok: false, error: `unexpected argument '${positionals[1]}'` };
+  }
+  if (positionals.length === 1) {
+    if (positionals[0] !== 'done' && positionals[0] !== 'fail') {
+      return { ok: false, error: `unknown result '${positionals[0]}' (expected 'done' or 'fail')` };
+    }
+    args.result = positionals[0];
+  }
+  return { ok: true, args };
+}
+
+/**
+ * Emit output. In jsonMode the machine-readable object goes to stdout and the
+ * human lines to stderr; otherwise the human lines go to stdout.
+ */
+function emit(jsonMode, jsonObj, humanLines) {
+  if (jsonMode) {
+    process.stdout.write(`${JSON.stringify(jsonObj, null, 2)}\n`);
+    for (const line of humanLines) process.stderr.write(`${line}\n`);
+  } else {
+    for (const line of humanLines) process.stdout.write(`${line}\n`);
+  }
+}
+
+/**
+ * Drive the plan-execution loop. One iteration per invocation:
+ *
+ *   1. Load the ledger from <plan>/state.json; when missing or invalid, init
+ *      it from <plan>/tasks.md.
+ *   2. When a result ('done'|'fail') is given, record it for the current
+ *      in_progress task via applyAttemptResult — the CLI is the single writer
+ *      of the ledger, so the continuation message never instructs the agent to
+ *      edit it (cliMode).
+ *   3. Stop when shouldContinue() is false (summary printed, exit 0).
+ *   4. Otherwise dispatch the next task: markInProgress, persist, and print
+ *      the task id + dispatch instructions (the cliMode continuation message).
+ *
+ * Returns the process exit code.
+ */
+function cmdRun(argv) {
+  const parsed = parseRunArgs(argv);
+  if (!parsed.ok) {
+    usageError(parsed.error);
+    return 2;
+  }
+  const args = parsed.args;
+
+  const planDir = path.resolve(args.plan);
+  const ledgerPath = path.join(planDir, LEDGER_FILE);
+  const planFile = path.join(planDir, PLAN_FILE);
+
+  let state = loadState(ledgerPath);
+  if (!state) {
+    if (!fs.existsSync(planFile)) {
+      throw new Error(`plan file not found: ${planFile}`);
+    }
+    const markdown = fs.readFileSync(planFile, 'utf8');
+    state = initState(tasksFromMarkdown(markdown));
+    if (args.maxIterations !== null) {
+      state.budget.max_iterations_per_run = args.maxIterations;
+    }
+    saveState(ledgerPath, state);
+  } else if (args.maxIterations !== null) {
+    // Override the budget for this run; persisted on the next save.
+    state = { ...state, budget: { ...state.budget, max_iterations_per_run: args.maxIterations } };
+  }
+
+  if (args.dryRun) {
+    emit(
+      args.json,
+      {
+        command: 'dry-run',
+        status: 'ok',
+        summary: summary(state),
+        ledger: ledgerPath,
+        tasks: state.tasks.map((t) => ({ id: t.id, phase: t.phase, title: t.title })),
+      },
+      [`Dry run — ${summary(state)}`]
+    );
+    return 0;
+  }
+
+  // The CLI records results; the dispatched agent never edits the ledger.
+  if (args.result) {
+    const inProgress = state.tasks.find((t) => t.status === 'in_progress');
+    if (!inProgress) {
+      throw new Error(`no in_progress task to record '${args.result}' for`);
+    }
+    state = applyAttemptResult(state, inProgress.id, args.result);
+    saveState(ledgerPath, state);
+  }
+
+  if (!shouldContinue(state)) {
+    emit(
+      args.json,
+      {
+        command: 'run',
+        status: 'stopped',
+        summary: summary(state),
+        reason: stopReason(state),
+      },
+      [summary(state)]
+    );
+    return 0;
+  }
+
+  const task = nextTask(state);
+  // Build the message from the pre-dispatch state: buildContinuationMessage
+  // resolves the task via nextTask(), which skips in_progress tasks, so the
+  // message must be built before markInProgress to name the task being
+  // dispatched.
+  let message = buildContinuationMessage(state, { cliMode: true });
+  if (args.noContinue) message = stripCliDirective(message);
+  state = markInProgress(state, task.id);
+  saveState(ledgerPath, state);
+
+  emit(
+    args.json,
+    {
+      command: 'run',
+      status: 'dispatched',
+      task: { id: task.id, phase: task.phase, title: task.title },
+      message,
+      summary: summary(state),
+    },
+    [message]
+  );
+  return 0;
+}
+
+// ---------------------------------------------------------------------------
+// help / usage
+// ---------------------------------------------------------------------------
+
+const USAGE = `Usage: swe-pro-agents <command> [options]
+
+Commands:
+  run [result] [options]   Drive the plan-execution loop
+      result               'done' or 'fail' — record the result of the current
+                           in_progress task (the CLI records results; the
+                           dispatched agent never edits the ledger)
+      --plan <dir>         Plan directory (default: plans/)
+      --dry-run            Init the ledger from the plan without dispatching;
+                           print the summary and exit 0
+      --max-iterations <n> Override the iterations budget (default: 40)
+      --no-continue        Print the continuation message without the
+                           "CLI-driven run" directive line
+      --json               Machine-readable output (JSON on stdout, human text
+                           on stderr)
+  setup [--apply]          Show the opencode.json config snippet; --apply
+                           writes it (with a .bak backup)
+  status                   Show installation status + update check
+  version                  Show package version
+  help                     Show this help
+
+Options:
+  -v, --version            Show package version
+  -h, --help               Show this help
+
+Exit codes: 0 success, 1 runtime error, 2 usage error.
+`;
+
 function cmdHelp() {
-  console.log(`\n  SWE Pro Agents v${pkg.version}`);
-  console.log(`  ${'─'.repeat(40)}`);
-  console.log(`  Usage: swe-pro-agents <command>\n`);
-  console.log(`  Commands:`);
-  console.log(`    setup [--apply]  Show the opencode.json config snippet;`);
-  console.log(`                     --apply writes it (with a .bak backup)`);
-  console.log(`    status           Show installation status + update check`);
-  console.log(`    version          Show package version`);
-  console.log(`    help             Show this help\n`);
+  console.log(`SWE Pro Agents v${pkg.version}`);
+  console.log(USAGE);
+}
+
+function usageError(message) {
+  if (message) process.stderr.write(`Error: ${message}\n`);
+  process.stderr.write(USAGE);
 }
 
 async function main() {
-  const cmd = process.argv[2] || 'help';
+  const argv = process.argv.slice(2);
+  const cmd = argv[0];
+
+  if (cmd === undefined) {
+    cmdHelp();
+    return 0;
+  }
 
   switch (cmd) {
+    case 'run':
+      return cmdRun(argv.slice(1));
     case 'setup':
       cmdSetup();
-      if (process.argv.includes('--apply')) {
+      if (argv.includes('--apply')) {
         console.log(`  Applying opencode.json entry...`);
         applyToOpenCodeConfig();
       }
-      break;
+      return 0;
     case 'status':
       cmdStatus();
       // Update check — offline/slow registries silently skip it.
@@ -229,22 +488,28 @@ async function main() {
         console.log(`              run 'npm update -g ${PACKAGE_NAME}'`);
         console.log();
       }
-      break;
+      return 0;
     case 'version':
     case '-v':
     case '--version':
       cmdVersion();
-      break;
+      return 0;
     case 'help':
     case '-h':
     case '--help':
-    default:
       cmdHelp();
-      break;
+      return 0;
+    default:
+      usageError(`unknown command '${cmd}'`);
+      return 2;
   }
 }
 
-main().catch(err => {
-  console.error(`[${PACKAGE_NAME}] Error:`, err.message);
-  process.exit(1);
-});
+main()
+  .then((code) => {
+    process.exitCode = code;
+  })
+  .catch((err) => {
+    console.error(`[${PACKAGE_NAME}] Error:`, err.message);
+    process.exitCode = 1;
+  });

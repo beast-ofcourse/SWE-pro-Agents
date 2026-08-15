@@ -29,11 +29,22 @@ jobs:
           node --check scripts/install.js
           node --check scripts/uninstall.js
           node --check scripts/validate.js
+          node --check scripts/loop-logic.js
+          node --check scripts/run-loop.js
+          node --check scripts/validate-plan.js
           node --check test/installer.test.js
           node --check test/validate.test.js
+          node --check test/loop-logic.test.js
+          node --check test/run-loop.test.js
       - name: Pack validation (agents + skills, strict)
         run: npm run validate
       - name: Installer lifecycle tests
         run: node test/installer.test.js
       - name: Validator self-tests
         run: node test/validate.test.js
+      - name: Plan validator self-tests
+        run: node test/validate-plan.test.js
+      - name: Loop logic tests
+        run: node test/loop-logic.test.js
+      - name: Loop runner tests
+        run: node test/run-loop.test.js

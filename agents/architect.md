@@ -120,4 +120,5 @@ Structure phases in dependency order — typically: Phase 0 Foundations (repo, c
 
 - Spec incomplete and no yolo → keep asking; do not write the files.
 - Write nothing outside `plans/` (and `docs/`, per existing convention). No source code, ever.
+- Architect owns the spec (`plans/project-overview.md`, `plans/tasks.md`, `plans/user-flow.md`). Execution state (`plans/state.json`) is owned by SWE Pro — never create or edit it.
 - The plan is done when all three source files exist, a **current** validator run produced no unresolved Critical or Major findings (`plans/validation.md` matches the plan files as they now stand), the self-check passes, and the handoff is stated. A plan with a stale validation report is not finished.

@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-08-15
+
+### Added
+
+- **Autonomous loop** — `plans/` plans execute end to end without a human in the loop:
+  - `swe-pro-agents run` CLI — the single writer of the ledger; one invocation dispatches the next task and prints the continuation message. Flags: `--plan <dir>`, `--dry-run`, `--max-iterations <n>`, `--no-continue`, `--json`
+  - `plugins/continuation.js` — OpenCode plugin that nudges an idle `swe-pro` session on `session.idle` to resume plan execution when the ledger says the loop should continue
+  - `plans/state.json` ledger — schema-v1 state: ledger statuses `running|paused|blocked|done|aborted`, per-task statuses `pending|in_progress|done|blocked`, attempt/iteration budgets, atomic saves
+  - `scripts/validate-plan.js` — `npm run validate:plan` enforces plan rules P1 (plan presence), P2 (task shape: **Build.**/**Acceptance criteria.**/**Verify.** sections), P3 (ledger consistency with `tasks.md`)
+  - Tests: `test/loop-logic.test.js`, `test/run-loop.test.js`, `test/validate-plan.test.js` wired into `npm test`
+
 ### Changed
 
 - Common engineering rules extracted from the agent files into `AGENTS.md` (EOS): ambiguous requirements default to deciding per existing precedent with the assumption stated (don't stall), library/API contracts are checked against docs or the installed version before use, secrets never enter code/logs/version control, behavior changes lock in a regression test where tests exist, and reports state what was run and what couldn't be. Agent files now carry only domain-specific behavior.

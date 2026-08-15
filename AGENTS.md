@@ -196,6 +196,18 @@ Do not build on an invalid baseline unless the task is to fix that baseline.
 
 ---
 
+## Autonomous loop
+
+The autonomous loop runs tasks end to end without a human in the loop.
+
+* **Completion promise** — an agent ends its final reply with `<promise>DONE</promise>` only when its task is verified complete.
+* **Ledger rules** — read `plans/state.json` before dispatching, mark the task `in_progress` before dispatch, and update it after each task via atomic save.
+* **Budget** — 2 attempts per task, 40 iterations per run; stop on blocked.
+* **Gate rule** — paused on a red baseline or unresolved Critical findings.
+* **Autonomous-mode directive** — never push or merge; continuation messages are auto-pilot authorization, so there is no phase-checkpoint pause in autonomous mode.
+
+---
+
 ## Completion checklist
 
 Before reporting done, verify:

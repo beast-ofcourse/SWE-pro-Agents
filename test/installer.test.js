@@ -5,12 +5,18 @@
  *
  * Everything runs against a throwaway HOME/USERPROFILE directory, so the real
  * ~/.config/opencode is never touched. Covers:
- *   1. fresh install   — agents + skills land in the right places, manifest written
+ *   1. fresh install   — agents + skills + plugins land in the right places, manifest written
  *   2. idempotent reinstall
- *   3. update          — stale agents/skills recorded in an old manifest get pruned
+ *   3. update          — stale agents/skills/plugins recorded in an old manifest get pruned
  *   4. no manifest     — installer never guesses ownership, unknown files survive
  *   5. uninstall       — removes only pack-owned files; user skills survive
  *   6. uninstall w/o manifest — agents dir removed, user skills untouched
+ *   7. plugins         — fresh install copies both plugin files + records names;
+ *                        update prunes stale swe-pro-agents-* files; non-prefixed
+ *                        files in the plugin dir are never touched; uninstall
+ *                        removes the pack's prefixed plugins and leaves user
+ *                        plugins alone (and the whole dir untouched without a
+ *                        manifest)
  *
  * Zero dependencies: node:assert + node:child_process + node:fs.
  * Run with: node test/installer.test.js
@@ -42,8 +48,14 @@ const SKILL_NAMES = fs
   .map((e) => e.name)
   .sort();
 
+// Plugin basenames the pack installs into the global plugin dir (see
+// scripts/install.js listPackPlugins — sources are plugins/continuation.js and
+// scripts/loop-logic.js).
+const PLUGIN_NAMES = ['swe-pro-agents-continuation.js', 'swe-pro-agents-loop-logic.js'];
+
 const agentsDir = (home) => path.join(home, '.config', 'opencode', 'agents', PACKAGE_NAME);
 const skillsDir = (home) => path.join(home, '.config', 'opencode', 'skills');
+const pluginsDir = (home) => path.join(home, '.config', 'opencode', 'plugins');
 const packConfigDir = (home) => path.join(home, '.config', 'swe-pro-agents');
 const manifestPath = (home) => path.join(packConfigDir(home), 'manifest.json');
 const packAgentsMd = (home) => path.join(packConfigDir(home), 'AGENTS.md');
@@ -249,6 +261,99 @@ test('uninstall without manifest still removes the package-scoped agents dir, le
   assert.ok(!fs.existsSync(agentsDir(home)), 'agents dir removed');
   assert.ok(fs.existsSync(path.join(skillsDir(home), 'orphan-skill')), 'skills untouched without manifest');
   assert.ok(/could not determine/.test(out), 'output warns about undeterminable skills');
+});
+
+// ---------------------------------------------------------------------------
+// 7. Plugins
+// ---------------------------------------------------------------------------
+test('fresh install copies both plugin files and records their names in the manifest', () => {
+  const home = tempHome();
+  run(INSTALL, home);
+
+  for (const name of PLUGIN_NAMES) {
+    assert.ok(fs.existsSync(path.join(pluginsDir(home), name)), `plugin ${name} installed`);
+  }
+  // Content matches the pack sources (continuation.js from plugins/, loop-logic.js from scripts/).
+  assert.deepStrictEqual(
+    fs.readFileSync(path.join(pluginsDir(home), 'swe-pro-agents-continuation.js'), 'utf-8'),
+    fs.readFileSync(path.join(REPO, 'plugins', 'continuation.js'), 'utf-8'),
+    'continuation plugin content matches the pack'
+  );
+  assert.deepStrictEqual(
+    fs.readFileSync(path.join(pluginsDir(home), 'swe-pro-agents-loop-logic.js'), 'utf-8'),
+    fs.readFileSync(path.join(REPO, 'scripts', 'loop-logic.js'), 'utf-8'),
+    'loop-logic plugin content matches the pack'
+  );
+
+  const manifest = readManifest(home);
+  assert.deepStrictEqual(manifest.plugins, PLUGIN_NAMES, 'manifest.plugins');
+});
+
+test('update prunes a stale swe-pro-agents-* plugin recorded in a previous manifest', () => {
+  const home = tempHome();
+  fs.mkdirSync(pluginsDir(home), { recursive: true });
+  fs.writeFileSync(path.join(pluginsDir(home), 'swe-pro-agents-old-plugin.js'), '# stale\n');
+  const manifestDir = path.join(home, '.config', 'swe-pro-agents');
+  fs.mkdirSync(manifestDir, { recursive: true });
+  fs.writeFileSync(
+    manifestPath(home),
+    JSON.stringify({
+      packageVersion: '0.0.1',
+      agents: AGENT_FILES,
+      skills: SKILL_NAMES,
+      plugins: [...PLUGIN_NAMES, 'swe-pro-agents-old-plugin.js'],
+    })
+  );
+
+  run(INSTALL, home);
+
+  assert.ok(!fs.existsSync(path.join(pluginsDir(home), 'swe-pro-agents-old-plugin.js')), 'stale plugin pruned');
+  for (const name of PLUGIN_NAMES) {
+    assert.ok(fs.existsSync(path.join(pluginsDir(home), name)), `current plugin ${name} intact`);
+  }
+  const manifest = readManifest(home);
+  assert.deepStrictEqual(manifest.plugins, PLUGIN_NAMES, 'manifest no longer lists stale plugin');
+});
+
+test('a non-prefixed plugin file in the plugin dir survives install and update', () => {
+  const home = tempHome();
+  fs.mkdirSync(pluginsDir(home), { recursive: true });
+  fs.writeFileSync(path.join(pluginsDir(home), 'my-own-plugin.js'), '# mine\n');
+
+  run(INSTALL, home);
+  assert.ok(fs.existsSync(path.join(pluginsDir(home), 'my-own-plugin.js')), 'user plugin survives install');
+
+  // Update: the manifest now exists, so pruning runs — but the user's
+  // non-prefixed file is never in the manifest and never matches the
+  // swe-pro-agents-* prefix, so it must survive.
+  run(INSTALL, home);
+  assert.ok(fs.existsSync(path.join(pluginsDir(home), 'my-own-plugin.js')), 'user plugin survives update');
+});
+
+test('uninstall removes the pack plugin files and leaves non-prefixed user plugins', () => {
+  const home = tempHome();
+  fs.mkdirSync(pluginsDir(home), { recursive: true });
+  fs.writeFileSync(path.join(pluginsDir(home), 'my-own-plugin.js'), '# mine\n');
+
+  run(INSTALL, home);
+  run(UNINSTALL, home);
+
+  for (const name of PLUGIN_NAMES) {
+    assert.ok(!fs.existsSync(path.join(pluginsDir(home), name)), `pack plugin ${name} removed`);
+  }
+  assert.ok(fs.existsSync(path.join(pluginsDir(home), 'my-own-plugin.js')), 'user plugin survives uninstall');
+});
+
+test('uninstall without a manifest leaves the plugin dir untouched', () => {
+  const home = tempHome();
+  fs.mkdirSync(pluginsDir(home), { recursive: true });
+  fs.writeFileSync(path.join(pluginsDir(home), 'swe-pro-agents-continuation.js'), '# x\n');
+  fs.writeFileSync(path.join(pluginsDir(home), 'my-own-plugin.js'), '# mine\n');
+
+  run(UNINSTALL, home);
+
+  assert.ok(fs.existsSync(path.join(pluginsDir(home), 'swe-pro-agents-continuation.js')), 'prefixed plugin untouched without manifest');
+  assert.ok(fs.existsSync(path.join(pluginsDir(home), 'my-own-plugin.js')), 'user plugin untouched without manifest');
 });
 
 // ---------------------------------------------------------------------------

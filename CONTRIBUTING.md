@@ -6,6 +6,7 @@ break other people's setups, and don't guess facts.**
 
 - [Development setup](#development-setup)
 - [Testing](#testing)
+- [The plan-execution loop](#the-plan-execution-loop)
 - [Project structure](#project-structure)
 - [Adding or changing an agent](#adding-or-changing-an-agent)
 - [Adding or changing a skill](#adding-or-changing-a-skill)
@@ -36,10 +37,13 @@ npm test
 
 ## Testing
 
-- `npm test` runs both zero-dependency suites: `test/installer.test.js` (6 tests —
-  the install/uninstall lifecycle: fresh install, idempotent reinstall, stale-file
-  pruning, no-manifest safety, uninstall isolation, and manifest-less uninstall)
-  and `test/validate.test.js` (11 tests — the validator's self-tests).
+- `npm test` runs the full zero-dependency suite: `test/installer.test.js` (12
+  tests — the install/uninstall lifecycle: fresh install, idempotent reinstall,
+  stale-file pruning, no-manifest safety, uninstall isolation, manifest-less
+  uninstall, and plugin-file handling), `test/validate.test.js` (18 tests — the
+  pack validator's self-tests), `test/validate-plan.test.js` (9 tests — the plan
+  validator), `test/loop-logic.test.js` (48 tests — the loop's pure logic), and
+  `test/run-loop.test.js` (9 tests — the loop runner end to end).
 - `npm run validate` runs `scripts/validate.js`, the **strict** pack validator: it
   lints every agent and skill and exits 1 on any violation. The validator is wired
   into CI, so the pack must stay green there too.
@@ -49,6 +53,44 @@ npm test
   validation, and both test suites on **Linux + Windows × Node 18/20/22**.
 - If your change alters what the installer copies or removes, extend the test
   suite to cover it — it must stay green.
+
+## The plan-execution loop
+
+The pack ships an autonomous plan-execution loop: `swe-pro` executes
+`plans/tasks.md` task by task, recording progress in a ledger. Three pieces are
+contributor-facing — the test commands, the plan rules, and the ledger/plugin
+machinery:
+
+- **Test commands.** `npm test` runs the full suite (installer lifecycle, pack
+  validator, plan validator, loop logic, and loop runner — see
+  [Testing](#testing)); `npm run validate` runs the strict pack validator;
+  `npm run validate:plan` runs the plan validator (`scripts/validate-plan.js`)
+  against `plans/`.
+- **Plan rules.** `npm run validate:plan` enforces three rules on a plan
+  directory:
+  - **P1 — Plan presence:** `tasks.md` exists and contains at least one
+    `### T-###` heading.
+  - **P2 — Task shape:** every `### T-###` heading has **Build.**, **Acceptance
+    criteria.**, and **Verify.** sections (the title falls back to the heading
+    text; **Phase.** is optional); task ids are unique.
+  - **P3 — Ledger consistency:** if `state.json` exists, its task ids match
+    `tasks.md` exactly (no orphans, no missing) and its status is one of
+    `running|paused|blocked|done|aborted`.
+- **The ledger (`plans/state.json`).** The loop's single source of truth: schema
+  version, ledger status, plan file, iteration count, per-task
+  `{ id, phase, title, status, attempts, last_verify }`, and the budget
+  (2 attempts per task, 40 iterations per run). Ledger statuses are
+  `running|paused|blocked|done|aborted`; per-task statuses are
+  `pending|in_progress|done|blocked`. **Single-writer rule:** the loop runner
+  (`scripts/run-loop.js`) is the only writer — read the ledger before
+  dispatching, mark the task `in_progress` before dispatch, and record the
+  result after each task, every update via an atomic save (write to `.tmp`,
+  rename over). Never hand-edit it.
+- **The plugin (`plugins/continuation.js`).** An OpenCode plugin that nudges the
+  loop forward: on `session.idle`, when the session's agent is `swe-pro` and the
+  ledger reports `running` with a pending task and no `in_progress` task, it
+  prompts the session to continue plan execution. Every failure path returns
+  silently — the hook never throws.
 
 ## Project structure
 
