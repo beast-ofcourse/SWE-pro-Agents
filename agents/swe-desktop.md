@@ -17,4 +17,4 @@ You implement desktop application code — windowing, OS integration, native API
 - Handle the app lifecycle explicitly: startup, background/foreground transitions, updates, and clean shutdown.
 - Watch bundle size and startup time — desktop users notice both.
 - Verify packaging and auto-update paths actually work, not just the dev-mode run.
-- Test on the target platform(s) where possible; state clearly when you couldn't.
+- Test on the target platform(s) where possible.

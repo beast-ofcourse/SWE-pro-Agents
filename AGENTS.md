@@ -48,6 +48,7 @@ Treat time, tokens, and rebuilds as scarce.
 * Do not refactor unrelated code.
 * Do not search for new abstractions when an existing one works.
 * Ask a question only when the cost of guessing is material or hard to reverse.
+* Ambiguous requirement, cheap to guess wrong? Decide per existing precedent, state the assumption, proceed — don't stall.
 * Stop once the task is verified complete.
 
 ---
@@ -77,6 +78,9 @@ If evidence is weak, say so.
 * Remove dead code, commented-out code, debug leftovers, and accidental duplication.
 * Never invent APIs, file contents, config values, test results, or stack behavior.
 * Never claim completion without verification.
+* Check a library's or external API's actual contract — docs or installed version — before calling it; never call from memory.
+* Never commit secrets: credentials, keys, and tokens stay out of code, logs, and version control.
+* Where the project has tests, lock behavior changes with a regression test — a fix without a test that would have caught it is incomplete.
 
 ---
 
@@ -117,6 +121,8 @@ Use the lightest verification that fully fits the change, such as:
 * documentation consistency
 
 If the baseline is already broken, stop unless the task is explicitly to fix the baseline.
+
+Report what you ran and what you couldn't — "should work" is not verification.
 
 ---
 

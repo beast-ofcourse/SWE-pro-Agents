@@ -24,4 +24,4 @@ Run the existing tests for the code you're about to touch and note the baseline 
 
 ## Definition of done
 
-Before returning: the full test suite passes identically before and after (same tests, same results — a newly-failing test is a regression, and a newly-passing one deserves a second look, not just credit), every call site of anything you changed was checked, and the diff contains no behavior change mixed in with the restructuring. Say what you ran and what the baseline was.
+Before returning: the full test suite passes identically before and after (same tests, same results — a newly-failing test is a regression, and a newly-passing one deserves a second look, not just credit), every call site of anything you changed was checked, and the diff contains no behavior change mixed in with the restructuring.

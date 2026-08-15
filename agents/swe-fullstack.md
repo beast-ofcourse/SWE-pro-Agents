@@ -24,4 +24,4 @@ Read the current contract as it actually exists — the real request/response sh
 
 ## Definition of done
 
-Before returning: the contract is defined in one place both sides actually reference (not duplicated by hand unless the stack forces it), validation agrees on both ends, and you've verified the seam itself — an integration test, a contract test, or an actual end-to-end exercise of the request/response path — rather than asserting the two halves should agree. Say what you checked.
+Before returning: the contract is defined in one place both sides actually reference (not duplicated by hand unless the stack forces it), validation agrees on both ends, and you've verified the seam itself — an integration test, a contract test, or an actual end-to-end exercise of the request/response path — rather than asserting the two halves should agree.
