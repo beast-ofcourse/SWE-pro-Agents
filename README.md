@@ -283,7 +283,7 @@ A `plans/` plan can run end to end without a human in the loop. Three pieces mak
    | `--no-continue` | Prints the continuation message without the "CLI-driven run" directive line |
    | `--json` | Machine-readable output (JSON on stdout, human text on stderr) |
 
-2. **The plugin** — `plugins/continuation.js` listens for OpenCode's `session.idle` event and nudges an idle `swe-pro` session to resume plan execution when the ledger says the loop should continue (status `running`, no task `in_progress`, at least one `pending`). Every failure path returns silently — the hook never throws.
+2. **The plugin** — `plugins/continuation.js` listens for OpenCode's `session.idle` event and nudges an idle `swe-pro` session to resume plan execution — but only for a session with an **active goal**. The loop is goal-gated: a session is armed when a `/goal` command executes in it (the plugin matches the `command.executed` event for the `goal` command). `/goal clear` (aliases `stop`, `off`, `reset`, `none`, `cancel`) and `/goal pause` disarm the gate; `/goal resume` (or a bare `/goal` / a new objective) re-arms it. Fail-closed: no active goal → no nudge, ever. The arm state is in-memory per session, so an OpenCode restart or plugin reload resets every session to unarmed — a fresh `/goal` is required after a restart. When armed, the nudge still requires the ledger to say the loop should continue (status `running`, no task `in_progress`, at least one `pending`). Every failure path returns silently — the hook never throws.
 
 3. **The ledger** — `plans/state.json` is the source of truth. Ledger statuses: `running | paused | blocked | done | aborted`; per-task statuses: `pending | in_progress | done | blocked`. A task blocks after `max_attempts_per_task` (default 2) failed attempts and stops the loop (stop-on-blocked); when every task is `done` the ledger becomes `done`. Saves are atomic (write `.tmp`, rename over).
 
@@ -310,7 +310,7 @@ The preuninstall hook removes everything this pack installed: the agent files, t
 Plain Node.js (≥ 18), zero dependencies, no build step — the tests are the entry point:
 
 ```bash
-npm test          # 6 installer lifecycle tests + 18 validator self-tests
+npm test          # 7 suites, 127 tests — installer, validator, plan validator, loop logic, loop runner, CLI, continuation plugin
 npm run validate  # strict pack validation (exits 1 on any violation)
 ```
 

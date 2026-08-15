@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- **Goal-gated autonomous loop** — `plugins/continuation.js` now only nudges an idle `swe-pro` session when that session has an **active goal**. A session is armed when a `/goal` command executes in it (the plugin matches the `command.executed` event for the `goal` command); `/goal clear` (aliases `stop`, `off`, `reset`, `none`, `cancel`) and `/goal pause` disarm the gate, `/goal resume` (or a bare `/goal` / a new objective) re-arms it. Fail-closed: no active goal → no nudge, ever. The arm state is in-memory per session, so an OpenCode restart or plugin reload resets every session to unarmed — a fresh `/goal` is required after a restart.
+
 ## [2.7.0] - 2026-08-15
 
 ### Added

@@ -68,9 +68,22 @@ function fakeClient(calls, agent) {
 }
 
 /** Fire the plugin's session.idle hook for a session. */
-async function fireIdle(directory, client) {
+async function fireIdle(directory, client, sessionID) {
   const hooks = await plugin.server({ client, directory });
-  await hooks.event({ event: { type: 'session.idle', properties: { sessionID: 'sess-1' } } });
+  await hooks.event({
+    event: { type: 'session.idle', properties: { sessionID: sessionID || 'sess-1' } },
+  });
+}
+
+/** Fire the plugin's command.executed hook for a session. */
+async function fireCommand(directory, client, name, args, sessionID) {
+  const hooks = await plugin.server({ client, directory });
+  await hooks.event({
+    event: {
+      type: 'command.executed',
+      properties: { name, sessionID: sessionID || 'sess-1', arguments: args },
+    },
+  });
 }
 
 /** A resumable ledger: running, no in_progress task, at least one pending. */
@@ -94,7 +107,9 @@ async function main() {
     process.chdir(emptyCwd);
     try {
       const calls = [];
-      await fireIdle(ledgerDir, fakeClient(calls));
+      const client = fakeClient(calls);
+      await fireCommand(ledgerDir, client, 'goal', '', 'sess-1'); // arm the goal gate
+      await fireIdle(ledgerDir, client);
       assert.strictEqual(calls.length, 1, 'expected exactly one prompt');
       assert.strictEqual(calls[0].path.id, 'sess-1');
       assert.strictEqual(calls[0].body.agent, 'swe-pro');
@@ -117,7 +132,7 @@ async function main() {
     process.chdir(emptyCwd);
     try {
       const calls = [];
-      await fireIdle(ledgerDir, fakeClient(calls));
+      await fireIdle(ledgerDir, fakeClient(calls), 'sess-2');
       assert.strictEqual(calls.length, 0, 'expected no prompt for a done ledger');
     } finally {
       process.chdir(originalCwd);
@@ -132,7 +147,7 @@ async function main() {
     process.chdir(emptyCwd);
     try {
       const calls = [];
-      await fireIdle(emptyDir, fakeClient(calls));
+      await fireIdle(emptyDir, fakeClient(calls), 'sess-3');
       assert.strictEqual(calls.length, 0, 'expected no prompt without a ledger');
     } finally {
       process.chdir(originalCwd);
@@ -149,7 +164,7 @@ async function main() {
     process.chdir(emptyCwd);
     try {
       const calls = [];
-      await fireIdle(ledgerDir, fakeClient(calls, 'architect'));
+      await fireIdle(ledgerDir, fakeClient(calls, 'architect'), 'sess-4');
       assert.strictEqual(calls.length, 0, 'expected no prompt for a non-swe-pro session');
     } finally {
       process.chdir(originalCwd);
@@ -175,8 +190,132 @@ async function main() {
     process.chdir(emptyCwd);
     try {
       const calls = [];
-      await fireIdle(ledgerDir, fakeClient(calls));
+      await fireIdle(ledgerDir, fakeClient(calls), 'sess-5');
       assert.strictEqual(calls.length, 0, 'expected no prompt while a task is in_progress');
+    } finally {
+      process.chdir(originalCwd);
+    }
+  });
+
+  await test('prompts when the session is armed with a goal objective and the ledger is resumable', async () => {
+    const ledgerDir = tempDir('continuation-ledger-');
+    fs.mkdirSync(path.join(ledgerDir, 'plans'), { recursive: true });
+    fs.writeFileSync(path.join(ledgerDir, 'plans', 'state.json'), resumableLedger());
+    const emptyCwd = tempDir('continuation-cwd-');
+
+    const originalCwd = process.cwd();
+    process.chdir(emptyCwd);
+    try {
+      const calls = [];
+      const client = fakeClient(calls);
+      await fireCommand(ledgerDir, client, 'goal', 'implement T-018', 'sess-6');
+      await fireIdle(ledgerDir, client, 'sess-6');
+      assert.strictEqual(calls.length, 1, 'expected exactly one prompt');
+      assert.strictEqual(calls[0].path.id, 'sess-6');
+    } finally {
+      process.chdir(originalCwd);
+    }
+  });
+
+  await test('does not prompt when the session is not armed (fail-closed)', async () => {
+    const ledgerDir = tempDir('continuation-ledger-');
+    fs.mkdirSync(path.join(ledgerDir, 'plans'), { recursive: true });
+    fs.writeFileSync(path.join(ledgerDir, 'plans', 'state.json'), resumableLedger());
+    const emptyCwd = tempDir('continuation-cwd-');
+
+    const originalCwd = process.cwd();
+    process.chdir(emptyCwd);
+    try {
+      const calls = [];
+      await fireIdle(ledgerDir, fakeClient(calls), 'sess-7');
+      assert.strictEqual(calls.length, 0, 'expected no prompt without an active goal');
+    } finally {
+      process.chdir(originalCwd);
+    }
+  });
+
+  await test('does not prompt after the goal is cleared', async () => {
+    const ledgerDir = tempDir('continuation-ledger-');
+    fs.mkdirSync(path.join(ledgerDir, 'plans'), { recursive: true });
+    fs.writeFileSync(path.join(ledgerDir, 'plans', 'state.json'), resumableLedger());
+    const emptyCwd = tempDir('continuation-cwd-');
+
+    const originalCwd = process.cwd();
+    process.chdir(emptyCwd);
+    try {
+      const calls = [];
+      const client = fakeClient(calls);
+      await fireCommand(ledgerDir, client, 'goal', '', 'sess-8');
+      await fireCommand(ledgerDir, client, 'goal', 'clear', 'sess-8');
+      await fireIdle(ledgerDir, client, 'sess-8');
+      assert.strictEqual(calls.length, 0, 'expected no prompt after the goal is cleared');
+    } finally {
+      process.chdir(originalCwd);
+    }
+  });
+
+  await test('does not arm on a non-goal command', async () => {
+    const ledgerDir = tempDir('continuation-ledger-');
+    fs.mkdirSync(path.join(ledgerDir, 'plans'), { recursive: true });
+    fs.writeFileSync(path.join(ledgerDir, 'plans', 'state.json'), resumableLedger());
+    const emptyCwd = tempDir('continuation-cwd-');
+
+    const originalCwd = process.cwd();
+    process.chdir(emptyCwd);
+    try {
+      const calls = [];
+      const client = fakeClient(calls);
+      await fireCommand(ledgerDir, client, 'session.share', '', 'sess-9');
+      await fireIdle(ledgerDir, client, 'sess-9');
+      assert.strictEqual(calls.length, 0, 'expected no prompt from a non-goal command');
+    } finally {
+      process.chdir(originalCwd);
+    }
+  });
+
+  await test('pause disarms and resume re-arms the gate', async () => {
+    const ledgerDir = tempDir('continuation-ledger-');
+    fs.mkdirSync(path.join(ledgerDir, 'plans'), { recursive: true });
+    fs.writeFileSync(path.join(ledgerDir, 'plans', 'state.json'), resumableLedger());
+    const emptyCwd = tempDir('continuation-cwd-');
+
+    const originalCwd = process.cwd();
+    process.chdir(emptyCwd);
+    try {
+      const calls = [];
+      const client = fakeClient(calls);
+      await fireCommand(ledgerDir, client, 'goal', 'some objective', 'sess-p');
+      await fireCommand(ledgerDir, client, 'goal', 'pause', 'sess-p');
+      await fireIdle(ledgerDir, client, 'sess-p');
+      assert.strictEqual(calls.length, 0, 'expected no prompt while paused');
+
+      await fireCommand(ledgerDir, client, 'goal', 'resume', 'sess-p');
+      await fireIdle(ledgerDir, client, 'sess-p');
+      assert.strictEqual(calls.length, 1, 'expected a prompt after resume');
+    } finally {
+      process.chdir(originalCwd);
+    }
+  });
+
+  await test('does not throw on malformed events', async () => {
+    const emptyDir = tempDir('continuation-empty-');
+    const emptyCwd = tempDir('continuation-cwd-');
+
+    const originalCwd = process.cwd();
+    process.chdir(emptyCwd);
+    try {
+      const calls = [];
+      const hooks = await plugin.server({ client: fakeClient(calls), directory: emptyDir });
+
+      await hooks.event({ event: { type: 'command.executed' } });
+      await hooks.event({ event: { type: 'command.executed', properties: { name: 'goal' } } });
+      await hooks.event({
+        event: { type: 'command.executed', properties: { name: 'goal', sessionID: 'sess-x', arguments: 42 } },
+      });
+      await hooks.event({ event: { type: 'session.idle' } });
+      await hooks.event({ event: { type: 'session.updated', properties: { sessionID: 'sess-x' } } });
+
+      assert.strictEqual(calls.length, 0, 'expected no prompt from malformed events');
     } finally {
       process.chdir(originalCwd);
     }

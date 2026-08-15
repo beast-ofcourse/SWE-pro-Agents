@@ -37,15 +37,15 @@ npm test
 
 ## Testing
 
-- `npm test` runs the full zero-dependency suite: `test/installer.test.js` (12
+- `npm test` runs the full zero-dependency suite: `test/installer.test.js` (14
   tests — the install/uninstall lifecycle: fresh install, idempotent reinstall,
   stale-file pruning, no-manifest safety, uninstall isolation, manifest-less
   uninstall, and plugin-file handling), `test/validate.test.js` (18 tests — the
-  pack validator's self-tests), `test/validate-plan.test.js` (9 tests — the plan
-  validator), `test/loop-logic.test.js` (48 tests — the loop's pure logic),
-  `test/run-loop.test.js` (9 tests — the loop runner end to end), and
-  `test/continuation.test.js` (3 tests — the continuation plugin's ledger
-  directory handling).
+  pack validator's self-tests), `test/validate-plan.test.js` (12 tests — the plan
+  validator), `test/loop-logic.test.js` (57 tests — the loop's pure logic),
+  `test/run-loop.test.js` (10 tests — the loop runner end to end),
+  `test/bin.test.js` (5 tests — the CLI), and `test/continuation.test.js` (11
+  tests — the continuation plugin's goal-gated idle nudge).
 - `npm run validate` runs `scripts/validate.js`, the **strict** pack validator: it
   lints every agent and skill and exits 1 on any violation. The validator is wired
   into CI, so the pack must stay green there too.
@@ -64,10 +64,10 @@ contributor-facing — the test commands, the plan rules, and the ledger/plugin
 machinery:
 
 - **Test commands.** `npm test` runs the full suite (installer lifecycle, pack
-  validator, plan validator, loop logic, loop runner, and continuation plugin —
-  see [Testing](#testing)); `npm run validate` runs the strict pack validator;
-  `npm run validate:plan` runs the plan validator (`scripts/validate-plan.js`)
-  against `plans/`.
+  validator, plan validator, loop logic, loop runner, CLI, and continuation
+  plugin — see [Testing](#testing)); `npm run validate` runs the strict pack
+  validator; `npm run validate:plan` runs the plan validator
+  (`scripts/validate-plan.js`) against `plans/`.
 - **Plan rules.** `npm run validate:plan` enforces three rules on a plan
   directory:
   - **P1 — Plan presence:** `tasks.md` exists and contains at least one
@@ -89,10 +89,18 @@ machinery:
   result after each task, every update via an atomic save (write to `.tmp`,
   rename over). Never hand-edit it.
 - **The plugin (`plugins/continuation.js`).** An OpenCode plugin that nudges the
-  loop forward: on `session.idle`, when the session's agent is `swe-pro` and the
-  ledger reports `running` with a pending task and no `in_progress` task, it
-  prompts the session to continue plan execution. Every failure path returns
-  silently — the hook never throws.
+  loop forward — but only for a session with an **active goal**. The loop is
+  goal-gated: a session is armed when a `/goal` command executes in it (the
+  plugin matches the `command.executed` event for the `goal` command); `/goal
+  clear` (aliases `stop`, `off`, `reset`, `none`, `cancel`) and `/goal pause`
+  disarm the gate, `/goal resume` (or a bare `/goal` / a new objective) re-arms
+  it. Fail-closed: no active goal → no nudge, ever. The arm state is in-memory
+  per session, so an OpenCode restart or plugin reload resets every session to
+  unarmed — a fresh `/goal` is required after a restart. When armed, on
+  `session.idle`, when the session's agent is `swe-pro` and the ledger reports
+  `running` with a pending task and no `in_progress` task, it prompts the
+  session to continue plan execution. Every failure path returns silently — the
+  hook never throws.
 
 ## Project structure
 
