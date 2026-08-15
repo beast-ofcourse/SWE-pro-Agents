@@ -56,10 +56,10 @@ function tempDir(prefix) {
 }
 
 /** A fake OpenCode client recording session.prompt calls. */
-function fakeClient(calls) {
+function fakeClient(calls, agent) {
   return {
     session: {
-      get: async () => ({ agent: 'swe-pro' }),
+      get: async () => ({ agent: agent || 'swe-pro' }),
       prompt: async (args) => {
         calls.push(args);
       },
@@ -134,6 +134,49 @@ async function main() {
       const calls = [];
       await fireIdle(emptyDir, fakeClient(calls));
       assert.strictEqual(calls.length, 0, 'expected no prompt without a ledger');
+    } finally {
+      process.chdir(originalCwd);
+    }
+  });
+
+  await test('does not prompt for a non-swe-pro session agent', async () => {
+    const ledgerDir = tempDir('continuation-ledger-');
+    fs.mkdirSync(path.join(ledgerDir, 'plans'), { recursive: true });
+    fs.writeFileSync(path.join(ledgerDir, 'plans', 'state.json'), resumableLedger());
+    const emptyCwd = tempDir('continuation-cwd-');
+
+    const originalCwd = process.cwd();
+    process.chdir(emptyCwd);
+    try {
+      const calls = [];
+      await fireIdle(ledgerDir, fakeClient(calls, 'architect'));
+      assert.strictEqual(calls.length, 0, 'expected no prompt for a non-swe-pro session');
+    } finally {
+      process.chdir(originalCwd);
+    }
+  });
+
+  await test('does not prompt when a task is in_progress', async () => {
+    const ledgerDir = tempDir('continuation-ledger-');
+    fs.mkdirSync(path.join(ledgerDir, 'plans'), { recursive: true });
+    fs.writeFileSync(
+      path.join(ledgerDir, 'plans', 'state.json'),
+      JSON.stringify({
+        status: 'running',
+        tasks: [
+          { id: 'T-001', status: 'in_progress' },
+          { id: 'T-002', status: 'pending' },
+        ],
+      })
+    );
+    const emptyCwd = tempDir('continuation-cwd-');
+
+    const originalCwd = process.cwd();
+    process.chdir(emptyCwd);
+    try {
+      const calls = [];
+      await fireIdle(ledgerDir, fakeClient(calls));
+      assert.strictEqual(calls.length, 0, 'expected no prompt while a task is in_progress');
     } finally {
       process.chdir(originalCwd);
     }

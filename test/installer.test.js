@@ -372,6 +372,29 @@ test('uninstall with a legacy manifest (no plugins array) leaves prefixed plugin
   assert.ok(fs.existsSync(path.join(pluginsDir(home), 'my-own-plugin.js')), 'user plugin untouched');
 });
 
+test('uninstall skips non-string manifest.plugins entries without throwing', () => {
+  const home = tempHome();
+  fs.mkdirSync(pluginsDir(home), { recursive: true });
+  fs.writeFileSync(path.join(pluginsDir(home), 'swe-pro-agents-continuation.js'), '# x\n');
+  fs.writeFileSync(path.join(pluginsDir(home), 'my-own-plugin.js'), '# mine\n');
+  const manifestDir = path.join(home, '.config', 'swe-pro-agents');
+  fs.mkdirSync(manifestDir, { recursive: true });
+  fs.writeFileSync(
+    manifestPath(home),
+    JSON.stringify({
+      packageVersion: '2.7.0',
+      agents: AGENT_FILES,
+      skills: SKILL_NAMES,
+      plugins: ['swe-pro-agents-continuation.js', 42, { name: 'evil' }],
+    })
+  );
+
+  run(UNINSTALL, home);
+
+  assert.ok(!fs.existsSync(path.join(pluginsDir(home), 'swe-pro-agents-continuation.js')), 'valid recorded plugin removed');
+  assert.ok(fs.existsSync(path.join(pluginsDir(home), 'my-own-plugin.js')), 'user plugin untouched');
+});
+
 // ---------------------------------------------------------------------------
 
 console.log(`\n${passed} passed, ${failed} failed`);

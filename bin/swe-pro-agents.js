@@ -33,6 +33,7 @@ const {
   buildContinuationMessage,
   summary,
   shouldContinue,
+  syncWithSpec,
   CLI_DIRECTIVE,
 } = require('../scripts/loop-logic.js');
 
@@ -311,20 +312,21 @@ function cmdRun(argv) {
   const ledgerPath = path.join(planDir, LEDGER_FILE);
   const planFile = path.join(planDir, PLAN_FILE);
 
+  if (!fs.existsSync(planFile)) {
+    throw new Error(`plan file not found: ${planFile}`);
+  }
+  const markdown = fs.readFileSync(planFile, 'utf8');
+  const specTasks = tasksFromMarkdown(markdown);
+  if (specTasks.length === 0) {
+    throw new Error(`plan file contains no tasks: ${planFile}`);
+  }
+
   let state = loadState(ledgerPath);
   if (!state) {
     // An existing file that cannot be loaded (corrupt, invalid) is never
     // silently replaced — that would lose recorded progress.
     if (fs.existsSync(ledgerPath)) {
       throw new Error(`ledger exists but could not be loaded: ${ledgerPath}`);
-    }
-    if (!fs.existsSync(planFile)) {
-      throw new Error(`plan file not found: ${planFile}`);
-    }
-    const markdown = fs.readFileSync(planFile, 'utf8');
-    const specTasks = tasksFromMarkdown(markdown);
-    if (specTasks.length === 0) {
-      throw new Error(`plan file contains no tasks: ${planFile}`);
     }
     state = initState(specTasks);
     if (args.maxIterations !== null) {
@@ -334,6 +336,15 @@ function cmdRun(argv) {
   } else if (args.maxIterations !== null) {
     // Override the budget for this run; persisted on the next save.
     state = { ...state, budget: { ...state.budget, max_iterations_per_run: args.maxIterations } };
+  }
+
+  // Reconcile the ledger against the current plan spec before dry-run,
+  // result handling, or dispatch — tasks.md may have changed since the
+  // ledger was created (tasks renamed, added, or removed).
+  const synced = syncWithSpec(state, specTasks);
+  if (synced.added.length > 0 || synced.removed.length > 0) {
+    state = synced.state;
+    saveState(ledgerPath, state);
   }
 
   if (args.dryRun) {

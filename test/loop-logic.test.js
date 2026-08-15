@@ -245,6 +245,64 @@ test('validateState rejects negative iterations', () => {
   assert.ok(r.errors.some((e) => e === 'iterations -1 < 0'), 'expected an iterations error');
 });
 
+test('validateState rejects a malformed task record', () => {
+  const s = validState();
+  s.tasks[1] = null;
+  const r = validateState(s);
+  assert.strictEqual(r.ok, false);
+  assert.ok(r.errors.some((e) => e === 'task records must be objects'), 'expected a task-record error');
+});
+
+test('validateState rejects a task with a missing or empty id', () => {
+  const s = validState();
+  s.tasks[1] = { status: 'pending', attempts: 0 };
+  const r = validateState(s);
+  assert.strictEqual(r.ok, false);
+  assert.ok(r.errors.some((e) => e === "task has invalid id 'undefined'"), 'expected an invalid-id error');
+});
+
+test('validateState rejects non-integer or negative attempts', () => {
+  const s = validState();
+  s.tasks[0].attempts = '2';
+  const r = validateState(s);
+  assert.strictEqual(r.ok, false);
+  assert.ok(r.errors.some((e) => e === "task 'T-001' has invalid attempts '2'"), 'expected an attempts error');
+
+  const s2 = validState();
+  s2.tasks[0].attempts = -1;
+  const r2 = validateState(s2);
+  assert.strictEqual(r2.ok, false);
+  assert.ok(r2.errors.some((e) => e === "task 'T-001' has invalid attempts '-1'"), 'expected an attempts error');
+});
+
+test('validateState rejects non-integer or negative budget fields', () => {
+  const s = validState();
+  s.budget.max_attempts_per_task = 1.5;
+  const r = validateState(s);
+  assert.strictEqual(r.ok, false);
+  assert.ok(
+    r.errors.some((e) => e === 'budget.max_attempts_per_task must be a non-negative integer'),
+    'expected a max_attempts error'
+  );
+
+  const s2 = validState();
+  s2.budget.max_iterations_per_run = -1;
+  const r2 = validateState(s2);
+  assert.strictEqual(r2.ok, false);
+  assert.ok(
+    r2.errors.some((e) => e === 'budget.max_iterations_per_run must be a non-negative integer'),
+    'expected a max_iterations error'
+  );
+});
+
+test('validateState rejects non-integer iterations', () => {
+  const s = validState();
+  s.iterations = 1.5;
+  const r = validateState(s);
+  assert.strictEqual(r.ok, false);
+  assert.ok(r.errors.some((e) => e === 'iterations must be a non-negative integer'), 'expected an iterations error');
+});
+
 // ---------------------------------------------------------------------------
 // nextTask
 // ---------------------------------------------------------------------------
@@ -531,6 +589,15 @@ test('loadState returns null for a state without a budget', () => {
   const ledgerPath = path.join(dir, 'state.json');
   const s = validState();
   delete s.budget;
+  fs.writeFileSync(ledgerPath, JSON.stringify(s), 'utf8');
+  assert.strictEqual(loadState(ledgerPath), null);
+});
+
+test('loadState returns null for a ledger with string attempts', () => {
+  const dir = tempDir('loop-logic-');
+  const ledgerPath = path.join(dir, 'state.json');
+  const s = validState();
+  s.tasks[0].attempts = '2';
   fs.writeFileSync(ledgerPath, JSON.stringify(s), 'utf8');
   assert.strictEqual(loadState(ledgerPath), null);
 });

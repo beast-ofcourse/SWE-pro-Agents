@@ -136,6 +136,14 @@ function validateState(state) {
   } else {
     const seen = new Set();
     for (const task of state.tasks) {
+      if (!task || typeof task !== 'object') {
+        errors.push('task records must be objects');
+        continue;
+      }
+      if (typeof task.id !== 'string' || task.id.length === 0) {
+        errors.push(`task has invalid id '${task.id}'`);
+        continue;
+      }
       if (!TASK_STATUSES.has(task.status)) {
         errors.push(`task '${task.id}' has invalid status '${task.status}'`);
       }
@@ -143,11 +151,14 @@ function validateState(state) {
         errors.push(`duplicate task id '${task.id}'`);
       }
       seen.add(task.id);
+      if (typeof task.attempts !== 'number' || !Number.isInteger(task.attempts) || task.attempts < 0) {
+        errors.push(`task '${task.id}' has invalid attempts '${task.attempts}'`);
+      }
     }
     const maxAttempts = state.budget && state.budget.max_attempts_per_task;
     if (typeof maxAttempts === 'number') {
       for (const task of state.tasks) {
-        if (task.status !== 'blocked' && task.attempts > maxAttempts) {
+        if (task && typeof task === 'object' && task.status !== 'blocked' && task.attempts > maxAttempts) {
           errors.push(`task '${task.id}' has ${task.attempts} attempts (> ${maxAttempts})`);
         }
       }
@@ -157,16 +168,24 @@ function validateState(state) {
   if (!state.budget || typeof state.budget !== 'object') {
     errors.push('budget must be an object');
   } else {
-    if (typeof state.budget.max_attempts_per_task !== 'number') {
-      errors.push('budget.max_attempts_per_task must be a number');
+    if (
+      typeof state.budget.max_attempts_per_task !== 'number' ||
+      !Number.isInteger(state.budget.max_attempts_per_task) ||
+      state.budget.max_attempts_per_task < 0
+    ) {
+      errors.push('budget.max_attempts_per_task must be a non-negative integer');
     }
-    if (typeof state.budget.max_iterations_per_run !== 'number') {
-      errors.push('budget.max_iterations_per_run must be a number');
+    if (
+      typeof state.budget.max_iterations_per_run !== 'number' ||
+      !Number.isInteger(state.budget.max_iterations_per_run) ||
+      state.budget.max_iterations_per_run < 0
+    ) {
+      errors.push('budget.max_iterations_per_run must be a non-negative integer');
     }
   }
 
-  if (typeof state.iterations !== 'number') {
-    errors.push('iterations must be a number');
+  if (typeof state.iterations !== 'number' || !Number.isInteger(state.iterations)) {
+    errors.push('iterations must be a non-negative integer');
   } else if (state.iterations < 0) {
     errors.push(`iterations ${state.iterations} < 0`);
   }

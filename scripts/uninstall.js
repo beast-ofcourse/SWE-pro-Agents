@@ -67,7 +67,7 @@ function main() {
   //    and only names recorded in our own manifest. User skills survive.
   if (manifest) {
     for (const name of manifest.skills) {
-      if (!name || name === '.' || name === '..') continue;
+      if (typeof name !== 'string' || !name || name === '.' || name === '..') continue;
       if (name.includes('/') || name.includes('\\')) continue;
       const target = path.join(SKILLS_DIR, name);
       if (path.dirname(target) !== path.normalize(SKILLS_DIR)) continue;
@@ -92,7 +92,7 @@ function main() {
   if (manifest && fs.existsSync(PLUGIN_DIR)) {
     const pluginNames = Array.isArray(manifest.plugins) ? manifest.plugins : [];
     for (const name of pluginNames) {
-      if (!name || name === '.' || name === '..') continue;
+      if (typeof name !== 'string' || !name || name === '.' || name === '..') continue;
       if (name.includes('/') || name.includes('\\')) continue;
       if (!name.startsWith('swe-pro-agents-')) continue;
       const target = path.join(PLUGIN_DIR, path.basename(name));
