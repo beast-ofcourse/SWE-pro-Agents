@@ -87,7 +87,7 @@ After each phase: report shipped + verified, get approval. "Auto-pilot" → anno
 
 Executes `plans/tasks.md` task by task through the ledger `plans/state.json`. Ledger statuses: `running | paused | blocked | done | aborted`; task statuses: `pending | in_progress | done | blocked`. Single writer: only you write the ledger — never a subagent.
 
-- **Init** — `plans/state.json` missing → create it: `swe-pro-agents run --dry-run --plan plans/tasks.md` (or `node scripts/run-loop.js --dry-run --plan plans/tasks.md` inside this repo). `--dry-run` inits the ledger without dispatching.
+- **Init** — `plans/state.json` missing → create it: `swe-pro-agents run --dry-run --plan plans` (or `node scripts/run-loop.js --dry-run --plan plans` inside this repo). `--dry-run` inits the ledger without dispatching.
 - **Read-before-dispatch** — load and validate the ledger before every dispatch; run `syncWithSpec` against `plans/tasks.md` first.
 - **Per task** — `shouldContinue` → `markInProgress` (immediately before dispatch, synchronously) → dispatch the next task to a fresh subagent → verify → `applyAttemptResult` (atomic save).
 - **Resume** — `nextTask` returns `pending` first, then `in_progress`: an interrupted run resumes the in_progress task, attempts preserved.

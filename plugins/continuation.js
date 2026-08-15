@@ -65,10 +65,10 @@
  *    (Info.agent).
  *
  * Behavior: on session.idle, if the session's agent is `swe-pro` and
- * plans/state.json (relative to the project cwd) reports status "running" with
- * at least one pending task and no in_progress task, prompt the session to
- * continue plan execution. Every failure path returns silently; the hook never
- * throws.
+ * plans/state.json (relative to the plugin context `directory`) reports status
+ * "running" with at least one pending task and no in_progress task, prompt the
+ * session to continue plan execution. Every failure path returns silently; the
+ * hook never throws.
  */
 
 'use strict';
@@ -79,17 +79,17 @@ const path = require('path');
 const NUDGE_MESSAGE =
   'Autonomous loop: continue plan execution per plans/state.json. Load and validate the ledger, dispatch the next task, verify it, record the result, and end with <promise>DONE</promise>.';
 
-const stateFile = () => path.join(process.cwd(), 'plans', 'state.json');
+const stateFile = (directory) => path.join(directory, 'plans', 'state.json');
 
 /**
- * Read plans/state.json. Returns the parsed object, or null when the file is
- * missing, unreadable, or not a JSON object (caller treats null as "do
- * nothing").
+ * Read plans/state.json under the given project directory. Returns the parsed
+ * object, or null when the file is missing, unreadable, or not a JSON object
+ * (caller treats null as "do nothing").
  */
-function readState() {
+function readState(directory) {
   let raw;
   try {
-    raw = fs.readFileSync(stateFile(), 'utf8');
+    raw = fs.readFileSync(stateFile(directory), 'utf8');
   } catch {
     return null;
   }
@@ -115,7 +115,7 @@ function shouldResume(state) {
 
 module.exports = {
   id: 'swe-pro-continuation',
-  server: async ({ client }) => {
+  server: async ({ client, directory }) => {
     return {
       event: async ({ event }) => {
         try {
@@ -127,7 +127,7 @@ module.exports = {
           const session = await client.session.get({ path: { id: sessionID } });
           if (!session || session.agent !== 'swe-pro') return;
 
-          const state = readState();
+          const state = readState(directory);
           if (!shouldResume(state)) return;
 
           await client.session.prompt({

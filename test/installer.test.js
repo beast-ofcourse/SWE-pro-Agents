@@ -49,9 +49,10 @@ const SKILL_NAMES = fs
   .sort();
 
 // Plugin basenames the pack installs into the global plugin dir (see
-// scripts/install.js listPackPlugins — sources are plugins/continuation.js and
-// scripts/loop-logic.js).
-const PLUGIN_NAMES = ['swe-pro-agents-continuation.js', 'swe-pro-agents-loop-logic.js'];
+// scripts/install.js listPackPlugins — the only plugin is
+// plugins/continuation.js; scripts/loop-logic.js is a library consumed by the
+// CLI, never installed as a plugin).
+const PLUGIN_NAMES = ['swe-pro-agents-continuation.js'];
 
 const agentsDir = (home) => path.join(home, '.config', 'opencode', 'agents', PACKAGE_NAME);
 const skillsDir = (home) => path.join(home, '.config', 'opencode', 'skills');
@@ -266,23 +267,18 @@ test('uninstall without manifest still removes the package-scoped agents dir, le
 // ---------------------------------------------------------------------------
 // 7. Plugins
 // ---------------------------------------------------------------------------
-test('fresh install copies both plugin files and records their names in the manifest', () => {
+test('fresh install copies the plugin file and records its name in the manifest', () => {
   const home = tempHome();
   run(INSTALL, home);
 
   for (const name of PLUGIN_NAMES) {
     assert.ok(fs.existsSync(path.join(pluginsDir(home), name)), `plugin ${name} installed`);
   }
-  // Content matches the pack sources (continuation.js from plugins/, loop-logic.js from scripts/).
+  // Content matches the pack source (plugins/continuation.js).
   assert.deepStrictEqual(
     fs.readFileSync(path.join(pluginsDir(home), 'swe-pro-agents-continuation.js'), 'utf-8'),
     fs.readFileSync(path.join(REPO, 'plugins', 'continuation.js'), 'utf-8'),
     'continuation plugin content matches the pack'
-  );
-  assert.deepStrictEqual(
-    fs.readFileSync(path.join(pluginsDir(home), 'swe-pro-agents-loop-logic.js'), 'utf-8'),
-    fs.readFileSync(path.join(REPO, 'scripts', 'loop-logic.js'), 'utf-8'),
-    'loop-logic plugin content matches the pack'
   );
 
   const manifest = readManifest(home);
@@ -354,6 +350,26 @@ test('uninstall without a manifest leaves the plugin dir untouched', () => {
 
   assert.ok(fs.existsSync(path.join(pluginsDir(home), 'swe-pro-agents-continuation.js')), 'prefixed plugin untouched without manifest');
   assert.ok(fs.existsSync(path.join(pluginsDir(home), 'my-own-plugin.js')), 'user plugin untouched without manifest');
+});
+
+test('uninstall with a legacy manifest (no plugins array) leaves prefixed plugins', () => {
+  const home = tempHome();
+  fs.mkdirSync(pluginsDir(home), { recursive: true });
+  fs.writeFileSync(path.join(pluginsDir(home), 'swe-pro-agents-continuation.js'), '# x\n');
+  fs.writeFileSync(path.join(pluginsDir(home), 'my-own-plugin.js'), '# mine\n');
+  const manifestDir = path.join(home, '.config', 'swe-pro-agents');
+  fs.mkdirSync(manifestDir, { recursive: true });
+  // Pre-2.6.x manifests recorded agents and skills but no plugins array —
+  // they prove nothing about plugin ownership, so nothing may be removed.
+  fs.writeFileSync(
+    manifestPath(home),
+    JSON.stringify({ packageVersion: '2.5.0', agents: AGENT_FILES, skills: SKILL_NAMES })
+  );
+
+  run(UNINSTALL, home);
+
+  assert.ok(fs.existsSync(path.join(pluginsDir(home), 'swe-pro-agents-continuation.js')), 'prefixed plugin untouched by a legacy manifest');
+  assert.ok(fs.existsSync(path.join(pluginsDir(home), 'my-own-plugin.js')), 'user plugin untouched');
 });
 
 // ---------------------------------------------------------------------------

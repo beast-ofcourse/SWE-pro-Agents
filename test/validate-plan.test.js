@@ -105,6 +105,15 @@ test('extractTasks parses ids and falls back to the heading text for the title',
   assert.strictEqual(tasks[1].title, '');
 });
 
+test('extractTasks recognizes colon-form headings like the loop parser', () => {
+  const tasks = extractTasks('### T-001: First task\n\n**Build.** A.\n\n### T-002: Second task\n\n**Build.** B.\n');
+  assert.strictEqual(tasks.length, 2);
+  assert.strictEqual(tasks[0].id, 'T-001');
+  assert.strictEqual(tasks[0].title, 'First task');
+  assert.strictEqual(tasks[1].id, 'T-002');
+  assert.strictEqual(tasks[1].title, 'Second task');
+});
+
 // ---------------------------------------------------------------------------
 // P1 — plan presence
 // ---------------------------------------------------------------------------
@@ -163,6 +172,17 @@ test('P3 flags an invalid ledger status', () => {
   const state = JSON.stringify({ status: 'in-flight', tasks: [{ id: 'T-001' }, { id: 'T-002' }] });
   const v = validatePlanDir(planDir({ 'tasks.md': CLEAN_TASKS, 'state.json': state }));
   assert.ok(v.some((x) => x.rule === 'P3' && /invalid status/.test(x.detail)), 'expected a P3 violation for the status');
+});
+
+test('P3 flags an unparseable state.json', () => {
+  const v = validatePlanDir(planDir({ 'tasks.md': CLEAN_TASKS, 'state.json': '{ not json' }));
+  assert.ok(v.some((x) => x.rule === 'P3' && /unparseable JSON/.test(x.detail)), 'expected a P3 violation for unparseable JSON');
+});
+
+test('P3 flags a plan task missing from the ledger', () => {
+  const state = JSON.stringify({ status: 'running', tasks: [{ id: 'T-001' }] });
+  const v = validatePlanDir(planDir({ 'tasks.md': CLEAN_TASKS, 'state.json': state }));
+  assert.ok(v.some((x) => x.rule === 'P3' && /missing task 'T-002'/.test(x.detail)), 'expected a P3 violation for the missing task');
 });
 
 // ---------------------------------------------------------------------------

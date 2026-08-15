@@ -27,6 +27,8 @@
 const fs = require('fs');
 const path = require('path');
 
+const { TASK_HEADING_RE } = require('./loop-logic.js');
+
 /** Allowed ledger statuses (P3). */
 const VALID_STATUSES = new Set(['running', 'paused', 'blocked', 'done', 'aborted']);
 
@@ -38,14 +40,18 @@ const REQUIRED_SECTIONS = ['**Build.**', '**Acceptance criteria.**', '**Verify.*
  * Returns [{ id, title, body }] where `title` is the heading text after the
  * id (the fallback when a task has no explicit title) and `body` is the text
  * between this heading and the next task heading (or end of file).
+ *
+ * Uses the same heading grammar as the loop parser (TASK_HEADING_RE from
+ * scripts/loop-logic.js) so the validator recognizes exactly the headings the
+ * loop parses — including colon-form and en-dash titles.
  */
 function extractTasks(content) {
   const tasks = [];
   let current = null;
   for (const line of content.split(/\r?\n/)) {
-    const m = line.match(/^###\s+(T-\d+)(?:\s*(?:—|-)\s*(.*))?$/);
+    const m = line.match(TASK_HEADING_RE);
     if (m) {
-      current = { id: m[1], title: (m[2] || '').trim(), body: [] };
+      current = { id: m[1], title: (m[2] || '').replace(/^[\s—–\-:]+/, ''), body: [] };
       tasks.push(current);
     } else if (current) {
       current.body.push(line);

@@ -229,6 +229,18 @@ test('a missing plan file exits 1', () => {
   assert.ok(r.stderr.includes('[run-loop] Error: plan file not found'), 'expected the error message');
 });
 
+test('a corrupt ledger exits 1 and is never silently replaced', () => {
+  const dir = planDir({ 'tasks.md': TASKS_MD, 'state.json': '{ not json' });
+  const r = runLoop(['--plan', dir]);
+  assert.strictEqual(r.status, 1, 'corrupt ledger should exit 1');
+  assert.ok(r.stderr.includes('ledger exists but could not be loaded'), 'expected the corrupt-ledger error');
+  assert.strictEqual(
+    fs.readFileSync(path.join(dir, 'state.json'), 'utf8'),
+    '{ not json',
+    'the corrupt ledger file must be left untouched'
+  );
+});
+
 test('an unknown flag exits 2', () => {
   const r = runLoop(['--bogus']);
   assert.strictEqual(r.status, 2, 'unknown flag should exit 2');

@@ -42,7 +42,7 @@
   "scripts": {
     "postinstall": "node scripts/install.js",
     "preuninstall": "node scripts/uninstall.js",
-    "test": "node test/installer.test.js && node test/validate.test.js && node test/validate-plan.test.js && node test/loop-logic.test.js && node test/run-loop.test.js",
+    "test": "node test/installer.test.js && node test/validate.test.js && node test/validate-plan.test.js && node test/loop-logic.test.js && node test/run-loop.test.js && node test/continuation.test.js",
     "validate": "node scripts/validate.js",
     "validate:plan": "node scripts/validate-plan.js"
   },

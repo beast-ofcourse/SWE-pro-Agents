@@ -43,22 +43,9 @@ const {
   tasksFromMarkdown,
 } = require('./loop-logic.js');
 
+const { DEFAULT_PLAN_DIR, LEDGER_FILE, PLAN_FILE, stopReason, emit } = require('./cli-shared.js');
+
 const pkg = require(path.join(__dirname, '..', 'package.json'));
-
-const DEFAULT_PLAN_DIR = 'plans';
-const LEDGER_FILE = 'state.json';
-const PLAN_FILE = 'tasks.md';
-
-/**
- * Why shouldContinue() returned false. Presentation only — mirrors
- * bin/swe-pro-agents.js; the gate itself lives in scripts/loop-logic.js.
- */
-function stopReason(state) {
-  if (state.status !== 'running') return `ledger status is '${state.status}'`;
-  if (state.iterations >= state.budget.max_iterations_per_run) return 'iteration budget exhausted';
-  if (state.tasks.some((t) => t.status === 'blocked')) return 'a task is blocked';
-  return 'no next task';
-}
 
 /**
  * Parse the command-line arguments. Returns { ok: true, args } or
@@ -100,19 +87,6 @@ function parseArgs(argv) {
     }
   }
   return { ok: true, args };
-}
-
-/**
- * Emit output. In jsonMode the machine-readable object goes to stdout and the
- * human lines to stderr; otherwise the human lines go to stdout.
- */
-function emit(jsonMode, jsonObj, humanLines) {
-  if (jsonMode) {
-    process.stdout.write(`${JSON.stringify(jsonObj, null, 2)}\n`);
-    for (const line of humanLines) process.stderr.write(`${line}\n`);
-  } else {
-    for (const line of humanLines) process.stdout.write(`${line}\n`);
-  }
 }
 
 /**
@@ -163,9 +137,14 @@ async function main() {
     throw new Error(`plan file contains no tasks: ${planFile}`);
   }
 
-  // Load the ledger; init it from the plan when missing or invalid.
+  // Load the ledger; init it from the plan when missing. An existing file
+  // that cannot be loaded (corrupt, invalid) is never silently replaced —
+  // that would lose recorded progress.
   let state = loadState(ledgerPath);
   if (!state) {
+    if (fs.existsSync(ledgerPath)) {
+      throw new Error(`ledger exists but could not be loaded: ${ledgerPath}`);
+    }
     state = initLedger(ledgerPath, markdown);
     if (args.maxIterations !== null) {
       state = { ...state, budget: { ...state.budget, max_iterations_per_run: args.maxIterations } };

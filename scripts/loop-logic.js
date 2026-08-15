@@ -38,6 +38,14 @@ const DEFAULT_MAX_ATTEMPTS_PER_TASK = 2;
 const DEFAULT_MAX_ITERATIONS_PER_RUN = 40;
 
 /**
+ * The task-heading grammar: `### T-###` with optional trailing title text
+ * (separator punctuation like "—", "-", or ":" is stripped by the caller).
+ * Shared with scripts/validate-plan.js so the plan validator recognizes
+ * exactly the headings the loop parses.
+ */
+const TASK_HEADING_RE = /^###\s+(T-\d+)\s*(.*)$/;
+
+/**
  * Parse a plans/tasks.md-style document into task descriptors.
  *
  * Matches `### T-###` headings; the title is the heading text after the id
@@ -52,7 +60,7 @@ function tasksFromMarkdown(markdown) {
   const tasks = [];
   const lines = String(markdown).split(/\r?\n/);
   for (let i = 0; i < lines.length; i++) {
-    const m = lines[i].match(/^###\s+(T-\d+)\s*(.*)$/);
+    const m = lines[i].match(TASK_HEADING_RE);
     if (!m) continue;
     const id = m[1];
     const title = m[2].replace(/^[\s—–\-:]+/, '');
@@ -103,7 +111,7 @@ function initState(tasks) {
  *
  * Rejects: wrong schema version, unknown ledger status, missing/empty tasks,
  * unknown task status, duplicate task ids, over-budget attempts on non-blocked
- * tasks, and negative iterations.
+ * tasks, a missing or malformed budget, and missing or negative iterations.
  *
  * @param {object} state
  * @returns {{ok: boolean, errors: string[]}}
@@ -146,7 +154,20 @@ function validateState(state) {
     }
   }
 
-  if (typeof state.iterations === 'number' && state.iterations < 0) {
+  if (!state.budget || typeof state.budget !== 'object') {
+    errors.push('budget must be an object');
+  } else {
+    if (typeof state.budget.max_attempts_per_task !== 'number') {
+      errors.push('budget.max_attempts_per_task must be a number');
+    }
+    if (typeof state.budget.max_iterations_per_run !== 'number') {
+      errors.push('budget.max_iterations_per_run must be a number');
+    }
+  }
+
+  if (typeof state.iterations !== 'number') {
+    errors.push('iterations must be a number');
+  } else if (state.iterations < 0) {
     errors.push(`iterations ${state.iterations} < 0`);
   }
 
@@ -226,7 +247,9 @@ function syncWithSpec(state, tasks) {
   for (const specTask of tasks) {
     const existing = ledgerById.get(specTask.id);
     if (existing) {
-      merged.push(existing);
+      // Refresh the descriptive fields from the spec; keep the execution
+      // fields (status, attempts, last_verify) so progress is preserved.
+      merged.push({ ...existing, phase: specTask.phase || '', title: specTask.title || '' });
     } else {
       merged.push({
         id: specTask.id,
@@ -275,7 +298,9 @@ function applyAttemptResult(state, taskId, result) {
     nextTaskState = {
       ...task,
       attempts,
-      status: attempts >= maxAttempts ? 'blocked' : task.status,
+      // Below max the task goes back to pending so the runner explicitly
+      // re-dispatches the retry; at max it blocks (stop-on-blocked).
+      status: attempts >= maxAttempts ? 'blocked' : 'pending',
     };
   }
 
@@ -289,6 +314,13 @@ function applyAttemptResult(state, taskId, result) {
 
   return { ...state, status, iterations: state.iterations + 1, tasks };
 }
+
+/**
+ * The "CLI-driven run" directive sentence appended to cliMode continuation
+ * messages (with surrounding spaces). Exported so bin/swe-pro-agents.js can
+ * strip it for --no-continue without duplicating the literal.
+ */
+const CLI_DIRECTIVE = ' CLI-driven run: do NOT modify plans/state.json — the caller records results. ';
 
 /**
  * Build the continuation prompt for the next task. Throws when there is no
@@ -307,7 +339,7 @@ function buildContinuationMessage(state, opts) {
   if (cliMode) {
     return (
       head +
-      ' CLI-driven run: do NOT modify plans/state.json — the caller records results. ' +
+      CLI_DIRECTIVE +
       'Dispatch the task, verify the result, and end your reply with <promise>DONE</promise>. ' +
       'Never push or merge; destructive operations require explicit confirmation and are auto-denied here.'
     );
@@ -402,6 +434,8 @@ function initLedger(path, markdown) {
 
 module.exports = {
   LEDGER_SCHEMA_VERSION,
+  TASK_HEADING_RE,
+  CLI_DIRECTIVE,
   tasksFromMarkdown,
   initState,
   validateState,

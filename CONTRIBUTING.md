@@ -42,15 +42,17 @@ npm test
   stale-file pruning, no-manifest safety, uninstall isolation, manifest-less
   uninstall, and plugin-file handling), `test/validate.test.js` (18 tests — the
   pack validator's self-tests), `test/validate-plan.test.js` (9 tests — the plan
-  validator), `test/loop-logic.test.js` (48 tests — the loop's pure logic), and
-  `test/run-loop.test.js` (9 tests — the loop runner end to end).
+  validator), `test/loop-logic.test.js` (48 tests — the loop's pure logic),
+  `test/run-loop.test.js` (9 tests — the loop runner end to end), and
+  `test/continuation.test.js` (3 tests — the continuation plugin's ledger
+  directory handling).
 - `npm run validate` runs `scripts/validate.js`, the **strict** pack validator: it
   lints every agent and skill and exits 1 on any violation. The validator is wired
   into CI, so the pack must stay green there too.
 - Installer tests redirect `HOME`/`USERPROFILE` to a throwaway temp directory, so
   your real config is never touched. Temp dirs are cleaned up automatically.
 - CI (`.github/workflows/ci.yml`) runs syntax checks (`node --check`), strict pack
-  validation, and both test suites on **Linux + Windows × Node 18/20/22**.
+  validation, and the full test suite on **Linux + Windows × Node 18/20/22**.
 - If your change alters what the installer copies or removes, extend the test
   suite to cover it — it must stay green.
 
@@ -62,8 +64,8 @@ contributor-facing — the test commands, the plan rules, and the ledger/plugin
 machinery:
 
 - **Test commands.** `npm test` runs the full suite (installer lifecycle, pack
-  validator, plan validator, loop logic, and loop runner — see
-  [Testing](#testing)); `npm run validate` runs the strict pack validator;
+  validator, plan validator, loop logic, loop runner, and continuation plugin —
+  see [Testing](#testing)); `npm run validate` runs the strict pack validator;
   `npm run validate:plan` runs the plan validator (`scripts/validate-plan.js`)
   against `plans/`.
 - **Plan rules.** `npm run validate:plan` enforces three rules on a plan

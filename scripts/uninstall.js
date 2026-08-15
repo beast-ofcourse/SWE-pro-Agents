@@ -84,15 +84,24 @@ function main() {
     console.log(`  If this pack's skills or plugins are still there, remove them manually.`);
   }
 
-  // 3. Pack-owned plugins — only swe-pro-agents-* prefixed files in the shared
-  //    plugin dir, and only when a manifest proves this pack was installed.
-  //    Non-prefixed user plugins are never touched.
+  // 3. Pack-owned plugins — only the exact names the manifest records as
+  //    pack-owned, each still guarded by the swe-pro-agents- prefix and a
+  //    basename check. A manifest without a plugins array (pre-2.6.x) proves
+  //    nothing about plugin ownership, so nothing is removed from the shared
+  //    plugin dir — unrecorded prefixed files stay, and the user is told.
   if (manifest && fs.existsSync(PLUGIN_DIR)) {
-    for (const entry of fs.readdirSync(PLUGIN_DIR, { withFileTypes: true })) {
-      if (!entry.isFile() || !entry.name.startsWith('swe-pro-agents-')) continue;
-      fs.rmSync(path.join(PLUGIN_DIR, entry.name), { force: true });
-      console.log(`  Removed plugin: ${entry.name}`);
-      removedAnything = true;
+    const pluginNames = Array.isArray(manifest.plugins) ? manifest.plugins : [];
+    for (const name of pluginNames) {
+      if (!name || name === '.' || name === '..') continue;
+      if (name.includes('/') || name.includes('\\')) continue;
+      if (!name.startsWith('swe-pro-agents-')) continue;
+      const target = path.join(PLUGIN_DIR, path.basename(name));
+      if (path.dirname(target) !== path.normalize(PLUGIN_DIR)) continue;
+      if (fs.existsSync(target)) {
+        fs.rmSync(target, { force: true });
+        console.log(`  Removed plugin: ${path.basename(name)}`);
+        removedAnything = true;
+      }
     }
   }
 

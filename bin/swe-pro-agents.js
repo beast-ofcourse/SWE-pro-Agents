@@ -33,7 +33,10 @@ const {
   buildContinuationMessage,
   summary,
   shouldContinue,
+  CLI_DIRECTIVE,
 } = require('../scripts/loop-logic.js');
+
+const { DEFAULT_PLAN_DIR, LEDGER_FILE, PLAN_FILE, stopReason, emit } = require('../scripts/cli-shared.js');
 
 const PACKAGE_NAME = 'swe-pro-agents';
 const AGENTS_DIR = path.join(__dirname, '..', 'agents');
@@ -43,10 +46,6 @@ const TARGET_SKILLS_DIR = path.join(os.homedir(), '.config', 'opencode', 'skills
 const PACK_AGENTS_MD = path.join(os.homedir(), '.config', 'swe-pro-agents', 'AGENTS.md');
 const GLOBAL_AGENTS_MD = path.join(os.homedir(), '.config', 'opencode', 'AGENTS.md');
 const OPENCODE_CONFIG = path.join(os.homedir(), '.config', 'opencode', 'opencode.json');
-
-const DEFAULT_PLAN_DIR = 'plans';
-const LEDGER_FILE = 'state.json';
-const PLAN_FILE = 'tasks.md';
 
 const pkg = require(path.join(__dirname, '..', 'package.json'));
 
@@ -226,27 +225,13 @@ function cmdVersion() {
 // ---------------------------------------------------------------------------
 
 /**
- * The "CLI-driven run" directive sentence emitted by buildContinuationMessage
- * in cliMode (mirrors scripts/loop-logic.js). --no-continue strips it so the
- * message still carries the cliMode dispatch instructions without the
- * "the caller records results" line.
+ * Strip the CLI-driven-run directive sentence from a cliMode message. The
+ * directive literal is exported by scripts/loop-logic.js (the source that
+ * composes it), so wording changes there can never silently break
+ * --no-continue.
  */
-const CLI_DIRECTIVE = ' CLI-driven run: do NOT modify plans/state.json — the caller records results. ';
-
-/** Strip the CLI-driven-run directive sentence from a cliMode message. */
 function stripCliDirective(message) {
   return message.replace(CLI_DIRECTIVE, ' ');
-}
-
-/**
- * Why shouldContinue() returned false. Presentation only — the gate itself
- * lives in scripts/loop-logic.js.
- */
-function stopReason(state) {
-  if (state.status !== 'running') return `ledger status is '${state.status}'`;
-  if (state.iterations >= state.budget.max_iterations_per_run) return 'iteration budget exhausted';
-  if (state.tasks.some((t) => t.status === 'blocked')) return 'a task is blocked';
-  return 'no next task';
 }
 
 /**
@@ -300,19 +285,6 @@ function parseRunArgs(argv) {
 }
 
 /**
- * Emit output. In jsonMode the machine-readable object goes to stdout and the
- * human lines to stderr; otherwise the human lines go to stdout.
- */
-function emit(jsonMode, jsonObj, humanLines) {
-  if (jsonMode) {
-    process.stdout.write(`${JSON.stringify(jsonObj, null, 2)}\n`);
-    for (const line of humanLines) process.stderr.write(`${line}\n`);
-  } else {
-    for (const line of humanLines) process.stdout.write(`${line}\n`);
-  }
-}
-
-/**
  * Drive the plan-execution loop. One iteration per invocation:
  *
  *   1. Load the ledger from <plan>/state.json; when missing or invalid, init
@@ -341,11 +313,20 @@ function cmdRun(argv) {
 
   let state = loadState(ledgerPath);
   if (!state) {
+    // An existing file that cannot be loaded (corrupt, invalid) is never
+    // silently replaced — that would lose recorded progress.
+    if (fs.existsSync(ledgerPath)) {
+      throw new Error(`ledger exists but could not be loaded: ${ledgerPath}`);
+    }
     if (!fs.existsSync(planFile)) {
       throw new Error(`plan file not found: ${planFile}`);
     }
     const markdown = fs.readFileSync(planFile, 'utf8');
-    state = initState(tasksFromMarkdown(markdown));
+    const specTasks = tasksFromMarkdown(markdown);
+    if (specTasks.length === 0) {
+      throw new Error(`plan file contains no tasks: ${planFile}`);
+    }
+    state = initState(specTasks);
     if (args.maxIterations !== null) {
       state.budget.max_iterations_per_run = args.maxIterations;
     }

@@ -21,6 +21,7 @@ const path = require('path');
 
 const {
   LEDGER_SCHEMA_VERSION,
+  CLI_DIRECTIVE,
   tasksFromMarkdown,
   initState,
   validateState,
@@ -412,6 +413,15 @@ test('fail increments attempts and blocks the task and ledger at max attempts', 
   assert.strictEqual(next.iterations, 2);
 });
 
+test('fail below max resets an in_progress task to pending (never stuck in_progress)', () => {
+  const s = validState();
+  s.tasks[0].status = 'in_progress';
+  const next = applyAttemptResult(s, 'T-001', 'fail');
+  assert.strictEqual(next.tasks[0].attempts, 1);
+  assert.strictEqual(next.tasks[0].status, 'pending', 'a failed attempt must not leave the task in_progress');
+  assert.strictEqual(next.status, 'running');
+});
+
 test('all tasks done flips the ledger status to done', () => {
   const s = validState();
   let next = applyAttemptResult(s, 'T-001', 'done');
@@ -446,6 +456,14 @@ test('cliMode form omits ledger instructions and includes the CLI directive', ()
   assert.ok(!msg.includes('Load plans/state.json'), 'must not instruct loading the ledger');
   assert.ok(msg.includes('CLI-driven run'), 'expected the CLI directive');
   assert.ok(msg.includes('<promise>DONE</promise>'), 'expected the completion promise');
+});
+
+test('CLI_DIRECTIVE is the exact sentence composed into cliMode messages and strips cleanly', () => {
+  const msg = buildContinuationMessage(validState(), { cliMode: true });
+  assert.ok(msg.includes(CLI_DIRECTIVE), 'the exported directive must be the composed sentence');
+  const stripped = msg.replace(CLI_DIRECTIVE, ' ');
+  assert.ok(!stripped.includes('CLI-driven run'), 'stripping the exported directive removes the sentence');
+  assert.ok(stripped.includes('Next task: T-001'), 'the rest of the message survives');
 });
 
 test('buildContinuationMessage throws when there is no next task', () => {
@@ -504,6 +522,15 @@ test('loadState returns null for a state that fails validation', () => {
   const ledgerPath = path.join(dir, 'state.json');
   const s = validState();
   s.version = 99;
+  fs.writeFileSync(ledgerPath, JSON.stringify(s), 'utf8');
+  assert.strictEqual(loadState(ledgerPath), null);
+});
+
+test('loadState returns null for a state without a budget', () => {
+  const dir = tempDir('loop-logic-');
+  const ledgerPath = path.join(dir, 'state.json');
+  const s = validState();
+  delete s.budget;
   fs.writeFileSync(ledgerPath, JSON.stringify(s), 'utf8');
   assert.strictEqual(loadState(ledgerPath), null);
 });

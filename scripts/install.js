@@ -105,12 +105,12 @@ function listPackSkills() {
 }
 
 /**
- * Plugin file names the pack ships (basenames in PLUGIN_DIR). Sources live in
- * two places — plugins/continuation.js and scripts/loop-logic.js — so the
- * installed names are explicit rather than derived from one directory.
+ * Plugin file names the pack ships (basenames in PLUGIN_DIR). The only plugin
+ * is plugins/continuation.js — scripts/loop-logic.js is a library consumed by
+ * the CLI, not an OpenCode plugin, and must never be installed as one.
  */
 function listPackPlugins() {
-  return ['swe-pro-agents-continuation.js', 'swe-pro-agents-loop-logic.js'];
+  return ['swe-pro-agents-continuation.js'];
 }
 
 /** Tolerant manifest read — a missing or corrupt manifest means "no ownership info". */
@@ -192,7 +192,6 @@ function copySkills() {
 function copyPlugins() {
   const sources = [
     { name: 'swe-pro-agents-continuation.js', src: path.join(pkgDir(), 'plugins', 'continuation.js') },
-    { name: 'swe-pro-agents-loop-logic.js', src: path.join(pkgDir(), 'scripts', 'loop-logic.js') },
   ];
   let count = 0;
   for (const { name, src } of sources) {
