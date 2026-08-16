@@ -9,6 +9,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **Goal-gated autonomous loop** — `plugins/continuation.js` now only nudges an idle `swe-pro` session when that session has an **active goal**. A session is armed when a `/goal` command executes in it (the plugin matches the `command.executed` event for the `goal` command); `/goal clear` (aliases `stop`, `off`, `reset`, `none`, `cancel`) and `/goal pause` disarm the gate, `/goal resume` (or a bare `/goal` / a new objective) re-arms it. Fail-closed: no active goal → no nudge, ever. The arm state is in-memory per session, so an OpenCode restart or plugin reload resets every session to unarmed — a fresh `/goal` is required after a restart.
+
+## [2.7.0] - 2026-08-15
+
+### Added
+
+- **Autonomous loop** — `plans/` plans execute end to end without a human in the loop:
+  - `swe-pro-agents run` CLI — the single writer of the ledger; one invocation dispatches the next task and prints the continuation message. Flags: `--plan <dir>`, `--dry-run`, `--max-iterations <n>`, `--no-continue`, `--json`
+  - `plugins/continuation.js` — OpenCode plugin that nudges an idle `swe-pro` session on `session.idle` to resume plan execution when the ledger says the loop should continue
+  - `plans/state.json` ledger — schema-v1 state: ledger statuses `running|paused|blocked|done|aborted`, per-task statuses `pending|in_progress|done|blocked`, attempt/iteration budgets, atomic saves
+  - `scripts/validate-plan.js` — `npm run validate:plan` enforces plan rules P1 (plan presence), P2 (task shape: **Build.**/**Acceptance criteria.**/**Verify.** sections), P3 (ledger consistency with `tasks.md`)
+  - Tests: `test/loop-logic.test.js`, `test/run-loop.test.js`, `test/validate-plan.test.js` wired into `npm test`
+
+### Changed
+
 - Common engineering rules extracted from the agent files into `AGENTS.md` (EOS): ambiguous requirements default to deciding per existing precedent with the assumption stated (don't stall), library/API contracts are checked against docs or the installed version before use, secrets never enter code/logs/version control, behavior changes lock in a regression test where tests exist, and reports state what was run and what couldn't be. Agent files now carry only domain-specific behavior.
 
 ## [2.6.0] - 2026-08-12

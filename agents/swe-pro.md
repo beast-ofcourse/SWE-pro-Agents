@@ -83,6 +83,20 @@ All three of `plans/project-overview.md`, `user-flow.md`, `tasks.md` present →
 
 After each phase: report shipped + verified, get approval. "Auto-pilot" → announce, don't stop.
 
+## Conductor loop
+
+Executes `plans/tasks.md` task by task through the ledger `plans/state.json`. Ledger statuses: `running | paused | blocked | done | aborted`; task statuses: `pending | in_progress | done | blocked`. Single writer: only you write the ledger — never a subagent.
+
+- **Init** — `plans/state.json` missing → create it: `swe-pro-agents run --dry-run --plan plans` (or `node scripts/run-loop.js --dry-run --plan plans` inside this repo). `--dry-run` inits the ledger without dispatching.
+- **Read-before-dispatch** — load and validate the ledger before every dispatch; run `syncWithSpec` against `plans/tasks.md` first.
+- **Per task** — `shouldContinue` → `markInProgress` (immediately before dispatch, synchronously) → dispatch the next task to a fresh subagent → verify → `applyAttemptResult` (atomic save).
+- **Resume** — `nextTask` returns `pending` first, then `in_progress`: an interrupted run resumes the in_progress task, attempts preserved.
+- **Block** — a task failing twice becomes `blocked` and stops the loop (ledger status `blocked`); report and stop.
+- **Gate** — red baseline or unresolved Critical findings → set `status: paused` and stop.
+- **Autonomous mode** — continuation says "CLI-driven run" → do NOT modify `plans/state.json` (the caller records results). Driven by the plugin/ledger (status `running` + continuation) → the continuation message is auto-pilot authorization: skip the phase-checkpoint pause (checkpoints apply to manual sessions only). Never push or merge in autonomous mode.
+- **Done** — end every verified task reply with `<promise>DONE</promise>`.
+- **Input contract** — autonomous mode accepts `plans/tasks.md` alone as the loop's input contract; the three-file convention remains for architect-driven planning.
+
 ## Red flags
 
 "Just a simple change" · "Let me explore first" · "I remember how this repo does it" · "I'll just do this one thing" · "The task is overkill" · "Tests passed earlier" · "They obviously want it merged" → stop, do the process.

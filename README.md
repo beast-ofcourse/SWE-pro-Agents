@@ -153,6 +153,7 @@ If `status` warns that no global `AGENTS.md` is loaded, copy the pack's shared f
 
 | Command | What it does |
 | --- | --- |
+| `run` | Drives the plan-execution loop — see [Autonomous Loop](#autonomous-loop) |
 | `setup` | Prints the `opencode.json` snippet and checks your global `AGENTS.md` state |
 | `setup --apply` | Writes the `opencode.json` entry (backs up the existing config to `.bak` first) |
 | `status` | Shows installation state + npm update check (5s timeout, offline-safe) |
@@ -263,6 +264,31 @@ These agents are designed to **chain together**:
 | PR Review | `pr-reviewer → swe-pro` | Review end to end, fix in the order prescribed |
 | Production Incident | `swe-debugger → swe-performance → swe-devops` | Diagnose, profile, deploy |
 
+## Autonomous Loop
+
+A `plans/` plan can run end to end without a human in the loop. Three pieces make it work:
+
+1. **The CLI** — `swe-pro-agents run` is the **single writer** of the ledger: the dispatched agent never edits `plans/state.json`, the caller records results. One invocation dispatches the next task and prints the continuation message:
+
+   ```bash
+   swe-pro-agents run [result] [--plan <dir>] [--dry-run] [--max-iterations <n>] [--no-continue] [--json]
+   ```
+
+   | Flag | What it does |
+   | --- | --- |
+   | `result` | `done` or `fail` — records the result of the current `in_progress` task |
+   | `--plan <dir>` | Plan directory (default: `plans/`) |
+   | `--dry-run` | Initializes the ledger from the plan without dispatching; prints the summary and exits 0 |
+   | `--max-iterations <n>` | Overrides the iterations budget (default: 40) |
+   | `--no-continue` | Prints the continuation message without the "CLI-driven run" directive line |
+   | `--json` | Machine-readable output (JSON on stdout, human text on stderr) |
+
+2. **The plugin** — `plugins/continuation.js` listens for OpenCode's `session.idle` event and nudges an idle `swe-pro` session to resume plan execution — but only for a session with an **active goal**. The loop is goal-gated: a session is armed when a `/goal` command executes in it (the plugin matches the `command.executed` event for the `goal` command). `/goal clear` (aliases `stop`, `off`, `reset`, `none`, `cancel`) and `/goal pause` disarm the gate; `/goal resume` (or a bare `/goal` / a new objective) re-arms it. Fail-closed: no active goal → no nudge, ever. The arm state is in-memory per session, so an OpenCode restart or plugin reload resets every session to unarmed — a fresh `/goal` is required after a restart. When armed, the nudge still requires the ledger to say the loop should continue (status `running`, no task `in_progress`, at least one `pending`). Every failure path returns silently — the hook never throws.
+
+3. **The ledger** — `plans/state.json` is the source of truth. Ledger statuses: `running | paused | blocked | done | aborted`; per-task statuses: `pending | in_progress | done | blocked`. A task blocks after `max_attempts_per_task` (default 2) failed attempts and stops the loop (stop-on-blocked); when every task is `done` the ledger becomes `done`. Saves are atomic (write `.tmp`, rename over).
+
+Plan files are machine-checked by `npm run validate:plan`: **P1** plan presence, **P2** task shape (every `### T-###` task needs **Build.**, **Acceptance criteria.**, and **Verify.** sections), **P3** ledger consistency with `tasks.md`.
+
 ## Updating
 
 ```bash
@@ -284,7 +310,7 @@ The preuninstall hook removes everything this pack installed: the agent files, t
 Plain Node.js (≥ 18), zero dependencies, no build step — the tests are the entry point:
 
 ```bash
-npm test          # 6 installer lifecycle tests + 18 validator self-tests
+npm test          # 7 suites, 127 tests — installer, validator, plan validator, loop logic, loop runner, CLI, continuation plugin
 npm run validate  # strict pack validation (exits 1 on any violation)
 ```
 
