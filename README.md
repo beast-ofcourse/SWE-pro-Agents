@@ -40,6 +40,11 @@
 
 Short highlights of what's changed recently. Full detail lives in [CHANGELOG.md](CHANGELOG.md).
 
+**2.8.0**
+
+- **Goal-gated autonomous loop** — `plugins/continuation.js` only nudges an idle `swe-pro` session when that session has an active `/goal`; fail-closed, in-memory per-session arm state.
+- Ships all changes since 2.4.0 (2.5.0–2.7.0 were documented but never tagged/published): `deep-researcher` (replaces `web-researcher`), `youtube-to-skill` (24 skills), autonomous `plans/` loop (`swe-pro-agents run` + ledger + `validate:plan`), EOS extraction, and hardening.
+
 **2.6.0**
 
 - New **`youtube-to-skill`** skill — converts a YouTube video into a reusable, installable skill by extracting the demonstrated process (procedural walkthrough, decision framework, or code-along) from the transcript, via a connected YouTube MCP server.
