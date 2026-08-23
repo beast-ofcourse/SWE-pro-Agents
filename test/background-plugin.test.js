@@ -7,9 +7,14 @@
  */
 
 const assert = require('assert');
+const fs = require('fs');
+const os = require('os');
+const path = require('path');
 const { createBackgroundDelegate } = require('../scripts/background-delegate.js');
 
-// Disable the supervisor timer so the test controls reconciliation.
+// Isolate delegations from the real store and disable the supervisor timer so the
+// test controls reconciliation.
+process.env.SWE_PRO_DELEGATIONS_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'bg-pl-store-'));
 process.env.SWE_PRO_BG_SUPERVISOR = '0';
 
 const plugin = require('../plugins/swe-pro-agents-background.js');
@@ -92,7 +97,8 @@ async function run() {
   await check('bg_read returns result and fires parent notification on terminal', async () => {
     const ret = await tools.bg_delegate.execute({ prompt: 'do work' }, { sessionID: 'parent1' });
     const id = ret.match(/delegated (bg_\S+)/)[1];
-    client._markComplete('child_2', 'CHILD OUTPUT');
+    const st = JSON.parse(await tools.bg_status.execute({ id }));
+    client._markComplete(st.childSessionID, 'CHILD OUTPUT');
     const result = await tools.bg_read.execute({ id });
     assert.strictEqual(result, 'CHILD OUTPUT', 'bg_read returns child result');
     const stats = client._stats();
@@ -114,11 +120,12 @@ async function run() {
   await check('bg_steer prompts the running child (best-effort)', async () => {
     const ret = await tools.bg_delegate.execute({ prompt: 'task' }, { sessionID: 'parent1' });
     const id = ret.match(/delegated (bg_\S+)/)[1];
+    const st = JSON.parse(await tools.bg_status.execute({ id }));
     const steerRet = await tools.bg_steer.execute({ id, prompt: 'also check Y' });
     assert.ok(steerRet.includes('steered'), 'steer returns steered status');
     const promptCalls = client._stats().promptCalls;
-    const steered = promptCalls.find((p) => p.id === 'child_4' && JSON.stringify(p.body).includes('also check Y'));
-    assert.ok(steered, 'child_4 was prompted with the steer instruction');
+    const steered = promptCalls.find((p) => p.id === st.childSessionID && JSON.stringify(p.body).includes('also check Y'));
+    assert.ok(steered, 'child was prompted with the steer instruction');
     assert.ok(JSON.stringify(steered.body).includes('also check Y'), 'steer prompt body contains instruction');
   });
 

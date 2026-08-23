@@ -72,8 +72,13 @@ module.exports = {
     // even if the parent never calls bg_read. Disable via SWE_PRO_BG_SUPERVISOR=0.
     if (process.env.SWE_PRO_BG_SUPERVISOR !== '0') {
       const ms = parseInt(process.env.SWE_PRO_BG_SUPERVISOR_MS, 10) || 5000;
+      let reconciling = false;
       const timer = setInterval(() => {
-        bg.reconcileOrphans().catch(() => {});
+        if (reconciling) return; // don't overlap a still-in-flight reconciliation
+        reconciling = true;
+        bg.reconcileOrphans().catch(() => {}).finally(() => {
+          reconciling = false;
+        });
       }, ms);
       if (timer.unref) timer.unref();
     }

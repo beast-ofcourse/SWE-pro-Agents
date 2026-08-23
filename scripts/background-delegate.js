@@ -87,7 +87,12 @@ function createBackgroundDelegate(deps) {
 
   function writeState(state) {
     state.updatedAt = Date.now();
-    fs.writeFileSync(statePath(state.id), JSON.stringify(state, null, 2));
+    const target = statePath(state.id);
+    // Atomic replace: write to a temp file (non-.json so delegation scans ignore it),
+    // then rename into place. Avoids torn state if the process dies mid-write.
+    const tmp = target + '.tmp-' + process.pid + '-' + crypto.randomUUID().slice(0, 8);
+    fs.writeFileSync(tmp, JSON.stringify(state, null, 2));
+    fs.renameSync(tmp, target);
   }
 
   async function fetchChildResult(childSessionID) {
@@ -127,12 +132,17 @@ function createBackgroundDelegate(deps) {
   async function startDelegation(id) {
     const state = readState(id);
     if (!state) throw new Error('startDelegation: unknown id ' + id);
-    if (state.state === 'running' || state.state === 'completed') return;
-    const childID = await spawnDelegation(id, state);
-    state.childSessionID = childID;
-    state.state = 'running';
-    writeState(state);
-    running.add(id);
+    if (state.state === 'running' || state.state === 'completed' || state.state === 'error' || state.state === 'cancelled') return;
+    running.add(id); // reserve the concurrency slot before spawning
+    try {
+      const childID = await spawnDelegation(id, state);
+      state.childSessionID = childID;
+      state.state = 'running';
+      writeState(state);
+    } catch (err) {
+      running.delete(id);
+      throw err;
+    }
   }
 
   async function dequeue() {
@@ -180,11 +190,26 @@ function createBackgroundDelegate(deps) {
     };
     writeState(state);
 
-    if (running.size < maxParallel) {
-      await startDelegation(id);
-    } else {
-      queue.push({ id, priority: state.priority });
-      queue.sort((a, b) => b.priority - a.priority);
+    try {
+      if (running.size < maxParallel) {
+        await startDelegation(id);
+      } else {
+        queue.push({ id, priority: state.priority });
+        queue.sort((a, b) => b.priority - a.priority);
+      }
+    } catch (err) {
+      // Spawn failed after the worktree was created — don't leak it.
+      if (worktree && worktreeManager) {
+        try {
+          await worktreeManager.remove(worktree);
+        } catch {
+          /* best-effort */
+        }
+      }
+      state.state = 'error';
+      state.summary = 'failed to start: ' + (err && err.message ? err.message : String(err));
+      writeState(state);
+      throw err;
     }
     return id;
   }
@@ -201,6 +226,8 @@ function createBackgroundDelegate(deps) {
     writeState(state);
     if (onTerminal) onTerminal(id, state);
     running.delete(id);
+    const fi = queue.findIndex((q) => q.id === id);
+    if (fi !== -1) queue.splice(fi, 1);
     await dequeue();
     return state;
   }
@@ -226,6 +253,8 @@ function createBackgroundDelegate(deps) {
     writeState(state);
     if (onTerminal) onTerminal(id, state);
     running.delete(id);
+    const si = queue.findIndex((q) => q.id === id);
+    if (si !== -1) queue.splice(si, 1);
     await dequeue();
     return state;
   }
@@ -244,21 +273,21 @@ function createBackgroundDelegate(deps) {
   }
 
   async function readDelegation(id, timeoutMs = DEFAULT_READ_TIMEOUT_MS) {
-    const state = readState(id);
-    if (!state) throw new Error('readDelegation: unknown id ' + id);
-    if (state.state === 'completed') {
-      try {
-        return fs.readFileSync(markdownPath(id), 'utf-8');
-      } catch {
-        return '';
-      }
-    }
-    if (state.state === 'error' || state.state === 'cancelled') {
-      return 'terminal: ' + state.state;
-    }
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
-      if (await childIsComplete(state.childSessionID)) {
+      const state = readState(id);
+      if (!state) throw new Error('readDelegation: unknown id ' + id);
+      if (state.state === 'completed') {
+        try {
+          return fs.readFileSync(markdownPath(id), 'utf-8');
+        } catch {
+          return '';
+        }
+      }
+      if (state.state === 'error' || state.state === 'cancelled') return 'terminal: ' + state.state;
+      // Re-read each iteration so a queued (registered) delegation that acquires a
+      // childSessionID after dequeue(), or a delegation that turns terminal, is seen.
+      if (state.childSessionID && (await childIsComplete(state.childSessionID))) {
         const result = await fetchChildResult(state.childSessionID);
         await finalizeDelegation(id, result || '(no result captured)');
         return result || '(no result captured)';
@@ -282,6 +311,7 @@ function createBackgroundDelegate(deps) {
         summary: st.summary,
         agent: st.agent,
         mode: st.mode,
+        childSessionID: st.childSessionID || null,
       });
     }
     return out;
@@ -290,10 +320,16 @@ function createBackgroundDelegate(deps) {
   async function reconcileOrphans() {
     ensureStore();
     const files = fs.readdirSync(storeDir).filter((f) => f.endsWith('.json'));
+    const orphans = [];
     for (const f of files) {
       const st = readState(f.replace('.json', ''));
       if (!st) continue;
       if (st.state !== 'registered' && st.state !== 'running') continue;
+      orphans.push(st);
+    }
+    // Adopt highest-priority orphans first so recovery ordering matches createDelegation.
+    orphans.sort((a, b) => (b.priority || 0) - (a.priority || 0));
+    for (const st of orphans) {
       const complete = await childIsComplete(st.childSessionID);
       if (complete) {
         const result = await fetchChildResult(st.childSessionID);
@@ -302,7 +338,7 @@ function createBackgroundDelegate(deps) {
         if (running.size < maxParallel) await startDelegation(st.id);
         else {
           queue.push({ id: st.id, priority: st.priority });
-          await dequeue();
+          queue.sort((a, b) => b.priority - a.priority);
         }
       }
     }

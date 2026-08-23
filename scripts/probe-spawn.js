@@ -122,87 +122,96 @@ async function probeSpawn(ctx, opts = {}) {
   }
   report.diagnostics.childID = childID;
 
-  // --- Fire prompt WITHOUT await (fire-and-forget) ---
-  let promptPromise;
+  // Every post-create failure path must reach cleanup. Wrap the probe body so a
+  // thrown error (prompt/get) still aborts the created child instead of leaking it.
+  let terminalConfirmed = false;
+  let finalState = 'running';
   try {
-    promptPromise = client.session.prompt({
-      path: { id: childID },
-      body: { parts: [{ type: 'text', text: prompt }] },
-    });
-    if (promptPromise && typeof promptPromise.catch === 'function') {
-      // Swallow late rejection; we determine outcome by polling state, not by awaiting.
-      promptPromise.catch(() => {});
-    }
-  } catch (err) {
-    report.a2.reason = `session.prompt threw synchronously: ${err && err.message ? err.message : String(err)}`;
-    report.diagnostics.promptError = String(err);
-    return report;
-  }
-
-  // --- A2: inspect state immediately (must be running, not completed) ---
-  let snap;
-  try {
-    snap = unwrap(await client.session.get({ path: { id: childID } }));
-  } catch (err) {
-    report.a2.reason = `session.get threw: ${err && err.message ? err.message : String(err)}`;
-    report.diagnostics.getError = String(err);
-    return report;
-  }
-  const stateNow = readState(snap);
-  const outNow = readOutputTokens(snap);
-  // Fire-and-forget: the parent must regain control BEFORE the child finishes.
-  // Proven if the child has not yet produced output (tokens.output === 0) at the
-  // instant right after the non-awaited prompt call. (If a `state` field exists,
-  // `running` is also accepted.)
-  report.a2.pass = stateNow === 'running' || outNow === 0;
-  report.a2.reason = `state=${stateNow}, outputTokens=${outNow} immediately after non-awaited prompt`;
-  report.diagnostics.a2State = stateNow;
-  report.diagnostics.a2OutputTokens = outNow;
-  report.diagnostics.a2SessionKeys = snap && typeof snap === 'object' ? Object.keys(snap) : null;
-
-  // --- A1: poll until terminal or timeout ---
-  const start = Date.now();
-  let final = snap;
-  let finalState = stateNow;
-  while (Date.now() - start < timeoutMs) {
-    await sleep(pollMs);
+    // --- Fire prompt WITHOUT await (fire-and-forget) ---
     try {
-      final = unwrap(await client.session.get({ path: { id: childID } }));
-    } catch {
-      // Transient read error — keep polling.
-    }
-    finalState = readState(final);
-    if (finalState === 'completed' || finalState === 'error' || finalState === 'cancelled') break;
-    // This API version has no `state` field; detect execution via output tokens.
-    if (readOutputTokens(final) > 0) break;
-  }
-  report.diagnostics.getSession = final;
-
-  const assistantParts = countAssistantParts(final);
-  const partsFieldPresent = hasPartsField(final);
-  const finalOut = readOutputTokens(final);
-  report.diagnostics.finalState = finalState;
-  report.diagnostics.finalOutputTokens = finalOut;
-  report.diagnostics.assistantParts = assistantParts;
-  report.diagnostics.partsFieldPresent = partsFieldPresent;
-
-  const executed = finalState === 'completed' || finalOut > 0;
-  if (!executed) {
-    report.a1.reason = `child did not execute (finalState=${finalState}, outputTokens=${finalOut}) within ${timeoutMs}ms — matches OpenCode #8528 symptom if create succeeded but the prompt never ran.`;
-  } else if (partsFieldPresent && assistantParts === 0) {
-    report.a1.reason = `child executed (outputTokens=${finalOut}) but 0 assistant parts detected (parts field present).`;
-  } else {
-    report.a1.pass = true;
-    report.a1.reason = `child executed: outputTokens=${finalOut}, assistantParts=${assistantParts} (partsFieldPresent=${partsFieldPresent}).`;
-  }
-
-  // --- Cleanup: abort if still running ---
-  if (finalState === 'running') {
-    try {
-      await client.session.abort({ path: { id: childID } });
-      report.diagnostics.aborted = true;
+      const promptPromise = client.session.prompt({
+        path: { id: childID },
+        body: { parts: [{ type: 'text', text: prompt }] },
+      });
+      if (promptPromise && typeof promptPromise.catch === 'function') {
+        // Swallow late rejection; we determine outcome by polling state, not by awaiting.
+        promptPromise.catch(() => {});
+      }
     } catch (err) {
-      report.diagnostics.abortError = String(err);
+      report.a2.reason = `session.prompt threw synchronously: ${err && err.message ? err.message : String(err)}`;
+      report.diagnostics.promptError = String(err);
+      return report; // finally aborts the child
+    }
+
+    // --- A2: inspect state immediately (must be running, not completed) ---
+    let snap;
+    try {
+      snap = unwrap(await client.session.get({ path: { id: childID } }));
+    } catch (err) {
+      report.a2.reason = `session.get threw: ${err && err.message ? err.message : String(err)}`;
+      report.diagnostics.getError = String(err);
+      return report; // finally aborts the child
+    }
+    const stateNow = readState(snap);
+    const outNow = readOutputTokens(snap);
+    // Fire-and-forget: the parent must regain control BEFORE the child finishes.
+    // Proven if the child has not yet produced output (tokens.output === 0) at the
+    // instant right after the non-awaited prompt call. (If a `state` field exists,
+    // `running` is also accepted.)
+    report.a2.pass = stateNow === 'running' || outNow === 0;
+    report.a2.reason = `state=${stateNow}, outputTokens=${outNow} immediately after non-awaited prompt`;
+    report.diagnostics.a2State = stateNow;
+    report.diagnostics.a2OutputTokens = outNow;
+    report.diagnostics.a2SessionKeys = snap && typeof snap === 'object' ? Object.keys(snap) : null;
+
+    // --- A1: poll until terminal or timeout ---
+    const start = Date.now();
+    let final = snap;
+    let finalStateLocal = stateNow;
+    while (Date.now() - start < timeoutMs) {
+      await sleep(pollMs);
+      try {
+        final = unwrap(await client.session.get({ path: { id: childID } }));
+      } catch {
+        // Transient read error — keep polling.
+      }
+      finalStateLocal = readState(final);
+      if (finalStateLocal === 'completed' || finalStateLocal === 'error' || finalStateLocal === 'cancelled') break;
+      // This API version has no `state` field; detect execution via output tokens.
+      if (readOutputTokens(final) > 0) break;
+    }
+    finalState = finalStateLocal;
+    report.diagnostics.getSession = final;
+
+    const assistantParts = countAssistantParts(final);
+    const partsFieldPresent = hasPartsField(final);
+    const finalOut = readOutputTokens(final);
+    report.diagnostics.finalState = finalState;
+    report.diagnostics.finalOutputTokens = finalOut;
+    report.diagnostics.assistantParts = assistantParts;
+    report.diagnostics.partsFieldPresent = partsFieldPresent;
+
+    const executed = finalState === 'completed' || finalOut > 0;
+    if (!executed) {
+      report.a1.reason = `child did not execute (finalState=${finalState}, outputTokens=${finalOut}) within ${timeoutMs}ms — matches OpenCode #8528 symptom if create succeeded but the prompt never ran.`;
+    } else if (partsFieldPresent && assistantParts === 0) {
+      report.a1.reason = `child executed (outputTokens=${finalOut}) but 0 assistant parts detected (parts field present).`;
+    } else {
+      report.a1.pass = true;
+      report.a1.reason = `child executed: outputTokens=${finalOut}, assistantParts=${assistantParts} (partsFieldPresent=${partsFieldPresent}).`;
+    }
+
+    if (finalState === 'completed' || finalState === 'error' || finalState === 'cancelled') terminalConfirmed = true;
+  } finally {
+    // Abort the child unless it already reached a terminal state (avoid leaking a
+    // running session on any post-create failure path).
+    if (!terminalConfirmed) {
+      try {
+        await client.session.abort({ path: { id: childID } });
+        report.diagnostics.aborted = true;
+      } catch (err) {
+        report.diagnostics.abortError = String(err);
+      }
     }
   }
 

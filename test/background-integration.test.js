@@ -15,6 +15,9 @@ const { execSync } = require('child_process');
 
 const plugin = require('../plugins/swe-pro-agents-background.js');
 
+// Isolate delegations from the real store so the test never pollutes it.
+process.env.SWE_PRO_DELEGATIONS_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'bg-int-store-'));
+
 function tmpDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'bg-int-'));
 }
@@ -108,6 +111,34 @@ async function run() {
     // Worktree must be cleaned up after finalize.
     const wt = path.join(repoDir, '.worktrees', id);
     assert.ok(!fs.existsSync(wt), 'worktree removed after completion');
+  });
+
+  await check('worktree-mode delegation cleans up its worktree after completion', async () => {
+    const repoDir2 = tmpDir();
+    initRepo(repoDir2);
+    const client2 = makeFakeClient();
+    const server2 = await plugin.server({ client: client2, directory: repoDir2 });
+    const tools2 = server2.tool;
+
+    const ret = await tools2.bg_delegate.execute({ prompt: 'write code', agent: 'swe-implementation', mode: 'worktree' });
+    const m2 = ret.match(/delegated (bg_\S+)/);
+    assert.ok(m2, 'bg_delegate (worktree) returns a delegation sentence with an id');
+    const id2 = m2[1];
+
+    // bg_read blocks until terminal and finalizes the auto-completing child.
+    const md2 = await tools2.bg_read.execute({ id: id2 });
+    assert.strictEqual(md2, 'INT RESULT', 'worktree-mode bg_read returns the child result');
+
+    // Per validation #4 the worktree is NOT auto-removed on completion — the parent
+    // must merge/remove it manually. So it must still exist after read.
+    const stateFile = path.join(process.env.SWE_PRO_DELEGATIONS_DIR, id2 + '.json');
+    const st2 = JSON.parse(fs.readFileSync(stateFile, 'utf-8'));
+    assert.ok(st2.worktree && st2.worktree.path, 'worktree path recorded in state');
+    assert.ok(fs.existsSync(st2.worktree.path), 'worktree persists after completion (parent merges manually)');
+
+    // bg_stop cancels and removes the worktree.
+    await tools2.bg_stop.execute({ id: id2 });
+    assert.ok(!fs.existsSync(st2.worktree.path), 'worktree removed after bg_stop');
   });
 
   console.log('\n' + passed + ' passed, ' + failed + ' failed');

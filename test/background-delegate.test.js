@@ -189,6 +189,35 @@ async function run() {
     assert.strictEqual(highNow.state, 'running', 'high priority ran next');
   });
 
+  // 7b. Reconcile adopts orphans in priority order (highest first).
+  await check('reconcileOrphans adopts highest-priority orphan first', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp', env: { SWE_PRO_BG_MAX_PARALLEL: '1' } });
+    const low = await bg.createDelegation({ prompt: 'low' });
+    const high = await bg.createDelegation({ prompt: 'high', model: 'x' });
+    const mid = await bg.createDelegation({ prompt: 'mid', provider: 'y' });
+    // Simulate a crash: clear live runtime state, leave only registered orphans on disk.
+    bg._internals.running.clear();
+    bg._internals.queue.length = 0;
+    for (const id of [low, high, mid]) {
+      const st = bg._internals.readState(id);
+      st.state = 'registered';
+      st.childSessionID = null;
+      bg._internals.writeState(st);
+    }
+    await bg.reconcileOrphans();
+    // With 1 slot, the highest-priority orphan (high, p2) is adopted and started first.
+    const highSt = bg._internals.readState(high);
+    assert.strictEqual(highSt.state, 'running', 'highest-priority orphan adopted first');
+    const midSt = bg._internals.readState(mid);
+    assert.strictEqual(midSt.state, 'registered', 'mid still queued');
+    // Free the slot -> mid (p1) should run next, not low (p0).
+    await bg.finalizeDelegation(high, 'done');
+    const midNow = bg._internals.readState(mid);
+    assert.strictEqual(midNow.state, 'running', 'mid (p1) adopted before low (p0)');
+  });
+
   // 8. Orphan re-adoption: a registered/running delegation whose child completed
   //     is finalized on reconcile.
   await check('reconcileOrphans finalizes completed child', async () => {

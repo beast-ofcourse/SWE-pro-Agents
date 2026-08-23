@@ -143,6 +143,29 @@ async function run() {
     assert.ok(threw, 'throws when worktreeManager/repoDir missing');
   });
 
+  await check('failed worktree startup cleans up the worktree', async () => {
+    const repo = initTempRepo();
+    const wm = createWorktreeManager();
+    const client = makeFakeClient();
+    client.session.create = async () => { throw new Error('create rejected (simulated)'); };
+    const store = fs.mkdtempSync(path.join(os.tmpdir(), 'bg-store-'));
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: repo, repoDir: repo, worktreeManager: wm });
+    let threw = false;
+    try {
+      await bg.createDelegation({ prompt: 'write code', mode: 'worktree' });
+    } catch {
+      threw = true;
+    }
+    assert.ok(threw, 'createDelegation throws when spawn fails');
+    // The worktree was created during setup; it must be removed on spawn failure.
+    const files = fs.readdirSync(store).filter((f) => f.endsWith('.json'));
+    assert.strictEqual(files.length, 1, 'one delegation state recorded');
+    const state = JSON.parse(fs.readFileSync(path.join(store, files[0]), 'utf-8'));
+    assert.ok(state.worktree && state.worktree.path, 'worktree path recorded before failure');
+    assert.ok(!fs.existsSync(state.worktree.path), 'worktree removed after failed startup');
+    assert.strictEqual(state.state, 'error', 'delegation marked error');
+  });
+
   console.log('\n' + passed + ' passed, ' + failed + ' failed');
   if (failed > 0) process.exit(1);
 }
