@@ -14,7 +14,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/beast-ofcourse/SWE-pro-Agents/ci.yml?style=flat-square)](https://github.com/beast-ofcourse/SWE-pro-Agents/actions)
 [![license](https://img.shields.io/github/license/beast-ofcourse/SWE-pro-Agents?style=flat-square)](LICENSE)
 
-**26 OpenCode agent profiles (22 subagents + 4 primary) + 26 skills — a full engineering team in your terminal.**
+**26 OpenCode agent profiles (22 subagents + 4 primary) + 25 skills — a full engineering team in your terminal.**
 
 </div>
 
@@ -76,7 +76,7 @@ Short highlights of what's changed recently. Full detail lives in [CHANGELOG.md]
 Most AI coding assistants start blank — no domain expertise, no engineering discipline. SWE Pro Agents fixes that: each agent is a **loaded expert** with a curated system prompt, tool permissions, and behavioral rules baked in. You don't ask a model to "review this PR"; you invoke `swe-reviewer`, which already knows how to assess blast radius and enforce your standards.
 
 - **26 agent profiles** — 22 subagents + 4 primary (`swe-pro`, `architect`, `swe-reviewer`, `pr-reviewer`), each with a focused role and scoped tool permissions.
-- **26 on-demand skills** — token compression, skill authoring, tutoring, README/SVG/flowchart generation, an anti-AI-slop editor, OpenCode skill creation, MCP server building, video-to-skill conversion, rapid UI prototyping, goal-based loop control, and a full design-taste suite (brand kits, image-to-code, mobile/web image direction, UI styles, redesigns).
+- **25 on-demand skills** — token compression, skill authoring, tutoring, README/SVG/flowchart generation, an anti-AI-slop editor, OpenCode skill creation, MCP server building, video-to-skill conversion, rapid UI prototyping, and a full design-taste suite (brand kits, image-to-code, mobile/web image direction, UI styles, redesigns).
 - **Manifest-based installer & safe uninstaller** — records what it installs, prunes stale files on update, removes only what it owns.
 - **Status/setup CLI** — checks install state, writes the config with a backup, checks for updates (offline-safe).
 - **Zero runtime dependencies** — Node ≥ 18, plain stdlib.
@@ -111,7 +111,7 @@ Windows is supported end to end.
 npm install -g swe-pro-agents
 ```
 
-The postinstall hook copies agents to `~/.config/opencode/agents/swe-pro-agents/`, all 26 skills to `~/.config/opencode/skills/`, and this pack's `AGENTS.md` to the pack's own config dir (`~/.config/swe-pro-agents/` — deliberately *not* the agents dir, where OpenCode would load it as a phantom agent). That last file matters: every agent is intentionally short because it assumes the Engineering Operating System is loaded. If you have no global `~/.config/opencode/AGENTS.md`, copy the installed one into place:
+The postinstall hook copies agents to `~/.config/opencode/agents/swe-pro-agents/`, all 25 skills to `~/.config/opencode/skills/`, and this pack's `AGENTS.md` to the pack's own config dir (`~/.config/swe-pro-agents/` — deliberately *not* the agents dir, where OpenCode would load it as a phantom agent). That last file matters: every agent is intentionally short because it assumes the Engineering Operating System is loaded. If you have no global `~/.config/opencode/AGENTS.md`, copy the installed one into place:
 
 ```bash
 cp ~/.config/swe-pro-agents/AGENTS.md ~/.config/opencode/AGENTS.md
@@ -218,7 +218,7 @@ Four of the 26 profiles are **primary** agents (selectable as your main agent): 
 
 ## Skills
 
-The pack ships **26 skills**, each a self-contained `SKILL.md` loaded on demand via OpenCode's `skill` tool:
+The pack ships **25 skills**, each a self-contained `SKILL.md` loaded on demand via OpenCode's `skill` tool:
 
 | Skill | Purpose |
 | --- | --- |
@@ -235,7 +235,6 @@ The pack ships **26 skills**, each a self-contained `SKILL.md` loaded on demand 
 | `design-taste-frontend` | Anti-slop frontend skill — landing pages, portfolios, redesigns that don't look templated |
 | `design-taste-frontend-v1` | Original v1 taste-skill, preserved for exact backward compatibility |
 | `full-output-enforcement` | Overrides LLM truncation — complete code, no placeholders, clean token-limit splits |
-| `goal` | Set, show, pause, resume, or clear the active thread goal — arms the autonomous loop |
 | `gpt-taste` | Awwwards-level UX/UI + GSAP motion — randomization, AIDA structure, ScrollTriggers |
 | `high-end-visual-design` | High-end agency design rules — fonts, spacing, shadows, animations that feel expensive |
 | `image-to-code` | Image-first website design-to-code — generate, analyze, then implement to match |
@@ -290,7 +289,7 @@ A `plans/` plan can run end to end without a human in the loop. Three pieces mak
    | `--no-continue` | Prints the continuation message without the "CLI-driven run" directive line |
    | `--json` | Machine-readable output (JSON on stdout, human text on stderr) |
 
-2. **The plugin** — `plugins/continuation.js` listens for OpenCode's `session.idle` event and nudges an idle `swe-pro` session to resume plan execution — but only for a session with an **active goal** (pack-shipped `skills/goal`, no external plugin needed). The loop is goal-gated: a session is armed when a `/goal` command executes in it (the plugin matches the `command.executed` event for the `goal` command). `/goal clear` (aliases `stop`, `off`, `reset`, `none`, `cancel`) and `/goal pause` disarm the gate; `/goal resume` (or a bare `/goal` / a new objective) re-arms it; `/goal show` reports without changing arm (MVP arms — see skill). Fail-closed: no active goal → no nudge, ever. The arm state is in-memory per session, so an OpenCode restart or plugin reload resets every session to unarmed — a fresh `/goal` is required after a restart. When armed, the nudge still requires the ledger to say the loop should continue (status `running`, no task `in_progress`, at least one `pending`). Every failure path returns silently — the hook never throws.
+2. **The plugin** — `plugins/continuation.js` listens for OpenCode's `session.idle` event and nudges an idle `swe-pro` session to resume plan execution — but only for a session with an **active goal** (pack-shipped plugin command `config.command["goal"]` in the same plugin, no external plugin needed). The loop is goal-gated: a session is armed when a `/goal` command executes in it (the plugin matches the `command.executed` event for the `goal` command). `/goal clear` (aliases `stop`, `off`, `reset`, `none`, `cancel`) and `/goal pause` disarm the gate; `/goal resume` (or a bare `/goal` / a new objective) re-arms it; `/goal show` reports without changing arm (MVP arms — see plugin template). Fail-closed: no active goal → no nudge, ever. The arm state is in-memory per session, so an OpenCode restart or plugin reload resets every session to unarmed — a fresh `/goal` is required after a restart. When armed, the nudge still requires the ledger to say the loop should continue (status `running`, no task `in_progress`, at least one `pending`). Every failure path returns silently — the hook never throws.
 
 3. **The ledger** — `plans/state.json` is the source of truth. Ledger statuses: `running | paused | blocked | done | aborted`; per-task statuses: `pending | in_progress | done | blocked`. A task blocks after `max_attempts_per_task` (default 2) failed attempts and stops the loop (stop-on-blocked); when every task is `done` the ledger becomes `done`. Saves are atomic (write `.tmp`, rename over).
 
@@ -326,7 +325,7 @@ The tests simulate install/update/uninstall against a **throwaway `HOME`/`USERPR
 ```text
 SWE-pro-Agents/
 ├── agents/       26 agent profiles (4 primary, 22 subagents)
-├── skills/       26 skills
+├── skills/       25 skills
 ├── scripts/      install.js (postinstall), uninstall.js (preuninstall), validate.js (pack validator)
 ├── bin/          swe-pro-agents CLI
 ├── test/         installer lifecycle tests + validator self-tests

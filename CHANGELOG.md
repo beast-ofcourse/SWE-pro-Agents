@@ -9,8 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `sketch` — rapid throwaway HTML prototyping skill: 2-3 interactive variants to compare design directions before committing to build. Refactored for quick UI/frontend prototyping, concise workflow (clarify → build → verify → compare), Tailwind CDN, realistic content, browser verification. Pack is now **25 skills** (was 24) at that point.
-- `goal` — native `/goal` slash command (`skills/goal`): set, show, pause, resume, or clear the active thread goal that arms `plugins/continuation.js`. Pack-shipped, no external `opencode-goal-plugin` needed; `command.executed{ name:"goal" }` primary mechanism, fail-closed in-memory per-session (`pause`/`clear` disarm, `resume`/objective re-arm). Pack is now **26 skills** (was 25).
+- `sketch` — rapid throwaway HTML prototyping skill: 2-3 interactive variants to compare design directions before committing to build. Refactored for quick UI/frontend prototyping, concise workflow (clarify → build → verify → compare), Tailwind CDN, realistic content, browser verification. Pack is now **25 skills** (was 24).
+- `goal` — native `/goal` plugin command (`plugins/continuation.js` `config.command["goal"]`): set, show, pause, resume, or clear the active thread goal that arms the same plugin. Pack-shipped, no external `opencode-goal-plugin` needed; `command.executed{ name:"goal" }` primary mechanism, fail-closed in-memory per-session (`pause`/`clear` disarm, `resume`/objective re-arm). Pack remains **25 skills**; plugin now registers the command.
 
 ### Changed
 

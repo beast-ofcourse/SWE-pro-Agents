@@ -209,6 +209,30 @@ module.exports = {
   id: 'swe-pro-continuation',
   server: async ({ client, directory }) => {
     return {
+      config: async (config) => {
+        // Pack-shipped /goal — registers the slash command so command.executed fires
+        // without any external plugin. Template uses $ARGUMENTS per
+        // packages/opencode/src/cli/cmd/run/footer.prompt.tsx and
+        // opencode.json docs (command[].template). The template instructs the
+        // agent to handle subcommands consistent with handleCommandExecuted.
+        try {
+          config.command = config.command || {};
+          if (!config.command['goal']) {
+            config.command['goal'] = {
+              template:
+                'Handle the /goal slash command. User arguments: $ARGUMENTS\n\n' +
+                'Parse arguments.trim().toLowerCase():\n' +
+                '- "" or objective (including "resume" with or without objective) → Goal set: "<args>" — loop armed. Reply one line + help.\n' +
+                '- "show" | "status" | "help" → report current goal (best-effort from history; if none, "No active goal remembered") + ledger summary if you can read plans/state.json (display only) + Usage: /goal [<objective>] | /goal show | /goal pause|resume | /goal clear (aliases: stop,off,reset,none,cancel)\n' +
+                '- "pause" → Goal paused — loop disarmed. Use /goal resume to continue.\n' +
+                '- "clear" | "stop" | "off" | "reset" | "none" | "cancel" → Goal cleared — loop disarmed. Idempotent.\n' +
+                'Never modify plans/state.json for goal — the continuation plugin owns armedSessions, the ledger owns tasks. Note: this invocation arms/disarms the gate via command.executed. Fail-closed: restart requires fresh /goal. Headless swe-pro-agents run needs no /goal.',
+              description: 'Set, show, pause, resume, or clear the active thread goal — arms the autonomous loop',
+              agent: 'swe-pro',
+            };
+          }
+        } catch {}
+      },
       event: async ({ event }) => {
         try {
           if (!event || !event.type) return;
