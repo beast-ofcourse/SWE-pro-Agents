@@ -24,12 +24,18 @@ const path = require('path');
 
 const logic = require('./loop-logic.js');
 
+let gate;
+try {
+  gate = require('./loop-gate.js');
+} catch {}
+
 function ledgerPath(planDir) {
   return path.join(planDir, 'state.json');
 }
 
 /**
  * Load and validate. Returns state or null (never throws) on missing / corrupt / invalid.
+ * Contrast: open() throws on corrupt existing file (never silently replaces); isResumable() returns false.
  */
 function load(planDir) {
   const p = ledgerPath(planDir);
@@ -102,11 +108,13 @@ function open(planDir, tasks) {
  * Is the ledger in a state where the gate should nudge?
  * True only when status is running, no task is in_progress, and at least one pending.
  * Never throws — returns false on any error.
+ * Delegates to LoopGate's predicate when available (single source of truth — see S2).
  */
 function isResumable(planDir) {
   try {
     const state = load(planDir);
     if (!state) return false;
+    if (gate && typeof gate._shouldResume === 'function') return gate._shouldResume(state);
     if (state.status !== 'running') return false;
     if (!Array.isArray(state.tasks)) return false;
     if (state.tasks.some((t) => t && t.status === 'in_progress')) return false;

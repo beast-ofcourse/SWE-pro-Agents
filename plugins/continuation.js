@@ -139,23 +139,32 @@ const path = require('path');
 // Installed: __filename is .../swe-pro-agents-continuation.js → same dir.
 // Repo: __filename is .../plugins/continuation.js → ../scripts/loop-gate.js.
 let gate;
+let gateLoadedFrom = null;
 try {
   // Installed layout — same plugin dir, prefixed
   gate = require('./swe-pro-agents-loop-gate.js');
+  gateLoadedFrom = 'installed';
 } catch {}
 if (!gate) {
   try {
     gate = require('../scripts/loop-gate.js');
+    gateLoadedFrom = 'repo';
   } catch {}
 }
 if (!gate) {
-  // Should not happen; keep plugin loadable but nudge will be no-op
+  console.warn(
+    '[swe-pro-agents] LoopGate not found — continuation nudge disabled (checked ./swe-pro-agents-loop-gate.js and ../scripts/loop-gate.js)'
+  );
   gate = {
     handleGoalEvent: () => ({ handled: false }),
     shouldNudge: () => false,
     NUDGE_MESSAGE:
       'Autonomous loop: continue plan execution per plans/state.json. Load and validate the ledger, dispatch the next task, verify it, record the result, and end with <promise>DONE</promise>.',
   };
+} else {
+  try {
+    gate._loadedFrom = gateLoadedFrom;
+  } catch {}
 }
 
 const NUDGE_MESSAGE = gate.NUDGE_MESSAGE;
