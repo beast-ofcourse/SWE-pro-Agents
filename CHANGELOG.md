@@ -7,9 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `sketch` — rapid throwaway HTML prototyping skill: 2-3 interactive variants to compare design directions before committing to build. Refactored for quick UI/frontend prototyping, concise workflow (clarify → build → verify → compare), Tailwind CDN, realistic content, browser verification. Pack is now **25 skills** (was 24).
+
 ### Changed
 
-- Nothing yet.
+- Nothing else yet.
 
 ## [2.8.0] - 2026-08-22
 

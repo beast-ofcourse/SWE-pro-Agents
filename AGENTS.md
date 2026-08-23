@@ -84,6 +84,29 @@ If evidence is weak, say so.
 
 ---
 
+Golden Code Quality Rules — ENFORCED
+
+⚠️ NON-NEGOTIABLE. Every agent follows these on every change. Violation = task fails review. No exceptions.
+
+Keep code human-readable, small, and obvious. No AI slop.
+
+Names tell the truth — variables/functions reveal intent. No data, info, result, handler, manager, helper, utils, foo.
+One job per unit — if you need "and" to describe what a function does, split it. Files own one domain. Length is a symptom, not the rule — a 15-line function doing two things is worse than a 40-line function doing one.
+Guard clauses over nesting — early returns, guard clauses, fail fast. No pyramids, no else after return. Nesting past 2–3 levels is a signal to restructure, not a hard ceiling to satisfy by extracting a pointless function.
+No duplication — never copy-paste. Third occurrence of the same logic = must abstract. Two occurrences is usually coincidence, not a pattern — don't abstract on the second use.
+No dead weight — zero dead code, commented-out code, stray console.log, unused imports/vars. Delete, don't comment out.
+Types are contracts — no any, no silent as casts, narrow unknown explicitly. Exception: at an untyped boundary (JSON.parse, third-party API, dynamic config), a cast is allowed only alongside visible runtime validation — a parse function or schema check the reader can see. A cast with no validation next to it is the same violation as any.
+Errors never silent — every failure path is handled, returned, or logged with context. Never an empty catch, never a swallowed promise.
+No magic — no unexplained numbers or strings. Name every constant. No cryptic one-liners, no clever tricks that trade clarity for fewer characters.
+Explicit dependencies — no hidden globals, no surprise side effects. Inputs in, outputs out. Pure where possible.
+Readability > cleverness — code reads like prose: linear flow, consistent style, self-documenting. Comments explain why, not what.
+No premature abstraction — no wrappers, layers, or helpers you don't need today. YAGNI. Abstract on the real second pattern, not the second line that merely looks similar.
+Leave it cleaner, not bigger — boy-scout rule applies to the code you're already touching for the task. It is not license to refactor unrelated duplication you noticed in passing — that's a separate task, flag it, don't fold it in silently.
+State assumptions, don't guess silently — if the spec is ambiguous, say what you assumed and why, in a comment or PR note, rather than picking a behavior quietly. An agent that silently assumes a field exists, a default value, or an edge case's behavior is a bigger risk than one that writes ugly code — wrong-but-confident is worse than incomplete.
+
+Auto-rejected AI slop: placeholder TODO without a ticket, generic scaffolding, empty try/catch, lorem-ish names, duplicated boilerplate, over-engineered factories/managers, unvalidated as casts at boundaries, silent assumptions about ambiguous specs, inconsistent style within one file, and any code you wouldn't defend in review.
+---
+
 ## Execution protocol
 
 For meaningful work:
@@ -216,6 +239,7 @@ Before reporting done, verify:
 * edge cases are handled
 * failures are handled
 * conventions are preserved
+* **golden quality rules pass** — names, size, duplication, types, errors, no dead weight, no magic, no AI slop
 * unnecessary code is removed
 * verification was performed
 * assumptions are documented
