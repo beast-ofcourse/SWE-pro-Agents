@@ -114,7 +114,13 @@ function listPackSkills() {
  *    scripts/ledger.js are libraries consumed by the CLI, not plugins.
  */
 function listPackPlugins() {
-  return ['swe-pro-agents-continuation.js', 'swe-pro-agents-loop-gate.js'];
+  return [
+    'swe-pro-agents-continuation.js',
+    'swe-pro-agents-loop-gate.js',
+    'swe-pro-agents-background.js',
+    'swe-pro-agents-background-delegate.js',
+    'swe-pro-agents-background-worktree.js',
+  ];
 }
 
 /** Tolerant manifest read — a missing or corrupt manifest means "no ownership info". */
@@ -197,6 +203,9 @@ function copyPlugins() {
   const sources = [
     { name: 'swe-pro-agents-continuation.js', src: path.join(pkgDir(), 'plugins', 'continuation.js') },
     { name: 'swe-pro-agents-loop-gate.js', src: path.join(pkgDir(), 'scripts', 'loop-gate.js') },
+    { name: 'swe-pro-agents-background.js', src: path.join(pkgDir(), 'plugins', 'swe-pro-agents-background.js') },
+    { name: 'swe-pro-agents-background-delegate.js', src: path.join(pkgDir(), 'scripts', 'background-delegate.js') },
+    { name: 'swe-pro-agents-background-worktree.js', src: path.join(pkgDir(), 'scripts', 'background-worktree.js') },
   ];
   let count = 0;
   for (const { name, src } of sources) {
