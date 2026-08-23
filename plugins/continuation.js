@@ -119,7 +119,8 @@
  *       `command.executed` is published unconditionally after `prompt()`
  *       (prompt.ts lines 1460-1479).
  *
- *    T-018 implements the gate using this mechanism (armedSessions below).
+ *    T-018 implements the gate via LoopGate module (scripts/loop-gate.js).
+ *    This file is the thin adapter at the OpenCode seam.
  *
  * Behavior: on session.idle, if the session's agent is `swe-pro`, the session
  * has an active goal (armed via `command.executed` for `/goal`), and
@@ -131,79 +132,33 @@
 
 'use strict';
 
-const fs = require('fs');
 const path = require('path');
 
-const NUDGE_MESSAGE =
-  'Autonomous loop: continue plan execution per plans/state.json. Load and validate the ledger, dispatch the next task, verify it, record the result, and end with <promise>DONE</promise>.';
-
-const stateFile = (directory) => path.join(directory, 'plans', 'state.json');
-
-/**
- * Per-session goal-gate state, keyed by sessionID. Presence in the map means
- * the session has an active goal (armed via `command.executed` for `/goal`).
- * Default: not armed — the idle hook fails closed.
- */
-const armedSessions = new Map();
-
-/**
- * `/goal` subcommands that disarm the gate. Clear aliases per the prevalentWare
- * README (stop, off, reset, none, cancel) plus `pause`; `resume` re-arms.
- */
-const DISARM_SUBCOMMANDS = new Set(['clear', 'stop', 'off', 'reset', 'none', 'cancel', 'pause']);
-
-/**
- * Handle a command.executed event: arm or disarm the goal gate for the
- * session. Only the `goal` command is matched; every other command is ignored.
- * Malformed events (missing sessionID, non-string arguments) return silently.
- */
-function handleCommandExecuted(event) {
-  const props = event.properties || {};
-  if (props.name !== 'goal') return;
-  const sessionID = props.sessionID;
-  if (!sessionID) return;
-  if (typeof props.arguments !== 'string') return;
-
-  const args = props.arguments.trim().toLowerCase();
-  if (DISARM_SUBCOMMANDS.has(args)) {
-    armedSessions.delete(sessionID);
-  } else {
-    // Bare `/goal`, an objective, or `resume` all arm the gate.
-    armedSessions.set(sessionID, true);
-  }
-}
-
-/**
- * Read plans/state.json under the given project directory. Returns the parsed
- * object, or null when the file is missing, unreadable, or not a JSON object
- * (caller treats null as "do nothing").
- */
-function readState(directory) {
-  let raw;
+// Resolve LoopGate for both repo (scripts/loop-gate.js) and installed
+// (same dir, prefixed name swe-pro-agents-loop-gate.js) layouts.
+// Installed: __filename is .../swe-pro-agents-continuation.js → same dir.
+// Repo: __filename is .../plugins/continuation.js → ../scripts/loop-gate.js.
+let gate;
+try {
+  // Installed layout — same plugin dir, prefixed
+  gate = require('./swe-pro-agents-loop-gate.js');
+} catch {}
+if (!gate) {
   try {
-    raw = fs.readFileSync(stateFile(directory), 'utf8');
-  } catch {
-    return null;
-  }
-  try {
-    const state = JSON.parse(raw);
-    return state && typeof state === 'object' ? state : null;
-  } catch {
-    return null;
-  }
+    gate = require('../scripts/loop-gate.js');
+  } catch {}
+}
+if (!gate) {
+  // Should not happen; keep plugin loadable but nudge will be no-op
+  gate = {
+    handleGoalEvent: () => ({ handled: false }),
+    shouldNudge: () => false,
+    NUDGE_MESSAGE:
+      'Autonomous loop: continue plan execution per plans/state.json. Load and validate the ledger, dispatch the next task, verify it, record the result, and end with <promise>DONE</promise>.',
+  };
 }
 
-/**
- * Decide whether the ledger wants the loop resumed. True only when the ledger
- * status is "running", no task is in_progress, and at least one task is
- * pending.
- */
-function shouldResume(state) {
-  if (!state || state.status !== 'running') return false;
-  if (!Array.isArray(state.tasks)) return false;
-  if (state.tasks.some((task) => task && task.status === 'in_progress')) return false;
-  return state.tasks.some((task) => task && task.status === 'pending');
-}
+const NUDGE_MESSAGE = gate.NUDGE_MESSAGE;
 
 module.exports = {
   id: 'swe-pro-continuation',
@@ -214,7 +169,7 @@ module.exports = {
         // without any external plugin. Template uses $ARGUMENTS per
         // packages/opencode/src/cli/cmd/run/footer.prompt.tsx and
         // opencode.json docs (command[].template). The template instructs the
-        // agent to handle subcommands consistent with handleCommandExecuted.
+        // agent to handle subcommands consistent with LoopGate.
         try {
           config.command = config.command || {};
           if (!config.command['goal']) {
@@ -239,7 +194,7 @@ module.exports = {
 
           // The event hook receives every event type; dispatch on it.
           if (event.type === 'command.executed') {
-            handleCommandExecuted(event);
+            gate.handleGoalEvent(event);
             return;
           }
           if (event.type !== 'session.idle') return;
@@ -247,15 +202,11 @@ module.exports = {
           const sessionID = event.properties && event.properties.sessionID;
           if (!sessionID) return;
 
-          // Agent guard: never hijack architect/planning sessions.
+          // Agent guard is inside shouldNudge, but we need sessionAgent — fetch it here (adapter concern).
           const session = await client.session.get({ path: { id: sessionID } });
-          if (!session || session.agent !== 'swe-pro') return;
+          const sessionAgent = session && session.agent;
 
-          // Goal gate: no active goal -> no nudge, ever (fail-closed).
-          if (!armedSessions.has(sessionID)) return;
-
-          const state = readState(directory);
-          if (!shouldResume(state)) return;
+          if (!gate.shouldNudge({ directory, sessionID, sessionAgent })) return;
 
           await client.session.prompt({
             path: { id: sessionID },

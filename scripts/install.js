@@ -105,12 +105,16 @@ function listPackSkills() {
 }
 
 /**
- * Plugin file names the pack ships (basenames in PLUGIN_DIR). The only plugin
- * is plugins/continuation.js — scripts/loop-logic.js is a library consumed by
- * the CLI, not an OpenCode plugin, and must never be installed as one.
+ * Plugin file names the pack ships (basenames in PLUGIN_DIR). Two files:
+ *  - plugins/continuation.js — thin adapter at the OpenCode seam
+ *  - scripts/loop-gate.js — deep LoopGate module (installed as prefixed plugin
+ *    so the adapter can require('./swe-pro-agents-loop-gate.js') in the
+ *    installed layout; in the repo it lives in scripts/ and is required via
+ *    '../scripts/loop-gate.js' fallback). scripts/loop-logic.js and
+ *    scripts/ledger.js are libraries consumed by the CLI, not plugins.
  */
 function listPackPlugins() {
-  return ['swe-pro-agents-continuation.js'];
+  return ['swe-pro-agents-continuation.js', 'swe-pro-agents-loop-gate.js'];
 }
 
 /** Tolerant manifest read — a missing or corrupt manifest means "no ownership info". */
@@ -192,6 +196,7 @@ function copySkills() {
 function copyPlugins() {
   const sources = [
     { name: 'swe-pro-agents-continuation.js', src: path.join(pkgDir(), 'plugins', 'continuation.js') },
+    { name: 'swe-pro-agents-loop-gate.js', src: path.join(pkgDir(), 'scripts', 'loop-gate.js') },
   ];
   let count = 0;
   for (const { name, src } of sources) {
