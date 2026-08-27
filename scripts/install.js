@@ -105,13 +105,17 @@ function listPackSkills() {
 }
 
 /**
- * Plugin file names the pack ships (basenames in PLUGIN_DIR). Two files:
+ * Plugin file names the pack ships (basenames in PLUGIN_DIR).
  *  - plugins/continuation.js — thin adapter at the OpenCode seam
  *  - scripts/loop-gate.js — deep LoopGate module (installed as prefixed plugin
  *    so the adapter can require('./swe-pro-agents-loop-gate.js') in the
  *    installed layout; in the repo it lives in scripts/ and is required via
  *    '../scripts/loop-gate.js' fallback). scripts/loop-logic.js and
  *    scripts/ledger.js are libraries consumed by the CLI, not plugins.
+ *  - scripts/pack-config.js — feature-flag config reader (installed as
+ *    prefixed plugin so the adapter can require('./swe-pro-agents-pack-config.js')
+ *    in the installed layout; in the repo it lives in scripts/ and is required
+ *    via '../scripts/pack-config.js' fallback).
  */
 function listPackPlugins() {
   return [
@@ -120,6 +124,7 @@ function listPackPlugins() {
     'swe-pro-agents-background.js',
     'swe-pro-agents-background-delegate.js',
     'swe-pro-agents-background-worktree.js',
+    'swe-pro-agents-pack-config.js',
   ];
 }
 
@@ -206,6 +211,7 @@ function copyPlugins() {
     { name: 'swe-pro-agents-background.js', src: path.join(pkgDir(), 'plugins', 'swe-pro-agents-background.js') },
     { name: 'swe-pro-agents-background-delegate.js', src: path.join(pkgDir(), 'scripts', 'background-delegate.js') },
     { name: 'swe-pro-agents-background-worktree.js', src: path.join(pkgDir(), 'scripts', 'background-worktree.js') },
+    { name: 'swe-pro-agents-pack-config.js', src: path.join(pkgDir(), 'scripts', 'pack-config.js') },
   ];
   let count = 0;
   for (const { name, src } of sources) {

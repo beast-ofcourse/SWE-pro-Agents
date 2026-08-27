@@ -34,6 +34,7 @@ jobs:
           node --check scripts/loop-gate.js
           node --check scripts/run-loop.js
           node --check scripts/validate-plan.js
+          node --check scripts/pack-config.js
           node --check test/installer.test.js
           node --check test/validate.test.js
           node --check test/validate-plan.test.js
@@ -43,6 +44,7 @@ jobs:
           node --check test/run-loop.test.js
           node --check test/bin.test.js
           node --check test/continuation.test.js
+          node --check test/pack-config.test.js
       - name: Pack validation (agents + skills, strict)
         run: npm run validate
       - name: Installer lifecycle tests
@@ -63,3 +65,5 @@ jobs:
         run: node test/bin.test.js
       - name: Continuation plugin tests
         run: node test/continuation.test.js
+      - name: Config module tests
+        run: node test/pack-config.test.js

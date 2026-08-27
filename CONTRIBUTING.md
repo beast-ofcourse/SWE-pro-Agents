@@ -44,8 +44,10 @@ npm test
   pack validator's self-tests), `test/validate-plan.test.js` (12 tests — the plan
   validator), `test/loop-logic.test.js` (57 tests — the loop's pure logic),
   `test/run-loop.test.js` (10 tests — the loop runner end to end),
-  `test/bin.test.js` (5 tests — the CLI), and `test/continuation.test.js` (11
-  tests — the continuation plugin's goal-gated idle nudge).
+  `test/bin.test.js` (10 tests — the CLI, including the `setup` feature-flag
+  toggle), `test/continuation.test.js` (14 tests — the continuation plugin's
+  goal-gated idle nudge, including feature-flag gating), and
+  `test/pack-config.test.js` (11 tests — the `features.goal` config reader).
 - `npm run validate` runs `scripts/validate.js`, the **strict** pack validator: it
   lints every agent and skill and exits 1 on any violation. The validator is wired
   into CI, so the pack must stay green there too.

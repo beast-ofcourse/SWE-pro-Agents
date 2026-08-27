@@ -129,14 +129,24 @@ test('handleGoalEvent ignores missing sessionID and non-string args', () => {
   assert.strictEqual(r.handled, false);
 });
 
-test('handleGoalEvent show arms in MVP (documents current behavior)', () => {
+test('handleGoalEvent show/status/help are neutral (no arm/disarm)', () => {
+  // armed first
   reset();
-  gate.handleGoalEvent({ properties: { name: 'goal', sessionID: 's1', arguments: 'show' } });
-  assert.strictEqual(gate.isArmed('s1'), true, 'show arms in MVP — will be neutral after Gate hardening');
-  // status also arms
-  reset();
-  gate.handleGoalEvent({ properties: { name: 'goal', sessionID: 's1', arguments: 'status' } });
+  gate.handleGoalEvent({ properties: { name: 'goal', sessionID: 's1', arguments: 'obj' } });
   assert.strictEqual(gate.isArmed('s1'), true);
+  // neutral subcommands must not change arm state
+  for (const sub of ['show', 'status', 'help']) {
+    gate.handleGoalEvent({ properties: { name: 'goal', sessionID: 's1', arguments: sub } });
+    assert.strictEqual(gate.isArmed('s1'), true, `${sub} must not disarm`);
+  }
+  // disarmed, then neutral must not re-arm
+  reset();
+  gate.handleGoalEvent({ properties: { name: 'goal', sessionID: 's1', arguments: 'clear' } });
+  assert.strictEqual(gate.isArmed('s1'), false);
+  for (const sub of ['show', 'status', 'help']) {
+    gate.handleGoalEvent({ properties: { name: 'goal', sessionID: 's1', arguments: sub } });
+    assert.strictEqual(gate.isArmed('s1'), false, `${sub} must not arm`);
+  }
 });
 
 // ---------------------------------------------------------------------------
