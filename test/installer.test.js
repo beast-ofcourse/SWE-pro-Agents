@@ -51,13 +51,15 @@ const SKILL_NAMES = fs
 // Plugin basenames the pack installs into the global plugin dir (see
 // scripts/install.js listPackPlugins — continuation adapter + LoopGate deep
 // module + background-delegation adapter and its two deep modules
-// (delegate engine + worktree isolation); loop-logic/ledger are CLI libraries, not plugins.
+// (delegate engine + worktree isolation) + pack-config feature-flag reader;
+// loop-logic/ledger are CLI libraries, not plugins.
 const PLUGIN_NAMES = [
   'swe-pro-agents-continuation.js',
   'swe-pro-agents-loop-gate.js',
   'swe-pro-agents-background.js',
   'swe-pro-agents-background-delegate.js',
   'swe-pro-agents-background-worktree.js',
+  'swe-pro-agents-pack-config.js',
 ];
 
 const agentsDir = (home) => path.join(home, '.config', 'opencode', 'agents', PACKAGE_NAME);
@@ -290,6 +292,11 @@ test('fresh install copies the plugin file and records its name in the manifest'
     fs.readFileSync(path.join(pluginsDir(home), 'swe-pro-agents-loop-gate.js'), 'utf-8'),
     fs.readFileSync(path.join(REPO, 'scripts', 'loop-gate.js'), 'utf-8'),
     'loop-gate plugin content matches the pack'
+  );
+  assert.deepStrictEqual(
+    fs.readFileSync(path.join(pluginsDir(home), 'swe-pro-agents-pack-config.js'), 'utf-8'),
+    fs.readFileSync(path.join(REPO, 'scripts', 'pack-config.js'), 'utf-8'),
+    'pack-config plugin content matches the pack'
   );
 
   const manifest = readManifest(home);

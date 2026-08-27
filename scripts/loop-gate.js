@@ -29,6 +29,10 @@ const LOOP_AGENT = 'swe-pro';
 
 const DISARM_SUBCOMMANDS = new Set(['clear', 'stop', 'off', 'reset', 'none', 'cancel', 'pause']);
 
+// Neutral subcommands — inspect state without arming or disarming.
+// `show`/`status`/`help` must not arm the session (fixes the MVP arming bug).
+const NEUTRAL_SUBCOMMANDS = new Set(['show', 'status', 'help']);
+
 const NUDGE_MESSAGE =
   'Autonomous loop: continue plan execution per plans/state.json. Load and validate the ledger, dispatch the next task, verify it, record the result, and end with <promise>DONE</promise>.';
 
@@ -77,8 +81,12 @@ function handleGoalEvent(event) {
     const action = args === 'pause' ? 'paused' : 'cleared';
     return { handled: true, sessionID, armed: false, action, raw: args };
   }
+  if (NEUTRAL_SUBCOMMANDS.has(args)) {
+    // show/status/help inspect state without arming or disarming
+    return { handled: true, sessionID, armed: isArmed(sessionID), action: 'shown', raw: args };
+  }
+
   armedSessions.set(sessionID, true);
-  // bare, resume, objective, show — all arm in MVP (show arms; future can make show neutral via this module)
   const action = args === '' ? 'armed' : args === 'resume' ? 'resumed' : 'set';
   return { handled: true, sessionID, armed: true, action, raw: args };
 }

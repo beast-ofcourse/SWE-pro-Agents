@@ -71,6 +71,20 @@ function runBin(args) {
   return spawnSync(process.execPath, [BIN, 'run', ...args], { encoding: 'utf8' });
 }
 
+/** Run the CLI `setup` command as a subprocess in an isolated cwd + HOME. */
+function runSetup(args, cwd) {
+  // Real OpenCode creates this dir; the test HOME is empty, so pre-create it
+  // so applyToOpenCodeConfig() has a place to write.
+  fs.mkdirSync(path.join(cwd, '.config', 'opencode'), { recursive: true });
+  return spawnSync(process.execPath, [BIN, 'setup', ...args], {
+    cwd,
+    env: { ...process.env, HOME: cwd, USERPROFILE: cwd },
+    encoding: 'utf8',
+  });
+}
+
+const GOAL_CONFIG = 'swe-pro-agents.config.json';
+
 /** Read the ledger written by the CLI. */
 function readLedger(dir) {
   return JSON.parse(fs.readFileSync(path.join(dir, 'state.json'), 'utf8'));
@@ -142,6 +156,51 @@ test('exits 1 on a corrupt ledger and never replaces it', () => {
   assert.strictEqual(r.status, 1, `expected exit 1, got ${r.status}`);
   assert.ok(r.stderr.includes('ledger exists but could not be loaded'), `expected a corrupt-ledger error, got: ${r.stderr}`);
   assert.strictEqual(fs.readFileSync(path.join(dir, 'state.json'), 'utf8'), '{ not json', 'corrupt ledger must be left untouched');
+});
+
+// ---------------------------------------------------------------------------
+// setup — /goal feature flag
+// ---------------------------------------------------------------------------
+
+test('setup --apply --goal writes features.goal true', () => {
+  const dir = tempDir('bin-setup-');
+  const r = runSetup(['--apply', '--goal'], dir);
+  assert.strictEqual(r.status, 0, `expected exit 0, got ${r.status}: ${r.stderr}`);
+  const cfg = JSON.parse(fs.readFileSync(path.join(dir, GOAL_CONFIG), 'utf8'));
+  assert.strictEqual(cfg.features.goal, true);
+});
+
+test('setup --apply --no-goal writes features.goal false', () => {
+  const dir = tempDir('bin-setup-');
+  const r = runSetup(['--apply', '--no-goal'], dir);
+  assert.strictEqual(r.status, 0, `expected exit 0, got ${r.status}: ${r.stderr}`);
+  const cfg = JSON.parse(fs.readFileSync(path.join(dir, GOAL_CONFIG), 'utf8'));
+  assert.strictEqual(cfg.features.goal, false);
+});
+
+test('setup --apply (no flag, non-interactive) defaults to enabled', () => {
+  const dir = tempDir('bin-setup-');
+  const r = runSetup(['--apply'], dir);
+  assert.strictEqual(r.status, 0, `expected exit 0, got ${r.status}: ${r.stderr}`);
+  const cfg = JSON.parse(fs.readFileSync(path.join(dir, GOAL_CONFIG), 'utf8'));
+  assert.strictEqual(cfg.features.goal, true);
+});
+
+test('setup without --apply does not write a config file', () => {
+  const dir = tempDir('bin-setup-');
+  const r = runSetup([], dir);
+  assert.strictEqual(r.status, 0, `expected exit 0, got ${r.status}: ${r.stderr}`);
+  assert.strictEqual(fs.existsSync(path.join(dir, GOAL_CONFIG)), false, 'no config file should be written without --apply');
+});
+
+test('setup --apply --no-goal preserves other config keys', () => {
+  const dir = tempDir('bin-setup-');
+  fs.writeFileSync(path.join(dir, GOAL_CONFIG), JSON.stringify({ otherKey: 'keep-me', features: { goal: true } }), 'utf8');
+  const r = runSetup(['--apply', '--no-goal'], dir);
+  assert.strictEqual(r.status, 0, `expected exit 0, got ${r.status}: ${r.stderr}`);
+  const cfg = JSON.parse(fs.readFileSync(path.join(dir, GOAL_CONFIG), 'utf8'));
+  assert.strictEqual(cfg.features.goal, false);
+  assert.strictEqual(cfg.otherKey, 'keep-me');
 });
 
 console.log(`\n${passed} passed, ${failed} failed`);

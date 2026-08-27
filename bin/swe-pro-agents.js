@@ -7,8 +7,13 @@
  *   swe-pro-agents run [result] [--plan <dir>] [--dry-run]
  *                      [--max-iterations <n>] [--no-continue] [--json]
  *       — Drive the plan-execution loop (see cmdRun below).
- *   swe-pro-agents setup [--apply]   — Show the opencode.json config snippet
- *                                      (--apply writes it, with a .bak backup)
+ *   swe-pro-agents setup [--apply] [--goal|--no-goal]
+ *                                    — Show the opencode.json config snippet
+ *                                      (--apply writes it, with a .bak backup);
+ *                                      also toggles the /goal autonomous-loop
+ *                                      feature flag in swe-pro-agents.config.json
+ *                                      (default on; --goal/--no-goal or a [Y/n]
+ *                                      prompt when run interactively)
  *   swe-pro-agents status            — Show installation status + update check
  *   swe-pro-agents version           — Show version
  *   swe-pro-agents help              — Show this help
@@ -38,6 +43,7 @@ const {
 } = require('../scripts/loop-logic.js');
 
 const { DEFAULT_PLAN_DIR, LEDGER_FILE, PLAN_FILE, stopReason, emit } = require('../scripts/cli-shared.js');
+const packConfig = require('../scripts/pack-config.js');
 
 const PACKAGE_NAME = 'swe-pro-agents';
 const AGENTS_DIR = path.join(__dirname, '..', 'agents');
@@ -146,7 +152,25 @@ function applyToOpenCodeConfig() {
   console.log(`  Restart OpenCode to load the agents.`);
 }
 
-function cmdSetup() {
+const GOAL_CONFIG_FILE = packConfig.CONFIG_FILE;
+
+// Interactive yes/no. Only prompts on a TTY; otherwise returns defaultValue.
+function promptGoalDefault(defaultValue) {
+  if (!process.stdin.isTTY) return Promise.resolve(defaultValue);
+  const readline = require('readline');
+  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+  return new Promise((resolve) => {
+    rl.question('Enable the /goal autonomous-loop system? [Y/n] ', (answer) => {
+      rl.close();
+      const a = String(answer).trim().toLowerCase();
+      if (a === '' || a === 'y' || a === 'yes') return resolve(true);
+      if (a === 'n' || a === 'no') return resolve(false);
+      return resolve(defaultValue);
+    });
+  });
+}
+
+async function cmdSetup(argv) {
   console.log(`\n  Add this to your opencode.json:\n`);
   console.log(`  {`);
   console.log(`    "agents": [{ "path": "${configEntryPath()}" }]`);
@@ -172,6 +196,32 @@ function cmdSetup() {
     console.log(`  shared foundation. Copy it into place:\n`);
     console.log(`    cp "${PACK_AGENTS_MD}" "${GLOBAL_AGENTS_MD}"\n`);
   }
+
+  // --- /goal autonomous-loop feature flag ---
+  const apply = argv.includes('--apply');
+  const goalFlag = argv.includes('--goal');
+  const noGoalFlag = argv.includes('--no-goal');
+
+  if (!apply) {
+    console.log(`\n  Run 'swe-pro-agents setup --apply' to write the opencode.json entry and the /goal feature flag.`);
+    return;
+  }
+
+  let goalEnabled;
+  if (goalFlag) {
+    goalEnabled = true;
+  } else if (noGoalFlag) {
+    goalEnabled = false;
+  } else {
+    // Fail-open default: missing/invalid config reads as enabled.
+    goalEnabled = await promptGoalDefault(packConfig.isGoalEnabled(process.cwd()));
+  }
+
+  console.log(`\n  /goal autonomous-loop system: ${goalEnabled ? 'enabled' : 'disabled'}`);
+  packConfig.writeConfig(process.cwd(), { goal: goalEnabled });
+  console.log(`  Wrote ${GOAL_CONFIG_FILE} (features.goal: ${goalEnabled})`);
+  console.log(`  Applying opencode.json entry...`);
+  applyToOpenCodeConfig();
 }
 
 function cmdStatus() {
@@ -430,7 +480,10 @@ Commands:
       --json               Machine-readable output (JSON on stdout, human text
                            on stderr)
   setup [--apply]          Show the opencode.json config snippet; --apply
-                           writes it (with a .bak backup)
+                            writes it (with a .bak backup). Also toggles the
+                            /goal autonomous-loop feature flag via
+                            [--goal|--no-goal] (or a [Y/n] prompt); writes
+                            swe-pro-agents.config.json (default on)
   status                   Show installation status + update check
   version                  Show package version
   help                     Show this help
@@ -465,12 +518,7 @@ async function main() {
     case 'run':
       return cmdRun(argv.slice(1));
     case 'setup':
-      cmdSetup();
-      if (argv.includes('--apply')) {
-        console.log(`  Applying opencode.json entry...`);
-        applyToOpenCodeConfig();
-      }
-      return 0;
+      return cmdSetup(argv.slice(1));
     case 'status':
       cmdStatus();
       // Update check — offline/slow registries silently skip it.

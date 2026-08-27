@@ -321,6 +321,57 @@ async function main() {
     }
   });
 
+  await test('feature flag off: /goal command is not registered', async () => {
+    const ledgerDir = tempDir('continuation-flagoff-');
+    fs.writeFileSync(
+      path.join(ledgerDir, 'swe-pro-agents.config.json'),
+      JSON.stringify({ features: { goal: false } })
+    );
+    const hooks = await plugin.server({ client: fakeClient([]), directory: ledgerDir });
+    const cfg = {};
+    await hooks.config(cfg);
+    assert.strictEqual(
+      cfg.command && cfg.command['goal'],
+      undefined,
+      'goal command must not be registered when the feature flag is off'
+    );
+  });
+
+  await test('feature flag off: idle never prompts, even with a resumable ledger', async () => {
+    const ledgerDir = tempDir('continuation-flagoff-');
+    fs.mkdirSync(path.join(ledgerDir, 'plans'), { recursive: true });
+    fs.writeFileSync(path.join(ledgerDir, 'plans', 'state.json'), resumableLedger());
+    fs.writeFileSync(
+      path.join(ledgerDir, 'swe-pro-agents.config.json'),
+      JSON.stringify({ features: { goal: false } })
+    );
+    const emptyCwd = tempDir('continuation-cwd-');
+
+    const originalCwd = process.cwd();
+    process.chdir(emptyCwd);
+    try {
+      const calls = [];
+      const client = fakeClient(calls);
+      await fireCommand(ledgerDir, client, 'goal', '', 'sess-f'); // ignored when disabled
+      await fireIdle(ledgerDir, client, 'sess-f');
+      assert.strictEqual(calls.length, 0, 'expected no prompt when the feature flag is off');
+    } finally {
+      process.chdir(originalCwd);
+    }
+  });
+
+  await test('feature flag on (default): /goal command is registered', async () => {
+    const ledgerDir = tempDir('continuation-flagon-');
+    // no config file → fail-open default is enabled
+    const hooks = await plugin.server({ client: fakeClient([]), directory: ledgerDir });
+    const cfg = {};
+    await hooks.config(cfg);
+    assert.ok(
+      cfg.command && cfg.command['goal'],
+      'goal command must be registered by default (fail-open)'
+    );
+  });
+
   console.log(`\n${passed} passed, ${failed} failed`);
   if (failed > 0) process.exit(1);
 }

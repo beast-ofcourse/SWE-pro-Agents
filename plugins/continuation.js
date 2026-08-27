@@ -169,11 +169,37 @@ if (!gate) {
 
 const NUDGE_MESSAGE = gate.NUDGE_MESSAGE;
 
+// Resolve the feature-flag config reader for both repo and installed layouts.
+// Installed: __filename is .../swe-pro-agents-continuation.js → same dir.
+// Repo: __filename is .../plugins/continuation.js → ../scripts/pack-config.js.
+let configModule;
+try {
+  configModule = require('./swe-pro-agents-pack-config.js');
+} catch {}
+if (!configModule) {
+  try {
+    configModule = require('../scripts/pack-config.js');
+  } catch {}
+}
+// Fail-open: when the config module is missing, the feature is ON.
+const isGoalEnabled =
+  configModule && typeof configModule.isGoalEnabled === 'function'
+    ? configModule.isGoalEnabled
+    : () => true;
+
 module.exports = {
   id: 'swe-pro-continuation',
   server: async ({ client, directory }) => {
+    // Log the resolved feature state once at load (fail-open default).
+    try {
+      console.error('[swe-pro-agents] goal system: ' + (isGoalEnabled(directory) ? 'enabled' : 'disabled'));
+    } catch {}
+
     return {
       config: async (config) => {
+        // Feature flag: when /goal is disabled, register nothing — the plugin is inert.
+        if (!isGoalEnabled(directory)) return;
+
         // Pack-shipped /goal — registers the slash command so command.executed fires
         // without any external plugin. Template uses $ARGUMENTS per
         // packages/opencode/src/cli/cmd/run/footer.prompt.tsx and
@@ -187,11 +213,11 @@ module.exports = {
                 'Handle the /goal slash command. User arguments: $ARGUMENTS\n\n' +
                 'Parse arguments.trim().toLowerCase():\n' +
                 '- "" or objective (including "resume" with or without objective) → Goal set: "<args>" — loop armed. Reply one line + help.\n' +
-                '- "show" | "status" | "help" → report current goal (best-effort from history; if none, "No active goal remembered") + ledger summary if you can read plans/state.json (display only) + Usage: /goal [<objective>] | /goal show | /goal pause|resume | /goal clear (aliases: stop,off,reset,none,cancel)\n' +
+                '- "show" | "status" | "help" → report current goal (best-effort from history; if none, "No active goal remembered") + ledger summary if you can read plans/state.json (display only) + Usage: /goal [<objective>] | /goal show | /goal pause|resume | /goal clear (aliases: stop,off,reset,none,cancel). These are READ-ONLY — they do NOT arm or disarm the loop.\n' +
                 '- "pause" → Goal paused — loop disarmed. Use /goal resume to continue.\n' +
                 '- "clear" | "stop" | "off" | "reset" | "none" | "cancel" → Goal cleared — loop disarmed. Idempotent.\n' +
-                'Never modify plans/state.json for goal — the continuation plugin owns armedSessions, the ledger owns tasks. Note: this invocation arms/disarms the gate via command.executed. Fail-closed: restart requires fresh /goal. Headless swe-pro-agents run needs no /goal.',
-              description: 'Set, show, pause, resume, or clear the active thread goal — arms the autonomous loop',
+                'Never modify plans/state.json for goal — the continuation plugin owns armedSessions, the ledger owns tasks. Note: this invocation arms/disarms the gate via command.executed (show/status/help do not). Fail-closed: restart requires fresh /goal. Headless swe-pro-agents run needs no /goal.',
+              description: 'Set, show, pause, resume, or clear the active thread goal (show/status/help are read-only)',
               agent: 'swe-pro',
             };
           }
@@ -200,6 +226,10 @@ module.exports = {
       event: async ({ event }) => {
         try {
           if (!event || !event.type) return;
+
+          // Feature flag: when /goal is disabled, the plugin is inert — skip all handling.
+          // Re-read per idle (R1): the flag can change between sessions without a restart.
+          if (!isGoalEnabled(directory)) return;
 
           // The event hook receives every event type; dispatch on it.
           if (event.type === 'command.executed') {
