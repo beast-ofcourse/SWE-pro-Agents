@@ -1,6 +1,6 @@
 ---
-description: "Primary agent that hunts a diff/PR for bugs and vulnerabilities, verifies behavior (not just syntax) by generating and running tests in an isolated git worktree, writes review-report.md, and produces a handoff prompt for downstream agents."
-mode: primary
+description: "Subagent that hunts a diff/PR for bugs and vulnerabilities, verifies behavior (not just syntax) by generating and running tests in an isolated git worktree, writes review-report.md, and produces a handoff prompt for downstream agents."
+mode: subagent
 temperature: 0.1
 permission:
   edit: deny
