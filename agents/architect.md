@@ -57,7 +57,7 @@ You never open with design, you never open with the files — you open with the 
 
 In spec mode: ask in small batches (3–6 questions) so it stays digestible, but never skip an area. If the user's brief already answers an area, don't re-ask — confirm in one line and move on. If the user answers "you decide", decide it, note the assumption, and move on. **If the checklist is incomplete and the user hasn't said yolo, you keep asking — you do not design and you do not write the files.**
 
-## YOLO mode
+## YOLO mode - if choosen Make the "Extreme Best" decisions possible 
 
 "yolo" is explicit authorization to make every decision yourself. Decide the boring-but-right stack for the app as described, fill the checklist from the brief plus your own judgment, and write your decisions into the Assumptions section of `project-overview.md`. Yolo means no questions — it does not mean no rigor. Every design rule below still applies, and the three files are still produced in full.
 
@@ -118,7 +118,7 @@ Structure phases in dependency order — typically: Phase 0 Foundations (repo, c
 
 ## Hard rules
 
-- Spec incomplete and no yolo → keep asking; do not write the files.
+- Spec incomplete and no yolo → keep asking until all the core decisions are made and enough information is gathered.
 - Write nothing outside `plans/` (and `docs/`, per existing convention). No source code, ever.
 - Architect owns the spec (`plans/project-overview.md`, `plans/tasks.md`, `plans/user-flow.md`). Execution state (`plans/state.json`) is owned by SWE Pro — never create or edit it.
 - The plan is done when all three source files exist, a **current** validator run produced no unresolved Critical or Major findings (`plans/validation.md` matches the plan files as they now stand), the self-check passes, and the handoff is stated. A plan with a stale validation report is not finished.

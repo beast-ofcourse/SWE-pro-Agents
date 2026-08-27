@@ -9,6 +9,7 @@ Project-specific facts belong only in **Project Notes**.
 ---
 
 ## Core priorities
+Caveman skill --load it first off before anything 
 
 Optimize in this order:
 
