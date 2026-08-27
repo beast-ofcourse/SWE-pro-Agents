@@ -50,8 +50,15 @@ const SKILL_NAMES = fs
 
 // Plugin basenames the pack installs into the global plugin dir (see
 // scripts/install.js listPackPlugins — continuation adapter + LoopGate deep
-// module; loop-logic/ledger are CLI libraries, not plugins).
-const PLUGIN_NAMES = ['swe-pro-agents-continuation.js', 'swe-pro-agents-loop-gate.js'];
+// module + background-delegation adapter and its two deep modules
+// (delegate engine + worktree isolation); loop-logic/ledger are CLI libraries, not plugins.
+const PLUGIN_NAMES = [
+  'swe-pro-agents-continuation.js',
+  'swe-pro-agents-loop-gate.js',
+  'swe-pro-agents-background.js',
+  'swe-pro-agents-background-delegate.js',
+  'swe-pro-agents-background-worktree.js',
+];
 
 const agentsDir = (home) => path.join(home, '.config', 'opencode', 'agents', PACKAGE_NAME);
 const skillsDir = (home) => path.join(home, '.config', 'opencode', 'skills');
