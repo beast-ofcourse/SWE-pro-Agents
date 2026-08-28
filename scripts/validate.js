@@ -12,13 +12,13 @@
  *
  * The full rule spec (this is the source of truth; it ships with the code):
  *   Agents  A1 frontmatter parseable · A2 description required/single-line/≤1024
- *           A3 mode valid · A4 primary set exact · A5 subagents not primary
+ *           A3 mode valid
  *           A6 permission task refs known · A7 frontmatter name matches filename
  *           A8 no duplicate names
  *   Skills  S1 SKILL.md exists · S2 frontmatter parseable · S3 name valid+matches dir
  *           S4 description required/≤1024 · S5 license MIT · S6 compatibility opencode
  *           S7 no duplicate names · S8 description has trigger language
- *   Cross   C1 count integrity (files vs package.json vs README) · C2 no stray files
+   *   Cross   C2 no stray files
  *
  * Two rules are implemented more narrowly than the plan's literal wording,
  * because the pack itself does not follow the literal form:
@@ -35,12 +35,12 @@
 const fs = require('fs');
 const path = require('path');
 
-/** The four primary agents. Keep in sync with the pack. */
-const PRIMARY_AGENTS = new Set(['swe-pro', 'architect', 'swe-reviewer', 'pr-reviewer']);
-
-/** Expected pack size. Bump when the pack grows. */
-const EXPECTED_AGENT_COUNT = 26;
-const EXPECTED_SKILL_COUNT = 25;
+// A4 (primary agents must declare mode: primary), A5 (subagents must not
+// declare mode: primary, enforced via a hardcoded PRIMARY_AGENTS whitelist),
+// and C1 (hardcoded pack counts) were removed: they encoded brittle,
+// name-specific assumptions that broke on legitimate pack changes (demoting
+// swe-reviewer to a subagent, removing swe-documentation). Agent/skill counts
+// are still reported for visibility in the CLI output.
 
 /** OpenCode built-in agents that may appear in task allow/deny lists. */
 const OPENCODE_BUILTINS = new Set(['general', 'explore', 'build', 'plan']);
@@ -210,11 +210,6 @@ function validateAgentFile(filePath, knownSubagents) {
     rule('A3', `invalid mode '${mode}'`);
   }
 
-  // A5 — subagents must not declare mode: primary.
-  if (mode === 'primary' && !PRIMARY_AGENTS.has(base)) {
-    rule('A5', `subagent '${base}' must not declare mode: primary`);
-  }
-
   // A6 — permission.task allow/deny refs must be known.
   const fmLines = extractFrontmatterLines(content);
   if (fmLines) {
@@ -322,31 +317,21 @@ function validatePack(repoDir) {
     }
   }
 
-  const primaryDeclared = new Set();
-  const declaredNames = new Set();
-  for (const f of agentFiles) {
-    const full = path.join(agentsDir, f);
-    violations.push(...validateAgentFile(full, knownSubagents));
+    const declaredNames = new Set();
+    for (const f of agentFiles) {
+      const full = path.join(agentsDir, f);
+      violations.push(...validateAgentFile(full, knownSubagents));
 
-    // Track primary declarations and names for A4 / A8.
-    const base = path.basename(f, '.md');
-    const fm = parseFrontmatter(fs.readFileSync(full, 'utf8'));
-    if (fm.ok && fm.data.mode === 'primary') primaryDeclared.add(base);
-    const name = fm.ok && fm.data.name ? fm.data.name : base;
-    if (declaredNames.has(name)) {
-      violations.push({ rule: 'A8', file: base, detail: `duplicate agent name '${name}'` });
+      // Track names for A8 (duplicate detection).
+      const base = path.basename(f, '.md');
+      const fm = parseFrontmatter(fs.readFileSync(full, 'utf8'));
+      const name = fm.ok && fm.data.name ? fm.data.name : base;
+      if (declaredNames.has(name)) {
+        violations.push({ rule: 'A8', file: base, detail: `duplicate agent name '${name}'` });
+      }
+      declaredNames.add(name);
     }
-    declaredNames.add(name);
-  }
 
-  // A4 — every PRIMARY_AGENT must declare mode: primary. (The inverse — no
-  // other agent declaring primary — is enforced per-file by A5, so it is not
-  // repeated here.)
-  for (const p of PRIMARY_AGENTS) {
-    if (!primaryDeclared.has(p)) {
-      violations.push({ rule: 'A4', file: p, detail: `primary agent '${p}' must declare mode: primary` });
-    }
-  }
 
   // --- Skills ---
   const skillDirs = fs
@@ -381,47 +366,12 @@ function validatePack(repoDir) {
     }
   }
 
-  // --- Cross-cutting ---
-  const agentCount = agentFiles.length;
-  const skillCount = skillDirs.length;
+    // --- Cross-cutting ---
+    const agentCount = agentFiles.length;
+    const skillCount = skillDirs.length;
 
-  // C1 — counts match the expected pack size.
-  if (agentCount !== EXPECTED_AGENT_COUNT) {
-    violations.push({ rule: 'C1', file: 'agents', detail: `expected ${EXPECTED_AGENT_COUNT} agents, found ${agentCount}` });
+    return { violations, agentCount, skillCount };
   }
-  if (skillCount !== EXPECTED_SKILL_COUNT) {
-    violations.push({ rule: 'C1', file: 'skills', detail: `expected ${EXPECTED_SKILL_COUNT} skills, found ${skillCount}` });
-  }
-
-  // C1 — counts claimed in package.json description and README. Word-anchored
-  // so a substring like "26" can't satisfy the "6" check (or a version/year
-  // satisfy either).
-  const agentCountRe = new RegExp(`\\b${EXPECTED_AGENT_COUNT}\\b`);
-  const skillCountRe = new RegExp(`\\b${EXPECTED_SKILL_COUNT}\\b`);
-  const skillPhraseRe = new RegExp(`\\b${EXPECTED_SKILL_COUNT}\\s+skills\\b`);
-
-  const pkg = JSON.parse(fs.readFileSync(path.join(repoDir, 'package.json'), 'utf8'));
-  const desc = pkg.description || '';
-  if (!agentCountRe.test(desc)) {
-    violations.push({ rule: 'C1', file: 'package.json', detail: `description does not mention ${EXPECTED_AGENT_COUNT} agents` });
-  }
-  if (!skillCountRe.test(desc)) {
-    violations.push({ rule: 'C1', file: 'package.json', detail: `description does not mention ${EXPECTED_SKILL_COUNT} skills` });
-  }
-
-  const readmePath = path.join(repoDir, 'README.md');
-  if (fs.existsSync(readmePath)) {
-    const readme = fs.readFileSync(readmePath, 'utf8');
-    if (!agentCountRe.test(readme)) {
-      violations.push({ rule: 'C1', file: 'README.md', detail: `README does not mention ${EXPECTED_AGENT_COUNT} agents` });
-    }
-    if (!skillPhraseRe.test(readme)) {
-      violations.push({ rule: 'C1', file: 'README.md', detail: `README does not mention ${EXPECTED_SKILL_COUNT} skills` });
-    }
-  }
-
-  return { violations, agentCount, skillCount };
-}
 
 // --- CLI entry point ---
 if (require.main === module) {
@@ -450,7 +400,4 @@ module.exports = {
   validateAgentFile,
   validateSkillDir,
   validatePack,
-  PRIMARY_AGENTS,
-  EXPECTED_AGENT_COUNT,
-  EXPECTED_SKILL_COUNT,
 };

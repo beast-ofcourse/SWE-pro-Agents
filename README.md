@@ -14,7 +14,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/beast-ofcourse/SWE-pro-Agents/ci.yml?style=flat-square)](https://github.com/beast-ofcourse/SWE-pro-Agents/actions)
 [![license](https://img.shields.io/github/license/beast-ofcourse/SWE-pro-Agents?style=flat-square)](LICENSE)
 
-**26 OpenCode agent profiles (22 subagents + 4 primary) + 25 skills — a full engineering team in your terminal.**
+**25 OpenCode agent profiles (22 subagents + 3 primary) + 25 skills — a full engineering team in your terminal.**
 
 </div>
 
@@ -75,7 +75,7 @@ Short highlights of what's changed recently. Full detail lives in [CHANGELOG.md]
 
 Most AI coding assistants start blank — no domain expertise, no engineering discipline. SWE Pro Agents fixes that: each agent is a **loaded expert** with a curated system prompt, tool permissions, and behavioral rules baked in. You don't ask a model to "review this PR"; you invoke `swe-reviewer`, which already knows how to assess blast radius and enforce your standards.
 
-- **26 agent profiles** — 22 subagents + 4 primary (`swe-pro`, `architect`, `swe-reviewer`, `pr-reviewer`), each with a focused role and scoped tool permissions.
+- **25 agent profiles** — 22 subagents + 3 primary (`swe-pro`, `architect`, `pr-reviewer`), each with a focused role and scoped tool permissions.
 - **25 on-demand skills** — token compression, skill authoring, tutoring, README/SVG/flowchart generation, an anti-AI-slop editor, OpenCode skill creation, MCP server building, video-to-skill conversion, rapid UI prototyping, and a full design-taste suite (brand kits, image-to-code, mobile/web image direction, UI styles, redesigns).
 - **Manifest-based installer & safe uninstaller** — records what it installs, prunes stale files on update, removes only what it owns.
 - **Status/setup CLI** — checks install state, writes the config with a backup, checks for updates (offline-safe).
@@ -93,7 +93,7 @@ The installer copies agents, skills, and `AGENTS.md` into your OpenCode config a
 
 ## Verified
 
-Quality is **machine-checked, not claimed**. A zero-dependency validator (`npm run validate`) lints every agent and skill and **fails the build on any violation** — valid frontmatter, exact primary set, skill spec compliance, and agent/skill counts integrity-checked against `package.json` and this README. Enforced in CI on Linux + Windows × Node 18/20/22, and self-tested so the check can't silently rot.
+Quality is **machine-checked, not claimed**. A zero-dependency validator (`npm run validate`) lints every agent and skill and **fails the build on any violation** — valid frontmatter, skill spec compliance, and no stray files. Enforced in CI on Linux + Windows × Node 18/20/22, and self-tested so the check can't silently rot.
 
 ## Requirements
 
@@ -213,7 +213,7 @@ The team is organized into three squads. Each agent has a focused role, explicit
 | `arch-migration` | Incremental migration planning with rollback strategies |
 | `arch-validator` | Attacks the plans before the build — Critical/Major/Minor spec fixes |
 
-Four of the 26 profiles are **primary** agents (selectable as your main agent): `swe-pro`, `architect`, `swe-reviewer`, and `pr-reviewer`. The rest are subagents, invoked from a primary agent or by name.
+Three of the 25 profiles are **primary** agents (selectable as your main agent): `swe-pro`, `architect`, and `pr-reviewer`. The rest are subagents, invoked from a primary agent or by name.
 
 ## Skills
 
@@ -325,7 +325,7 @@ The tests simulate install/update/uninstall against a **throwaway `HOME`/`USERPR
 
 ```text
 SWE-pro-Agents/
-├── agents/       26 agent profiles (4 primary, 22 subagents)
+├── agents/       25 agent profiles (3 primary, 22 subagents)
 ├── skills/       25 skills
 ├── scripts/      install.js (postinstall), uninstall.js (preuninstall), validate.js (pack validator)
 ├── bin/          swe-pro-agents CLI
