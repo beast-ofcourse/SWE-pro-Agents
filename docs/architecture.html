@@ -137,7 +137,7 @@
    ▼        │                                  ▼
 plans/state.json  (ledger, schema v1)      test/loop-logic.test.js
    ▲
-   ├─ plugins/continuation.js — session.idle nudge ──► resumes swe-pro
+    ├─ plugins/swe-pro-agents.js — goal/continuation nudge + background delegation ──► resumes swe-pro
    │     (agent guard → GOAL GATE → ledger check → fixed nudge; NO logic import)
    │
    └─ scripts/run-loop.js — CLI ──► spawnSync opencode run --agent swe-pro --format json
@@ -150,7 +150,7 @@ plans/state.json  (ledger, schema v1)      test/loop-logic.test.js
     <tr><td>Declarative</td><td><code>agents/*.md</code>, <code>skills/*/SKILL.md</code></td><td>System prompts &amp; workflows. No code; reference EOS + loop conventions.</td></tr>
     <tr><td>Logic core</td><td><code>scripts/loop-logic.js</code>, <code>ledger.js</code>, <code>loop-gate.js</code></td><td>Pure functions over the ledger. Single source of truth.</td></tr>
     <tr><td>State</td><td><code>plans/state.json</code></td><td>Execution source of truth (schema v1). Atomic writes, validated on load.</td></tr>
-    <tr><td>Plugins</td><td><code>plugins/*.js</code></td><td>Thin adapters at the OpenCode seam. Require scripts via installed-layout fallback.</td></tr>
+    <tr><td>Plugins</td><td><code>plugins/swe-pro-agents.js</code></td><td>Single self-contained plugin at the OpenCode seam (inlined logic; OpenCode plugins can only require sibling files).</td></tr>
     <tr><td>CLI</td><td><code>bin/swe-pro-agents.js</code>, <code>scripts/run-loop.js</code></td><td>Headless driver; single ledger writer.</td></tr>
     <tr><td>Config</td><td><code>scripts/pack-config.js</code> + <code>swe-pro-agents.config.json</code></td><td>Feature flag (<code>features.goal</code>), default on / fail-open.</td></tr>
     <tr><td>Installer / validators</td><td><code>scripts/install.js</code>, <code>uninstall.js</code>, <code>validate.js</code>, <code>validate-plan.js</code></td><td>Copy/uninstall with manifest; static checks.</td></tr>
@@ -165,7 +165,7 @@ plans/state.json  (ledger, schema v1)      test/loop-logic.test.js
   <ol>
     <li>User starts <code>swe-pro</code> with a plan: "execute plans/tasks.md".</li>
     <li><code>swe-pro</code> inits the ledger, then runs the conductor loop per task: validate → <code>syncWithSpec</code> → <code>shouldContinue</code> → <code>markInProgress</code> → dispatch a fresh subagent → verify → <code>applyAttemptResult</code> (atomic save) → end with <code>&lt;promise&gt;DONE&lt;/promise&gt;</code>.</li>
-    <li>Session goes idle → <code>continuation.js</code> fires. It returns immediately unless: agent is <code>swe-pro</code>, the session has an <strong>active goal</strong> (armed via <code>/goal</code>), the ledger is <code>running</code>, no task is <code>in_progress</code>, and a task is <code>pending</code>. Then it resumes <code>swe-pro</code>.</li>
+    <li>Session goes idle → <code>swe-pro-agents.js</code> fires. It returns immediately unless: agent is <code>swe-pro</code>, the session has an <strong>active goal</strong> (armed via <code>/goal</code>), the ledger is <code>running</code>, no task is <code>in_progress</code>, and a task is <code>pending</code>. Then it resumes <code>swe-pro</code>.</li>
     <li>Stops on: all done, a task blocked (2 failures), budget exhausted, or a gate trip (<code>paused</code>).</li>
   </ol>
   <h3>CLI mode (headless)</h3>
@@ -186,7 +186,7 @@ plans/state.json  (ledger, schema v1)      test/loop-logic.test.js
     <li>The flag is <strong>re-read on every idle</strong> (not cached at load), so flipping it takes effect without restarting OpenCode.</li>
     <li><code>/goal show</code> / <code>status</code> / <code>help</code> are <strong>neutral</strong> — they report state without arming or disarming (previously <code>show</code> armed the gate).</li>
     <li><code>swe-pro-agents setup --goal|--no-goal</code> (or an interactive <code>[Y/n]</code> prompt) writes the flag; <code>--apply</code> also writes the opencode.json entry.</li>
-    <li>Single source of truth: <code>scripts/pack-config.js</code> owns read+write; both the CLI and the plugin consume it.</li>
+    <li>Single source of truth: <code>scripts/pack-config.js</code> owns read+write for the CLI; the plugin inlines its own copy (OpenCode plugins can only require sibling files).</li>
   </ul>
   <p class="note">R6 risk (documented, not fixed): <code>setup</code> writes to <code>process.cwd()</code> while the plugin reads OpenCode's <code>directory</code>. If they differ, the flag fails open to <code>true</code> and silently has no effect — mitigated by docs ("run setup from the project root").</p>
 </section>
@@ -194,9 +194,9 @@ plans/state.json  (ledger, schema v1)      test/loop-logic.test.js
 <section id="bg">
   <h2>Background subagents (PR #19, merged)</h2>
   <p>Delegate coding tasks to background subagents with git-worktree isolation, concurrency, priority, and crash recovery.</p>
-  <pre>plugins/swe-pro-agents-background.js   (tools: bg_delegate/read/status/list/stop/steer/prune)
-        │ owns
-scripts/background-delegate.js        (state machine, journal, terminal-state protection)
+  <pre>plugins/swe-pro-agents.js   (tools: bg_delegate/read/status/list/stop/steer/prune)
+        │ inlined
+        ├─ delegation engine         (state machine, journal, terminal-state protection)
         ├─ background-spawner seam     (SessionSpawner; NativeSpawner = stub for future)
         ├─ background-scheduler        (per-model concurrency + fair-share + backpressure)
         ├─ background-supervisor      (liveness probes, backoff restart, quarantine, CB)
@@ -241,12 +241,11 @@ scripts/background-delegate.js        (state machine, journal, terminal-state pr
     <tr><td><code>scripts/loop-logic.js</code></td><td>Pure ledger logic core (no I/O except load/save).</td></tr>
     <tr><td><code>scripts/loop-gate.js</code></td><td>Arm/disarm state + neutral subcommands (show/status/help).</td></tr>
     <tr><td><code>scripts/run-loop.js</code></td><td>Multi-iteration headless loop runner.</td></tr>
-    <tr><td><code>scripts/background-delegate.js</code></td><td>Background delegation engine (state machine, recovery).</td></tr>
+    <tr><td><code>plugins/swe-pro-agents.js</code></td><td>Self-contained plugin: goal/continuation nudge + background delegation engine (inlined; OpenCode plugins require sibling files only).</td></tr>
     <tr><td><code>scripts/pack-config.js</code></td><td>Feature-flag config reader/writer (fail-open).</td></tr>
     <tr><td><code>scripts/install.js</code> / <code>uninstall.js</code></td><td>Copy/remove pack files; manifest-tracked, prefix-scoped.</td></tr>
     <tr><td><code>scripts/validate.js</code> / <code>validate-plan.js</code></td><td>Pack validator (strict) / opt-in plan validator (P1/P2/P3).</td></tr>
-    <tr><td><code>plugins/continuation.js</code></td><td>Goal-gated <code>session.idle</code> nudge.</td></tr>
-    <tr><td><code>plugins/swe-pro-agents-background.js</code></td><td><code>bg_*</code> delegation tools.</td></tr>
+
     <tr><td><code>bin/swe-pro-agents.js</code></td><td>CLI: <code>run</code>, <code>setup</code>, <code>status</code>, <code>version</code>, <code>help</code>.</td></tr>
     <tr><td><code>plans/</code> (gitignored)</td><td>Architecture &amp; task plans: project-overview, tasks, user-flow, loop-implementation, goal-toggle, background-subagents, validation.</td></tr>
     <tr><td><code>docs/</code></td><td>ADR-0001 (goal-toggle decision) + this architecture doc.</td></tr>

@@ -15,9 +15,11 @@
  * locally to avoid installed-layout coupling — plugin cannot require('scripts/loop-logic')
  * in ~/.config/opencode/plugins/ layout). Keep readState private.
  *
- * Adapter at the seam: plugins/continuation.js is the thin OpenCode adapter
- * (config + event hooks) that delegates to this module. Tests cross this
- * module's interface directly; adapter tests drive the plugin end-to-end.
+ * This module is the CLI's copy of the LoopGate logic (consumed by
+ * scripts/ledger.js). The OpenCode plugin (plugins/swe-pro-agents.js) inlines
+ * its own copy because plugins can only require sibling files. Tests cross
+ * this module's interface directly; plugin tests drive swe-pro-agents.js
+ * end-to-end.
  */
 
 'use strict';

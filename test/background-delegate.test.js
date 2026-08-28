@@ -1,16 +1,17 @@
 'use strict';
 
 /**
- * background-delegate.test.js — plain-node tests for scripts/background-delegate.js.
- * Uses a controllable fake in-process client that mimics the verified wrapped
- * contract (create/get return { data }, completion = tokens.output > 0).
+ * background-delegate.test.js — plain-node tests for the delegation engine
+ * inlined in plugins/swe-pro-agents.js. Uses a controllable fake in-process
+ * client that mimics the verified wrapped contract (create/get return { data },
+ * completion = tokens.output > 0).
  */
 
 const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { createBackgroundDelegate } = require('../scripts/background-delegate.js');
+const { createBackgroundDelegate } = require('../plugins/swe-pro-agents.js');
 
 function tmpDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'bg-test-'));

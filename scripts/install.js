@@ -48,7 +48,7 @@ const os = require('os');
 const PACKAGE_NAME = 'swe-pro-agents';
 const AGENTS_DIR = path.join(os.homedir(), '.config', 'opencode', 'agents', PACKAGE_NAME);
 const SKILLS_DIR = path.join(os.homedir(), '.config', 'opencode', 'skills');
-// OpenCode's global plugin dir — doc-verified in plugins/continuation.js header:
+// OpenCode's global plugin dir — doc-verified in plugins/swe-pro-agents.js header:
 // https://opencode.ai/docs/plugins/ ("Use a plugin — From local files"); loader
 // scan glob `{plugin,plugins}/*.{ts,js}` confirmed in
 // packages/opencode/src/config/plugin.ts.
@@ -106,26 +106,19 @@ function listPackSkills() {
 
 /**
  * Plugin file names the pack ships (basenames in PLUGIN_DIR).
- *  - plugins/continuation.js — thin adapter at the OpenCode seam
- *  - scripts/loop-gate.js — deep LoopGate module (installed as prefixed plugin
- *    so the adapter can require('./swe-pro-agents-loop-gate.js') in the
- *    installed layout; in the repo it lives in scripts/ and is required via
- *    '../scripts/loop-gate.js' fallback). scripts/loop-logic.js and
- *    scripts/ledger.js are libraries consumed by the CLI, not plugins.
- *  - scripts/pack-config.js — feature-flag config reader (installed as
- *    prefixed plugin so the adapter can require('./swe-pro-agents-pack-config.js')
- *    in the installed layout; in the repo it lives in scripts/ and is required
- *    via '../scripts/pack-config.js' fallback).
+ *  - plugins/swe-pro-agents.js — the single self-contained OpenCode plugin.
+ *    It merges what were four installed plugins (goal/continuation nudge +
+ *    background-subagent delegation) into one file. It is self-contained on
+ *    purpose: OpenCode loads plugins from ~/.config/opencode/plugins/ and a
+ *    plugin there can only require sibling files, never ../scripts, so the
+ *    deep logic (LoopGate, delegation engine, worktree manager, feature-flag
+ *    reader) is inlined — no cross-file requires, no duplicated sibling copies.
+ *    scripts/loop-gate.js and scripts/pack-config.js are the CLI's own copies
+ *    of that same logic (consumed by scripts/ledger.js and bin/), kept separate
+ *    because the plugin cannot reach into ../scripts.
  */
 function listPackPlugins() {
-  return [
-    'swe-pro-agents-continuation.js',
-    'swe-pro-agents-loop-gate.js',
-    'swe-pro-agents-background.js',
-    'swe-pro-agents-background-delegate.js',
-    'swe-pro-agents-background-worktree.js',
-    'swe-pro-agents-pack-config.js',
-  ];
+  return ['swe-pro-agents.js'];
 }
 
 /** Tolerant manifest read — a missing or corrupt manifest means "no ownership info". */
@@ -203,24 +196,13 @@ function copySkills() {
   return count;
 }
 
-/** Copies the pack's plugin files into OpenCode's global plugin dir. */
+/** Copies the pack's single plugin file into OpenCode's global plugin dir. */
 function copyPlugins() {
-  const sources = [
-    { name: 'swe-pro-agents-continuation.js', src: path.join(pkgDir(), 'plugins', 'continuation.js') },
-    { name: 'swe-pro-agents-loop-gate.js', src: path.join(pkgDir(), 'scripts', 'loop-gate.js') },
-    { name: 'swe-pro-agents-background.js', src: path.join(pkgDir(), 'plugins', 'swe-pro-agents-background.js') },
-    { name: 'swe-pro-agents-background-delegate.js', src: path.join(pkgDir(), 'scripts', 'background-delegate.js') },
-    { name: 'swe-pro-agents-background-worktree.js', src: path.join(pkgDir(), 'scripts', 'background-worktree.js') },
-    { name: 'swe-pro-agents-pack-config.js', src: path.join(pkgDir(), 'scripts', 'pack-config.js') },
-  ];
-  let count = 0;
-  for (const { name, src } of sources) {
-    if (!fs.existsSync(src)) continue;
-    fs.mkdirSync(PLUGIN_DIR, { recursive: true });
-    fs.copyFileSync(src, path.join(PLUGIN_DIR, name));
-    count++;
-  }
-  return count;
+  const src = path.join(pkgDir(), 'plugins', 'swe-pro-agents.js');
+  if (!fs.existsSync(src)) return 0;
+  fs.mkdirSync(PLUGIN_DIR, { recursive: true });
+  fs.copyFileSync(src, path.join(PLUGIN_DIR, 'swe-pro-agents.js'));
+  return 1;
 }
 
 // Copies this pack's AGENTS.md to the pack's own config dir (never the agents
@@ -267,7 +249,7 @@ function main() {
     if (previous) {
       prune(previous.agents, newAgents, AGENTS_DIR, 'agent');
       prune(previous.skills, newSkills, SKILLS_DIR, 'skill');
-      prune(previous.plugins, newPlugins, PLUGIN_DIR, 'plugin', 'swe-pro-agents-');
+      prune(previous.plugins, newPlugins, PLUGIN_DIR, 'plugin', 'swe-pro-agents');
     } else {
       console.log(`[${PACKAGE_NAME}] No manifest found — first install or upgrade`);
       console.log(`  from a pre-manifest version; nothing pruned.`);

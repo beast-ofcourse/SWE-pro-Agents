@@ -2,7 +2,7 @@
 
 /**
  * background-integration.test.js — full-lifecycle integration test for the
- * background-delegation system. Loads the real plugin adapter, drives it with a
+ * background-delegation system. Loads the real plugin, drives it with a
  * controllable fake in-process client (verified wrapped contract), and uses a
  * real git worktree for isolation so the worktree path is exercised end to end.
  */
@@ -13,7 +13,7 @@ const os = require('os');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const plugin = require('../plugins/swe-pro-agents-background.js');
+const plugin = require('../plugins/swe-pro-agents.js');
 
 // Isolate delegations from the real store so the test never pollutes it.
 process.env.SWE_PRO_DELEGATIONS_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'bg-int-store-'));

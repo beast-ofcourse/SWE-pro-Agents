@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Self-tests for plugins/continuation.js.
+ * Self-tests for plugins/swe-pro-agents.js (goal/continuation nudge half).
  *
  * Regression for the review finding that readState() used process.cwd() —
  * the plugin must read plans/state.json relative to the plugin context
@@ -21,7 +21,13 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const plugin = require('../plugins/continuation.js');
+// Isolate the background-delegation engine the merged plugin also spins up, so
+// these goal/continuation tests never touch the real delegations store or run
+// the supervisor timer.
+process.env.SWE_PRO_BG_SUPERVISOR = '0';
+process.env.SWE_PRO_DELEGATIONS_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'cont-bg-'));
+
+const plugin = require('../plugins/swe-pro-agents.js');
 
 let passed = 0;
 let failed = 0;

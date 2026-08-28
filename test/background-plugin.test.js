@@ -1,23 +1,23 @@
 'use strict';
 
 /**
- * background-plugin.test.js — drives plugins/swe-pro-agents-background.js
- * end-to-end with a fake in-process client. Verifies tool shapes, delegation
- * flow, and that a parent notification fires on terminal.
+ * background-plugin.test.js — drives plugins/swe-pro-agents.js (background
+ * delegation half) end-to-end with a fake in-process client. Verifies tool
+ * shapes, delegation flow, and that a parent notification fires on terminal.
  */
 
 const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const { createBackgroundDelegate } = require('../scripts/background-delegate.js');
+const { createBackgroundDelegate } = require('../plugins/swe-pro-agents.js');
 
 // Isolate delegations from the real store and disable the supervisor timer so the
 // test controls reconciliation.
 process.env.SWE_PRO_DELEGATIONS_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'bg-pl-store-'));
 process.env.SWE_PRO_BG_SUPERVISOR = '0';
 
-const plugin = require('../plugins/swe-pro-agents-background.js');
+const plugin = require('../plugins/swe-pro-agents.js');
 
 function makeFakeClient() {
   const sessions = {};

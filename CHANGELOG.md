@@ -10,12 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - `sketch` — rapid throwaway HTML prototyping skill: 2-3 interactive variants to compare design directions before committing to build. Refactored for quick UI/frontend prototyping, concise workflow (clarify → build → verify → compare), Tailwind CDN, realistic content, browser verification. Pack is now **25 skills** (was 24).
-- `goal` — native `/goal` plugin command (`plugins/continuation.js` `config.command["goal"]`): set, show, pause, resume, or clear the active thread goal that arms the same plugin. Pack-shipped, no external `opencode-goal-plugin` needed; `command.executed{ name:"goal" }` primary mechanism, fail-closed in-memory per-session (`pause`/`clear` disarm, `resume`/objective re-arm). Pack remains **25 skills**; plugin now registers the command.
+- `goal` — native `/goal` plugin command (`plugins/swe-pro-agents.js` `config.command["goal"]`): set, show, pause, resume, or clear the active thread goal that arms the same plugin. Pack-shipped, no external `opencode-goal-plugin` needed; `command.executed{ name:"goal" }` primary mechanism, fail-closed in-memory per-session (`pause`/`clear` disarm, `resume`/objective re-arm). Pack remains **25 skills**; plugin now registers the command.
 - **`/goal` feature flag** — the autonomous-loop system is now opt-out via `swe-pro-agents.config.json` at the project root (`features.goal`, default `true`, fail-open). `swe-pro-agents setup [--goal|--no-goal]` (or an interactive `[Y/n]` prompt) writes the flag; `--no-goal` leaves the plugin installed but inert (no `/goal` command, idle events ignored). The flag is re-read on every idle, so it takes effect without restarting OpenCode.
 
 ### Changed
 
 - `/goal show`, `/goal status`, and `/goal help` are now **neutral** — they report state without arming or disarming the loop (previously `show` armed the gate).
+- **Plugin consolidation** — the installed OpenCode plugins are merged into one self-contained `plugins/swe-pro-agents.js` (goal/continuation nudge + background-subagent delegation). OpenCode plugins can only require sibling files, so the deep logic (LoopGate, delegation engine, worktree manager, feature-flag reader) is inlined; `scripts/loop-gate.js` and `scripts/pack-config.js` remain as the CLI's own copies (consumed by `scripts/ledger.js` and `bin/`). Installer, uninstaller, and tests updated; `npm test` green.
 
 ## [2.8.0] - 2026-08-22
 

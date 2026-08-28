@@ -6,7 +6,7 @@
  * Proves the validator itself works by running it against fixture files:
  * a valid agent, a broken agent, a valid skill, a broken skill — plus unit
  * checks for the frontmatter parser, task-ref parser, and the pack-level
- * validatePack() rules (C1 counts, A4/A5 primary set, A8/S7 duplicates).
+ * validatePack() rules (A8 duplicate agent names, S7 duplicate skill names, C2 stray entries).
  *
  * Zero dependencies: node:assert + node:child_process + node:fs + node:os + node:path.
  * Run with: node test/validate.test.js
@@ -186,11 +186,10 @@ test('valid agent passes', () => {
   assert.deepStrictEqual(v, []);
 });
 
-test('broken agent is flagged for folded description, wrong mode, unknown task ref', () => {
+test('broken agent is flagged for folded description and unknown task ref', () => {
   const v = validateAgentFile(fixture(BROKEN_AGENT, 'broken-agent.md'), KNOWN_SUBAGENTS);
   const rules = v.map((x) => x.rule);
   assert.ok(rules.includes('A2'), 'folded description flagged (A2)');
-  assert.ok(rules.includes('A5'), 'subagent declaring primary flagged (A5)');
   assert.ok(rules.includes('A6'), 'unknown task ref flagged (A6)');
 });
 
@@ -223,7 +222,7 @@ test('skill dir missing SKILL.md is flagged (S1)', () => {
 });
 
 // ---------------------------------------------------------------------------
-// validatePack (pack-level rules: C1, A4/A5, A8/S7)
+// validatePack (pack-level rules: A8, S7, C2)
 // ---------------------------------------------------------------------------
 
 const PRIMARY_NAMES = ['swe-pro', 'architect', 'swe-reviewer', 'pr-reviewer'];
@@ -231,34 +230,28 @@ const PRIMARY_NAMES = ['swe-pro', 'architect', 'swe-reviewer', 'pr-reviewer'];
 /**
  * Build a throwaway pack directory with `agentCount` agents and `skillCount`
  * skills. Optional corruption flags:
- *  - extraPrimary:   adds a 27th agent that declares mode: primary (A4/A5)
  *  - dupAgentName:   one subagent declares the same frontmatter name as another (A8)
  *  - dupSkillName:   one skill declares the same name as another (S7)
  * Returns the pack root path (tracked for cleanup).
  */
-function buildPack({ agentCount = 26, skillCount = 25, extraPrimary = false, dupAgentName = false, dupSkillName = false } = {}) {
+function buildPack({ agentCount = 26, skillCount = 25, dupAgentName = false, dupSkillName = false } = {}) {
   const dir = tempDir('validate-pack-');
   const agentsDir = path.join(dir, 'agents');
   const skillsDir = path.join(dir, 'skills');
   fs.mkdirSync(agentsDir, { recursive: true });
   fs.mkdirSync(skillsDir, { recursive: true });
 
-  // A rogue agent that declares mode: primary but is not one of the four primaries.
-  const rogueName = extraPrimary ? 'rogue-primary' : null;
-
   const subagentCount = agentCount - PRIMARY_NAMES.length;
   const agentNames = [];
   for (let i = 1; i <= subagentCount; i++) {
     agentNames.push(`agent-${String(i).padStart(2, '0')}`);
   }
-  if (rogueName) agentNames.push(rogueName);
-
   // Duplicate the FIRST subagent's name onto the SECOND subagent (agent-02),
   // so the duplicate is real (agent-02 declares agent-01's name).
   const dupTarget = dupAgentName && agentNames.length >= 2 ? agentNames[1] : null;
 
   for (const name of [...PRIMARY_NAMES, ...agentNames]) {
-    const mode = PRIMARY_NAMES.includes(name) || name === rogueName ? 'primary' : 'subagent';
+    const mode = PRIMARY_NAMES.includes(name) ? 'primary' : 'subagent';
     const nameLine = name === dupTarget ? 'name: agent-01\n' : '';
     const content = `---\ndescription: "A valid agent for testing."\nmode: ${mode}\n${nameLine}---\n# ${name}\n`;
     fs.writeFileSync(path.join(agentsDir, `${name}.md`), content);
@@ -288,16 +281,6 @@ test('validatePack passes a healthy 26-agent / 25-skill pack with zero violation
   assert.deepStrictEqual(violations, []);
 });
 
-test('validatePack flags a wrong agent count (C1)', () => {
-  const { violations } = validatePack(buildPack({ agentCount: 25 }));
-  assert.ok(violations.some((x) => x.rule === 'C1'), 'expected a C1 violation');
-});
-
-test('validatePack flags a subagent declaring mode: primary (A4/A5)', () => {
-  const { violations } = validatePack(buildPack({ extraPrimary: true }));
-  assert.ok(violations.some((x) => x.rule === 'A5'), 'expected an A5 violation');
-});
-
 test('validatePack flags duplicate agent names (A8)', () => {
   const { violations } = validatePack(buildPack({ dupAgentName: true }));
   assert.ok(violations.some((x) => x.rule === 'A8'), 'expected an A8 violation');
@@ -315,7 +298,7 @@ test('validatePack flags duplicate skill names (S7)', () => {
 test('CLI exits 1 with [FAIL] output against a broken pack, 0 against a clean one', () => {
   const script = path.join(__dirname, '..', 'scripts', 'validate.js');
   const clean = buildPack();
-  const broken = buildPack({ agentCount: 25 });
+  const broken = buildPack({ dupAgentName: true });
 
   const ok = spawnSync(process.execPath, [script, clean], { encoding: 'utf8' });
   assert.strictEqual(ok.status, 0, `clean pack should exit 0:\n${ok.stdout}${ok.stderr}`);

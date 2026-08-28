@@ -31,7 +31,7 @@ const os = require('os');
 const PACKAGE_NAME = 'swe-pro-agents';
 const TARGET_DIR = path.join(os.homedir(), '.config', 'opencode', 'agents', PACKAGE_NAME);
 const SKILLS_DIR = path.join(os.homedir(), '.config', 'opencode', 'skills');
-// OpenCode's global plugin dir — doc-verified in plugins/continuation.js header:
+// OpenCode's global plugin dir — doc-verified in plugins/swe-pro-agents.js header:
 // https://opencode.ai/docs/plugins/ ("Use a plugin — From local files"); loader
 // scan glob `{plugin,plugins}/*.{ts,js}` confirmed in
 // packages/opencode/src/config/plugin.ts.
@@ -94,7 +94,7 @@ function main() {
     for (const name of pluginNames) {
       if (typeof name !== 'string' || !name || name === '.' || name === '..') continue;
       if (name.includes('/') || name.includes('\\')) continue;
-      if (!name.startsWith('swe-pro-agents-')) continue;
+      if (!name.startsWith('swe-pro-agents')) continue;
       const target = path.join(PLUGIN_DIR, path.basename(name));
       if (path.dirname(target) !== path.normalize(PLUGIN_DIR)) continue;
       if (fs.existsSync(target)) {

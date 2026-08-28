@@ -11,8 +11,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFileSync } = require('child_process');
-const { createWorktreeManager } = require('../scripts/background-worktree.js');
-const { createBackgroundDelegate } = require('../scripts/background-delegate.js');
+const { createWorktreeManager, createBackgroundDelegate } = require('../plugins/swe-pro-agents.js');
 
 function initTempRepo() {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'bg-wt-'));

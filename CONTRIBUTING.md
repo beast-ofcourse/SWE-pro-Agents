@@ -90,7 +90,7 @@ machinery:
   dispatching, mark the task `in_progress` before dispatch, and record the
   result after each task, every update via an atomic save (write to `.tmp`,
   rename over). Never hand-edit it.
-- **The plugin (`plugins/continuation.js`).** An OpenCode plugin that nudges the
+- **The plugin (`plugins/swe-pro-agents.js`).** An OpenCode plugin that nudges the
   loop forward — but only for a session with an **active goal**. The loop is
   goal-gated: a session is armed when a `/goal` command executes in it (the
   plugin matches the `command.executed` event for the `goal` command); `/goal
