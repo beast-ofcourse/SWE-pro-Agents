@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>SWE Pro Agents — Architecture &amp; Roadmap</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #171a21;
+    --panel-2: #1e222b;
+    --ink: #e6e9ef;
+    --muted: #9aa3b2;
+    --line: #2a2f3a;
+    --accent: #6ea8fe;
+    --accent-2: #7ee0c0;
+    --warn: #f0b860;
+    --code-bg: #11141a;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  header {
+    padding: 48px 24px 32px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #12151c, #0f1115);
+  }
+  header .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { margin: 0 0 8px; font-size: 30px; letter-spacing: -0.02em; }
+  header p { margin: 4px 0; color: var(--muted); }
+  .tag {
+    display: inline-block; margin-right: 8px; padding: 2px 10px; border-radius: 999px;
+    background: var(--panel-2); color: var(--accent-2); font-size: 12px; border: 1px solid var(--line);
+  }
+  main { max-width: 980px; margin: 0 auto; padding: 24px; }
+  nav {
+    position: sticky; top: 0; z-index: 5; background: rgba(15,17,21,0.92);
+    backdrop-filter: blur(6px); border-bottom: 1px solid var(--line); padding: 10px 24px;
+  }
+  nav .wrap { max-width: 980px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 14px; }
+  nav a { color: var(--muted); text-decoration: none; font-size: 13px; }
+  nav a:hover { color: var(--accent); }
+  section { padding: 28px 0; border-bottom: 1px solid var(--line); }
+  h2 { font-size: 22px; margin: 0 0 12px; letter-spacing: -0.01em; }
+  h3 { font-size: 17px; margin: 22px 0 8px; color: var(--accent-2); }
+  p { margin: 10px 0; }
+  code, pre { font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace; }
+  code { background: var(--code-bg); padding: 1px 6px; border-radius: 4px; font-size: 13px; color: #ffd9a0; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--line); border-radius: 8px;
+    padding: 16px; overflow-x: auto; font-size: 12.5px; line-height: 1.5; color: #cdd6e4;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    padding: 16px 18px; margin: 12px 0;
+  }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .grid .card { margin: 0; }
+  .card h4 { margin: 0 0 6px; font-size: 15px; }
+  .card p { margin: 0; color: var(--muted); font-size: 13px; }
+  .pill { font-size: 12px; color: var(--accent); }
+  .note { border-left: 3px solid var(--warn); padding: 4px 14px; color: var(--muted); background: var(--panel); border-radius: 0 8px 8px 0; }
+  .ok { color: var(--accent-2); }
+  ul { margin: 10px 0; padding-left: 20px; }
+  li { margin: 4px 0; }
+  .footer { color: var(--muted); font-size: 13px; padding: 24px; text-align: center; }
+  a.ref { color: var(--accent); }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SWE Pro Agents — Architecture &amp; Roadmap</h1>
+    <p>A distribution pack for the OpenCode agent runtime: agents, skills, a CLI, and plugins bound by a shared Engineering Operating System (EOS) and a plan-driven execution loop.</p>
+    <p>
+      <span class="tag">26 agents</span>
+      <span class="tag">25 skills</span>
+      <span class="tag">zero runtime deps</span>
+      <span class="tag">Node CJS</span>
+      <span class="tag">plain-node tests</span>
+    </p>
+  </div>
+</header>
+
+<nav>
+  <div class="wrap">
+    <a href="#what">What it is</a>
+    <a href="#layers">Layers</a>
+    <a href="#loop">Execution loop</a>
+    <a href="#goal">/goal flag</a>
+    <a href="#bg">Background subagents</a>
+    <a href="#principles">Principles</a>
+    <a href="#future">Future plans</a>
+    <a href="#files">File map</a>
+  </div>
+</nav>
+
+<main>
+
+<section id="what">
+  <h2>What this repo is</h2>
+  <p>
+    <code>swe-pro-agents</code> is not an application — it is a <strong>pack</strong> you install into OpenCode.
+    It ships the "brains" of a software-engineering agent team:
+  </p>
+  <div class="grid">
+    <div class="card"><h4>Agent profiles</h4><p>26 markdown system prompts — an orchestrator, architecture &amp; review roles, a researcher, and 19 domain subagents.</p></div>
+    <div class="card"><h4>Skills</h4><p>25 reusable workflow definitions, auto-discovered by OpenCode from <code>~/.config/opencode/skills/</code>.</p></div>
+    <div class="card"><h4>CLI</h4><p><code>swe-pro-agents run</code> drives plan execution headlessly; <code>setup</code> wires config.</p></div>
+    <div class="card"><h4>Plugins</h4><p>Thin OpenCode adapters: idle nudge, background delegation, probe spawn.</p></div>
+    <div class="card"><h4>EOS</h4><p><code>AGENTS.md</code> — the Engineering Operating System every agent follows.</p></div>
+    <div class="card"><h4>Installer</h4><p>Copies agents/skills/plugins; a manifest makes uninstall safe.</p></div>
+  </div>
+  <p class="note">
+    Install copies files into <code>~/.config/opencode</code>; it never overwrites a user's own <code>AGENTS.md</code> — it places a package-scoped copy and tells the user to merge or reference it.
+  </p>
+</section>
+
+<section id="layers">
+  <h2>Architecture at a glance</h2>
+  <p>The design is a <strong>hybrid</strong>: a JSON ledger + a plugin <code>session.idle</code> nudge + a conductor agent + a <code>&lt;promise&gt;DONE&lt;/promise&gt;</code> completion token + an optional headless CLI. The plugin is the only "magic" — and it is a <em>nudge</em>, not logic. Every decision lives in testable code.</p>
+  <pre>plans/tasks.md  (spec — architect-owned, immutable during a run)
+   │
+   ├─ scripts/loop-logic.js   (pure CJS, zero deps: tasksFromMarkdown, initState,
+   │     nextTask, shouldContinue, markInProgress, syncWithSpec,
+   │     applyAttemptResult, buildContinuationMessage, summary, load/save)
+   │        ▲                                  │
+   │        │ (installed copy)                 │ unit tests
+   ▼        │                                  ▼
+plans/state.json  (ledger, schema v1)      test/loop-logic.test.js
+   ▲
+   ├─ plugins/continuation.js — session.idle nudge ──► resumes swe-pro
+   │     (agent guard → GOAL GATE → ledger check → fixed nudge; NO logic import)
+   │
+   └─ scripts/run-loop.js — CLI ──► spawnSync opencode run --agent swe-pro --format json
+         (scans stdout for &lt;promise&gt;DONE&lt;/promise&gt;, single ledger writer, exit 0/1/2)
+         ◄── bin/swe-pro-agents.js run</pre>
+
+  <h3>The layers (verified)</h3>
+  <table>
+    <tr><th>Layer</th><th>Path</th><th>Role</th></tr>
+    <tr><td>Declarative</td><td><code>agents/*.md</code>, <code>skills/*/SKILL.md</code></td><td>System prompts &amp; workflows. No code; reference EOS + loop conventions.</td></tr>
+    <tr><td>Logic core</td><td><code>scripts/loop-logic.js</code>, <code>ledger.js</code>, <code>loop-gate.js</code></td><td>Pure functions over the ledger. Single source of truth.</td></tr>
+    <tr><td>State</td><td><code>plans/state.json</code></td><td>Execution source of truth (schema v1). Atomic writes, validated on load.</td></tr>
+    <tr><td>Plugins</td><td><code>plugins/*.js</code></td><td>Thin adapters at the OpenCode seam. Require scripts via installed-layout fallback.</td></tr>
+    <tr><td>CLI</td><td><code>bin/swe-pro-agents.js</code>, <code>scripts/run-loop.js</code></td><td>Headless driver; single ledger writer.</td></tr>
+    <tr><td>Config</td><td><code>scripts/pack-config.js</code> + <code>swe-pro-agents.config.json</code></td><td>Feature flag (<code>features.goal</code>), default on / fail-open.</td></tr>
+    <tr><td>Installer / validators</td><td><code>scripts/install.js</code>, <code>uninstall.js</code>, <code>validate.js</code>, <code>validate-plan.js</code></td><td>Copy/uninstall with manifest; static checks.</td></tr>
+  </table>
+  <p class="note">The plugin deliberately does <strong>not</strong> import the logic core. This avoids dual copies and repo/installed-layout coupling — the plugin only inspects the ledger and nudges; <code>swe-pro</code> (or the CLI) does the real work.</p>
+</section>
+
+<section id="loop">
+  <h2>The execution loop</h2>
+  <p>Two modes share the same ledger and the same budgets (2 attempts/task, 40 iterations/run, stop-on-blocked).</p>
+  <h3>Plugin mode (interactive)</h3>
+  <ol>
+    <li>User starts <code>swe-pro</code> with a plan: "execute plans/tasks.md".</li>
+    <li><code>swe-pro</code> inits the ledger, then runs the conductor loop per task: validate → <code>syncWithSpec</code> → <code>shouldContinue</code> → <code>markInProgress</code> → dispatch a fresh subagent → verify → <code>applyAttemptResult</code> (atomic save) → end with <code>&lt;promise&gt;DONE&lt;/promise&gt;</code>.</li>
+    <li>Session goes idle → <code>continuation.js</code> fires. It returns immediately unless: agent is <code>swe-pro</code>, the session has an <strong>active goal</strong> (armed via <code>/goal</code>), the ledger is <code>running</code>, no task is <code>in_progress</code>, and a task is <code>pending</code>. Then it resumes <code>swe-pro</code>.</li>
+    <li>Stops on: all done, a task blocked (2 failures), budget exhausted, or a gate trip (<code>paused</code>).</li>
+  </ol>
+  <h3>CLI mode (headless)</h3>
+  <ol>
+    <li><code>swe-pro-agents run --plan plans/tasks.md</code> loads/inits the ledger and loops.</li>
+    <li>Each iteration spawns <code>opencode run &lt;msg&gt; --agent swe-pro --format json</code>, scans raw stdout for the promise token, records the result, saves atomically.</li>
+    <li>Exit 0 = done; 1 = blocked/paused/budget; 2 = usage error. The child is told not to touch the ledger (CLI is the single writer).</li>
+  </ol>
+  <p class="note">Fail-closed: no <code>/goal</code> ever executed (or a plugin restart lost in-memory arm state) → the loop never activates on idle alone. CLI mode is already command-activated.</p>
+</section>
+
+<section id="goal">
+  <h2>The <code>/goal</code> feature flag (shipped)</h2>
+  <p>This is the work merged in PR #20. The entire <code>/goal</code> + continuation system is now a <strong>separable, opt-out unit</strong> toggled by a project config flag.</p>
+  <ul>
+    <li><code>swe-pro-agents.config.json</code> with <code>{ "features": { "goal": true } }</code> at the project root. <strong>Default on, fail-open</strong> (missing/corrupt config ⇒ enabled).</li>
+    <li>When disabled, the plugin stays installed but <strong>inert</strong>: it registers no <code>/goal</code> command and ignores idle events.</li>
+    <li>The flag is <strong>re-read on every idle</strong> (not cached at load), so flipping it takes effect without restarting OpenCode.</li>
+    <li><code>/goal show</code> / <code>status</code> / <code>help</code> are <strong>neutral</strong> — they report state without arming or disarming (previously <code>show</code> armed the gate).</li>
+    <li><code>swe-pro-agents setup --goal|--no-goal</code> (or an interactive <code>[Y/n]</code> prompt) writes the flag; <code>--apply</code> also writes the opencode.json entry.</li>
+    <li>Single source of truth: <code>scripts/pack-config.js</code> owns read+write; both the CLI and the plugin consume it.</li>
+  </ul>
+  <p class="note">R6 risk (documented, not fixed): <code>setup</code> writes to <code>process.cwd()</code> while the plugin reads OpenCode's <code>directory</code>. If they differ, the flag fails open to <code>true</code> and silently has no effect — mitigated by docs ("run setup from the project root").</p>
+</section>
+
+<section id="bg">
+  <h2>Background subagents (PR #19, merged)</h2>
+  <p>Delegate coding tasks to background subagents with git-worktree isolation, concurrency, priority, and crash recovery.</p>
+  <pre>plugins/swe-pro-agents-background.js   (tools: bg_delegate/read/status/list/stop/steer/prune)
+        │ owns
+scripts/background-delegate.js        (state machine, journal, terminal-state protection)
+        ├─ background-spawner seam     (SessionSpawner; NativeSpawner = stub for future)
+        ├─ background-scheduler        (per-model concurrency + fair-share + backpressure)
+        ├─ background-supervisor      (liveness probes, backoff restart, quarantine, CB)
+        └─ background-worktree        (isolation)  +  background-results (schema + redaction)</pre>
+  <p>Data flow: <code>bg_delegate</code> → <code>registered → scheduled → running</code> (worktree created, child spawned) → supervisor polls for completion → on terminal, result is written + journaled → <code>bg_read</code> returns it → parent runs <code>bg_merge --check</code> (conflict report only; <strong>never auto-merges</strong>).</p>
+  <p class="note">Non-goals (binding): no auto-merge, no native <code>manager.launch()</code> dependency in v1, no tmux, no cross-machine distribution, no new runtime dependencies.</p>
+</section>
+
+<section id="principles">
+  <h2>Design principles (from EOS)</h2>
+  <div class="grid">
+    <div class="card"><h4>Hybrid, not monolithic</h4><p>Ledger + plugin nudge + conductor + promise token + CLI. The hook is a nudge, not logic.</p></div>
+    <div class="card"><h4>Single writer</h4><p>CLI owns the ledger headless; <code>swe-pro</code> owns it interactive. No dual writers.</p></div>
+    <div class="card"><h4>Fail-closed / fail-open</h4><p>No goal ⇒ no loop (closed). Missing config ⇒ feature on (open).</p></div>
+    <div class="card"><h4>Zero deps</h4><p>Node CJS, built-ins only. No supply-chain surface.</p></div>
+    <div class="card"><h4>Atomic &amp; validated</h4><p>tmp+rename writes; <code>validateState</code> on every load; schema version rejected on mismatch.</p></div>
+    <div class="card"><h4>Plain-node tests</h4><p>No framework. <code>npm test</code> chains every suite; CI runs Linux+Windows × Node 18/20/22.</p></div>
+  </div>
+</section>
+
+<section id="future">
+  <h2>Future plans — Background Subagents v2</h2>
+  <p>The headline initiative (see <code>plans/project-overview.md</code> + <code>plans/tasks.md</code>). A 24-task, 4-phase robustness/durability overhaul that "steals omo's primitives and beats them with worktree-native merge-safety, typed results, a replayable journal, and adaptive backpressure."</p>
+  <table>
+    <tr><th>Phase</th><th>Focus</th><th>Key tasks</th></tr>
+    <tr><td>0 — Foundations</td><td>Contracts</td><td>T-001 journal (append-only), T-002 spawner seam, T-003 result schema + redaction, T-004 extended state, T-005 session-API spike</td></tr>
+    <tr><td>1 — Robustness parity</td><td>Close current gaps</td><td>T-010 layered completion (finish-reason→heartbeat→gone→ttl) + interrupt, T-011 depth/capability guards, T-012 cascade cancel, T-013 redaction on persist, T-014 supervisor liveness</td></tr>
+    <tr><td>2 — Durability &amp; scheduling</td><td>Self-healing</td><td>T-020 journal every transition, T-021 per-key concurrency + fair-share, T-022 429 backpressure, T-023 self-healing supervisor, T-024 <code>bg_merge --check</code>, T-025 journal pruning</td></tr>
+    <tr><td>3 — Differentiators</td><td>Observability</td><td>T-030 typed + streaming read, T-031 <code>bg_resume</code>, T-032 <code>bg_dashboard</code> + <code>--json</code>, T-033 native spawner seam, T-034 plugin surface (10 tools)</td></tr>
+    <tr><td>4 — Hardening</td><td>Release</td><td>T-040 standalone tests, T-041 integration, T-042 docs + migration note, T-043 full suite + lint</td></tr>
+  </table>
+  <p><span class="pill ok">Done:</span> the <code>/goal</code> feature-flag work (this doc's <a class="ref" href="#goal">/goal section</a>) is merged. Background Subagents v1 (PR #19) is merged.</p>
+  <p><span class="pill">Out of scope for v1:</span> native <code>manager.launch()</code> adapter, web UI, multi-host distribution, container/sandbox beyond worktree.</p>
+</section>
+
+<section id="files">
+  <h2>File map</h2>
+  <table>
+    <tr><th>Path</th><th>What's inside</th></tr>
+    <tr><td><code>agents/</code></td><td>26 agent profiles (orchestrator, architecture, review, research, 19 domain subagents).</td></tr>
+    <tr><td><code>skills/</code></td><td>25 skills, each a <code>SKILL.md</code> + assets.</td></tr>
+    <tr><td><code>scripts/loop-logic.js</code></td><td>Pure ledger logic core (no I/O except load/save).</td></tr>
+    <tr><td><code>scripts/loop-gate.js</code></td><td>Arm/disarm state + neutral subcommands (show/status/help).</td></tr>
+    <tr><td><code>scripts/run-loop.js</code></td><td>Multi-iteration headless loop runner.</td></tr>
+    <tr><td><code>scripts/background-delegate.js</code></td><td>Background delegation engine (state machine, recovery).</td></tr>
+    <tr><td><code>scripts/pack-config.js</code></td><td>Feature-flag config reader/writer (fail-open).</td></tr>
+    <tr><td><code>scripts/install.js</code> / <code>uninstall.js</code></td><td>Copy/remove pack files; manifest-tracked, prefix-scoped.</td></tr>
+    <tr><td><code>scripts/validate.js</code> / <code>validate-plan.js</code></td><td>Pack validator (strict) / opt-in plan validator (P1/P2/P3).</td></tr>
+    <tr><td><code>plugins/continuation.js</code></td><td>Goal-gated <code>session.idle</code> nudge.</td></tr>
+    <tr><td><code>plugins/swe-pro-agents-background.js</code></td><td><code>bg_*</code> delegation tools.</td></tr>
+    <tr><td><code>bin/swe-pro-agents.js</code></td><td>CLI: <code>run</code>, <code>setup</code>, <code>status</code>, <code>version</code>, <code>help</code>.</td></tr>
+    <tr><td><code>plans/</code> (gitignored)</td><td>Architecture &amp; task plans: project-overview, tasks, user-flow, loop-implementation, goal-toggle, background-subagents, validation.</td></tr>
+    <tr><td><code>docs/</code></td><td>ADR-0001 (goal-toggle decision) + this architecture doc.</td></tr>
+    <tr><td><code>AGENTS.md</code></td><td>The Engineering Operating System (EOS) all agents follow.</td></tr>
+  </table>
+</section>
+
+<div class="footer">
+  Generated from the verified repo state (post PR #20). Architecture grounded in <code>scripts/</code>, <code>plugins/</code>, <code>bin/</code>, and <code>plans/</code>. Future plans reflect <code>plans/project-overview.md</code> + <code>plans/tasks.md</code>.
+</div>
+
+</main>
+</body>
+</html>
