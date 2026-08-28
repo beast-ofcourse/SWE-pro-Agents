@@ -1,0 +1,52 @@
+name: Release
+
+# Publishes the pack to npm and cuts a GitHub release when a version tag is pushed.
+# Usage: bump "version" in package.json, commit, tag as vX.Y.Z, push the tag.
+permissions:
+  contents: write      # create the GitHub release
+  id-token: write      # npm provenance
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    name: publish + GitHub release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node + npm auth
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+          token: ${{ secrets.NPM_TOKEN }}
+
+      - name: Verify tag matches package version
+        run: |
+          PKG_VERSION="$(node -p "require('./package.json').version")"
+          TAG="${GITHUB_REF_NAME}"
+          if [ "v${PKG_VERSION}" != "${TAG}" ]; then
+            echo "::error::Tag ${TAG} does not match package.json version v${PKG_VERSION}"
+            exit 1
+          fi
+          echo "Releasing ${TAG}"
+
+      - name: Pack validation
+        run: npm run validate
+
+      - name: Build tarball
+        run: echo "TARBALL=$(npm pack | tail -n1)" >> "$GITHUB_ENV"
+
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create GitHub release
+        run: gh release create "${GITHUB_REF_NAME}" --generate-notes --title "${GITHUB_REF_NAME}" "${TARBALL}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
