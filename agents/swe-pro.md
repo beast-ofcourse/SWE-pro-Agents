@@ -69,8 +69,8 @@ EOS in `AGENTS.md` governs: read before write, verify before conclude, minimal b
 
 All three of `plans/project-overview.md`, `user-flow.md`, `tasks.md` present → source of truth; execute `tasks.md` in order. Any missing → stop, ask. Ambiguous task → say so, no scope improvisation.
 
-- **Fresh subagent per task** — new `swe-implementation` (or layer specialist) with full contract: objective, scope, files, constraints, prior findings, acceptance criteria, known failures, required output, verification, task ID. No session history. You own: order, dispatch, review, report.
-- **UI → `swe-frontend`, always** — never `swe-implementation` or yourself; only it verifies UI in a real browser. Split mixed tasks. Exception: pure backend/logic.
+- **Fresh subagent per task** — new `swe-mini` (or layer specialist) with full contract: objective, scope, files, constraints, prior findings, acceptance criteria, known failures, required output, verification, task ID. No session history. You own: order, dispatch, review, report.
+- **UI → `swe-frontend`, always** — never `swe-mini` or yourself; only it verifies UI in a real browser. Split mixed tasks. Exception: pure backend/logic.
 - **Parallel only if provably independent** — same phase, no ordering dependency, no shared files (check plan, repo, generated outputs, external state — not just task text). Batch 3–4 per response; one per response = sequential. Doubt → sequential; never across phases.
 - **On return** — shared-file edits = broken independence check: discard/reconcile, rerun sequentially. Two-stage review: (1) spec compliance — exactly the task, no more/less; (2) code quality — conventions, defects, dead code, scope creep. Security/migrations → pass 2 to `swe-reviewer`. Done only when both passes + Verify green. Failed member → fix and re-verify before integrating.
 
@@ -129,7 +129,7 @@ Complete (plan done or fixes done + re-review clean) → announce, then:
 Name the specialist; delegate when it's their job or fresh context helps, else do it yourself.
 
 - `swe-repository` — map unfamiliar codebase
-- `swe-implementation` — general implementation (incl. CLI)
+- `swe-mini` — general implementation (incl. CLI)
 - `swe-frontend`/`swe-backend`/`swe-fullstack` — layer implementation; **frontend owns all UI**
 - `swe-desktop`/`swe-mobile` — platform implementation
 - `swe-api` — API contracts, versioning

@@ -18,7 +18,7 @@
 
       <rect x="0" y="54" width="360" height="46" rx="4" fill="#101623" stroke="#2a3a5c" stroke-width="1.5"/>
       <circle cx="26" cy="77" r="4" fill="#3b82f6"/>
-      <text x="44" y="82" fill="#c7d0e0">swe-implementation</text>
+      <text x="44" y="82" fill="#c7d0e0">swe-mini</text>
       <text x="336" y="82" text-anchor="end" fill="#4b5566">build</text>
 
       <rect x="0" y="108" width="360" height="46" rx="4" fill="#101623" stroke="#2a3a5c" stroke-width="1.5"/>
@@ -40,7 +40,7 @@
 
     <rect x="2" y="320" width="46" height="3" fill="#3b82f6"/>
 
-    <text x="0" y="366" fill="#8b93a3" font-size="17">26 agents. One Engineering Operating System.</text>
+    <text x="0" y="366" fill="#8b93a3" font-size="17">25 agents. One Engineering Operating System.</text>
     <text x="0" y="392" fill="#8b93a3" font-size="17">Zero rediscovered context.</text>
 
     <g font-size="13" fill="#5b6472">

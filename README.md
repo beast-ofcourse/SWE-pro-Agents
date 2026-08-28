@@ -182,7 +182,7 @@ The team is organized into three squads. Each agent has a focused role, explicit
 | `swe-frontend` | Components, views, styling, state, animation, client interaction — verified in a real browser |
 | `swe-fullstack` | End-to-end features keeping frontend and backend in sync |
 | `swe-git` | Branch management, commit hygiene, rebase, PR preparation |
-| `swe-implementation` | General-purpose implementation (incl. CLI tools) for well-defined tasks |
+| `swe-mini` | General-purpose implementation (incl. CLI tools) for well-defined tasks |
 | `swe-mobile` | Mobile screens, navigation, platform APIs, on-device perf |
 | `swe-performance` | Profiling, memory optimization, latency reduction — measured, not guessed |
 | `swe-pro` | Senior engineer — planning, architecture decisions, code review, mentoring |
@@ -262,7 +262,7 @@ These agents are designed to **chain together**:
 | Workflow | Chain | What happens |
 | --- | --- | --- |
 | Full Project Lifecycle | `architect → swe-pro → pr-reviewer → swe-pro` | Spec it, build it, review it, fix it — repeat until green |
-| Feature Delivery | `swe-pro → swe-implementation → swe-reviewer` | Plan and implement, write tests, get reviewed |
+| Feature Delivery | `swe-pro → swe-mini → swe-reviewer` | Plan and implement, write tests, get reviewed |
 | Bug Investigation | `swe-debugger → swe-security → swe-refactor` | Find the root cause, check for similar vulns, clean up |
 | Architecture Change | `architect → arch-migration → swe-database → swe-fullstack` | Design, plan the migration, update the schema, wire the stack |
 | Spec-Driven Build | `architect → swe-pro` | Architect writes `plans/`; SWE Pro executes `tasks.md` task by task |

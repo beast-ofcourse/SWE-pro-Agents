@@ -87,7 +87,7 @@ async function run() {
       assert.ok(tools[t] && typeof tools[t].execute === 'function', 'missing tool ' + t);
     }
 
-    const ret = await tools.bg_delegate.execute({ prompt: 'do work', agent: 'swe-implementation' });
+    const ret = await tools.bg_delegate.execute({ prompt: 'do work', agent: 'swe-mini' });
     const m = ret.match(/delegated (bg_\S+)/);
     assert.ok(m, 'bg_delegate returns a delegation sentence with an id');
     const id = m[1];
@@ -120,7 +120,7 @@ async function run() {
     const server2 = await plugin.server({ client: client2, directory: repoDir2 });
     const tools2 = server2.tool;
 
-    const ret = await tools2.bg_delegate.execute({ prompt: 'write code', agent: 'swe-implementation', mode: 'worktree' });
+    const ret = await tools2.bg_delegate.execute({ prompt: 'write code', agent: 'swe-mini', mode: 'worktree' });
     const m2 = ret.match(/delegated (bg_\S+)/);
     assert.ok(m2, 'bg_delegate (worktree) returns a delegation sentence with an id');
     const id2 = m2[1];
