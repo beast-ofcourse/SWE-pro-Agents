@@ -9,7 +9,7 @@ Project-specific facts belong only in **Project Notes**.
 ---
 
 ## Core priorities
-Caveman skill --load it first off before anything 
+### Caveman skill --load it first off before anything [unskippable load on every session]
 
 Optimize in this order:
 
@@ -19,7 +19,7 @@ Optimize in this order:
 4. Simplicity
 5. Security
 6. Reliability
-7. Performance
+7. Extreme Performance
 8. Developer Experience
 9. Speed
 
@@ -85,27 +85,27 @@ If evidence is weak, say so.
 
 ---
 
-Golden Code Quality Rules — ENFORCED
+## Golden Code Quality Rules — ENFORCED
 
 ⚠️ NON-NEGOTIABLE. Every agent follows these on every change. Violation = task fails review. No exceptions.
 
 Keep code human-readable, small, and obvious. No AI slop.
 
-Names tell the truth — variables/functions reveal intent. No data, info, result, handler, manager, helper, utils, foo.
-One job per unit — if you need "and" to describe what a function does, split it. Files own one domain. Length is a symptom, not the rule — a 15-line function doing two things is worse than a 40-line function doing one.
-Guard clauses over nesting — early returns, guard clauses, fail fast. No pyramids, no else after return. Nesting past 2–3 levels is a signal to restructure, not a hard ceiling to satisfy by extracting a pointless function.
-No duplication — never copy-paste. Third occurrence of the same logic = must abstract. Two occurrences is usually coincidence, not a pattern — don't abstract on the second use.
-No dead weight — zero dead code, commented-out code, stray console.log, unused imports/vars. Delete, don't comment out.
-Types are contracts — no any, no silent as casts, narrow unknown explicitly. Exception: at an untyped boundary (JSON.parse, third-party API, dynamic config), a cast is allowed only alongside visible runtime validation — a parse function or schema check the reader can see. A cast with no validation next to it is the same violation as any.
-Errors never silent — every failure path is handled, returned, or logged with context. Never an empty catch, never a swallowed promise.
-No magic — no unexplained numbers or strings. Name every constant. No cryptic one-liners, no clever tricks that trade clarity for fewer characters.
-Explicit dependencies — no hidden globals, no surprise side effects. Inputs in, outputs out. Pure where possible.
-Readability > cleverness — code reads like prose: linear flow, consistent style, self-documenting. Comments explain why, not what.
-No premature abstraction — no wrappers, layers, or helpers you don't need today. YAGNI. Abstract on the real second pattern, not the second line that merely looks similar.
-Leave it cleaner, not bigger — boy-scout rule applies to the code you're already touching for the task. It is not license to refactor unrelated duplication you noticed in passing — that's a separate task, flag it, don't fold it in silently.
-State assumptions, don't guess silently — if the spec is ambiguous, say what you assumed and why, in a comment or PR note, rather than picking a behavior quietly. An agent that silently assumes a field exists, a default value, or an edge case's behavior is a bigger risk than one that writes ugly code — wrong-but-confident is worse than incomplete.
+* **Names tell the truth** — variables/functions reveal intent. No `data`, `info`, `result`, `handler`, `manager`, `helper`, `utils`, `foo`.
+* **One job per unit** — if you need "and" to describe what a function does, split it. Files own one domain. Length is a symptom, not the rule — a 15-line function doing two things is worse than a 40-line function doing one.
+* **Guard clauses over nesting** — early returns, guard clauses, fail fast. No pyramids, no else after return. Nesting past 2–3 levels is a signal to restructure, not a hard ceiling to satisfy by extracting a pointless function.
+* **No duplication** — never copy-paste. Third occurrence of the same logic = must abstract. Two occurrences is usually coincidence, not a pattern — don't abstract on the second use.
+* **No dead weight** — zero dead code, commented-out code, stray `console.log`, unused imports/vars. Delete, don't comment out.
+* **Types are contracts** — no `any`, no silent `as` casts, narrow `unknown` explicitly. Exception: at an untyped boundary (`JSON.parse`, third-party API, dynamic config), a cast is allowed only alongside visible runtime validation — a parse function or schema check the reader can see. A cast with no validation next to it is the same violation as `any`.
+* **Errors never silent** — every failure path is handled, returned, or logged with context. Never an empty catch, never a swallowed promise.
+* **No magic** — no unexplained numbers or strings. Name every constant. No cryptic one-liners, no clever tricks that trade clarity for fewer characters.
+* **Explicit dependencies** — no hidden globals, no surprise side effects. Inputs in, outputs out. Pure where possible.
+* **Readability > cleverness** — code reads like prose: linear flow, consistent style, self-documenting. Comments explain why, not what.
+* **No premature abstraction** — no wrappers, layers, or helpers you don't need today. YAGNI. Abstract on the real second pattern, not the second line that merely looks similar.
+* **Leave it cleaner, not bigger** — boy-scout rule applies to the code you're already touching for the task. It is not license to refactor unrelated duplication you noticed in passing — that's a separate task, flag it, don't fold it in silently.
+* **State assumptions, don't guess silently** — if the spec is ambiguous, say what you assumed and why, in a comment or PR note, rather than picking a behavior quietly. An agent that silently assumes a field exists, a default value, or an edge case's behavior is a bigger risk than one that writes ugly code — wrong-but-confident is worse than incomplete.
 
-Auto-rejected AI slop: placeholder TODO without a ticket, generic scaffolding, empty try/catch, lorem-ish names, duplicated boilerplate, over-engineered factories/managers, unvalidated as casts at boundaries, silent assumptions about ambiguous specs, inconsistent style within one file, and any code you wouldn't defend in review.
+**Auto-rejected AI slop:** placeholder TODO without a ticket, generic scaffolding, empty try/catch, lorem-ish names, duplicated boilerplate, over-engineered factories/managers, unvalidated `as` casts at boundaries, silent assumptions about ambiguous specs, inconsistent style within one file, and any code you wouldn't defend in review.
 ---
 
 ## Execution protocol
@@ -226,7 +226,6 @@ The autonomous loop runs tasks end to end without a human in the loop.
 
 * **Completion promise** — an agent ends its final reply with `<promise>DONE</promise>` only when its task is verified complete.
 * **Ledger rules** — read `plans/state.json` before dispatching, mark the task `in_progress` before dispatch, and update it after each task via atomic save.
-* **Budget** — 2 attempts per task, 40 iterations per run; stop on blocked.
 * **Gate rule** — paused on a red baseline or unresolved Critical findings.
 * **Autonomous-mode directive** — never push or merge; continuation messages are auto-pilot authorization, so there is no phase-checkpoint pause in autonomous mode.
 
