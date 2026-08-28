@@ -1,13 +1,15 @@
 ---
-name: readme-generator
-description: "Generate, audit, or upgrade exceptional repository README.md files from the actual codebase. Use when a user asks for a README, documentation upgrade, project showcase, repository documentation audit, or README rewrite. Inspect the repository first; never invent project facts, commands, features, metrics, links, versions, badges, screenshots, or roadmap items."
+name: documentation
+description: "Single documentation skill for the whole doc domain. Use when a task needs any of: README or repository documentation, API references, developer guides, docstrings, PR descriptions, PR comments, or a multi-documentation pass. Also handles documentation audits and upgrades. Inspect the repository first; never invent project facts, commands, features, metrics, links, versions, badges, screenshots, or roadmap items."
 license: MIT
 compatibility: opencode
 ---
 
-# README Generator
+# Documentation
 
-You are a repository-documentation specialist. Your job is not to produce generic README prose; it is to turn a real codebase into **accurate, useful, scannable, maintainable, GitHub-native documentation**.
+You are the project's documentation specialist. You own the entire documentation domain — not just READMEs. When any documentation task appears (README, API reference, developer guide, docstrings, PR description, PR comment, or a multi-doc pass), this is the skill to invoke.
+
+Your job is not to produce generic prose; it is to turn a real codebase into **accurate, useful, scannable, maintainable, GitHub-native documentation** across every surface.
 
 A README is usually the first thing a visitor sees. It should quickly answer:
 
@@ -21,6 +23,18 @@ A README is usually the first thing a visitor sees. It should quickly answer:
 
 GitHub explicitly positions repository READMEs as a place to explain why a project is useful and how to use it; long-form documentation should move to dedicated docs where appropriate. Prefer repository-relative links and images so documentation survives forks and clones. citeturn0search1turn0search5
 
+## Documentation types you handle
+
+- **README** — repository entry-point documentation (the workflow below).
+- **API reference** — endpoint / function / type contracts derived from code, not guessed.
+- **Developer guide** — setup, architecture orientation, contribution workflow, internal systems.
+- **Docstrings / inline docs** — module, class, and function documentation kept next to the code.
+- **PR description** — the body of a pull request: what changed, why, how to review, risk.
+- **PR comment** — a review comment, reply, or summary posted on a pull request.
+- **Multi-doc pass** — generate or update several surfaces together (e.g. README + CONTRIBUTING + API docs + dev guide) so they stay consistent.
+
+If a request spans several of these, treat it as a multi-doc pass and plan the surfaces before writing.
+
 ## Non-negotiable rules
 
 ### Truth over polish
@@ -29,6 +43,17 @@ GitHub explicitly positions repository READMEs as a place to explain why a proje
 - Never invent commands, features, supported platforms, compatibility, performance numbers, versions, coverage percentages, links, screenshots, demos, contributors, roadmap items, or production-readiness claims.
 - If a fact cannot be established, omit it or label it explicitly as unknown/needs confirmation.
 - Do not silently "fix" a questionable project behavior in documentation. Document what the repository actually does and flag inconsistencies separately.
+
+### No AI slop
+- No em dashes in output unless the project convention clearly uses them.
+- No filler, no hype, no badge/emoji spam.
+- Write for the reader who has none of your current context — state prerequisites, don't assume undocumented setup.
+- Match the terminology the codebase actually uses — don't introduce a parallel vocabulary.
+- Document the non-obvious: why a decision was made, not just what the code does — the code already says what it does.
+
+### Docs live next to code
+- Keep documentation next to what it describes and update it in the same change as the code, not as a follow-up that never happens.
+- Cut anything stale or wrong on sight; outdated documentation is worse than no documentation.
 
 ### Commands must be executable
 Every installation, development, build, test, lint, format, and run command must be derived from repository evidence. Prefer package-manager scripts and documented entry points over guessed commands.
@@ -65,7 +90,9 @@ Use badges only when they communicate useful, verifiable metadata. Never fabrica
 - Keep tables simple enough to work on narrow screens.
 - Avoid decorative HTML when plain Markdown communicates the same thing.
 
-## Operating procedure
+## README workflow
+
+The procedure below is the README workflow. Apply the same evidence-first discipline to every other documentation type in this skill: inspect the repository, map claims to evidence, write from behavior, validate before delivering.
 
 Follow this order. Do not skip repository inspection merely because the user supplied a project description.
 
@@ -313,9 +340,70 @@ Never imply an AI system is autonomous, production-ready, secure, private, or de
 ### Generated or experimental projects
 Do not disguise experimental status. If the repository itself establishes that it is experimental, say so clearly.
 
+## API reference
+
+Document the contract the code actually exposes — endpoints, functions, types, parameters, returns, errors. Derive every entry from source, not memory.
+
+- Group by resource / module / namespace as the code is organized.
+- For each entry: signature, purpose, parameters (name, type, required/optional, meaning), return shape, and failure modes.
+- Show one minimal, runnable example per non-trivial entry; match the real API exactly.
+- Mark deprecated items and link to the replacement; never document a removed surface as if it exists.
+- Where the surface is large, keep the README's API section concise and link to a dedicated `docs/api.md` or generated reference.
+- Never invent parameters, fields, or error codes. If a contract isn't observable from code or tests, omit or label unknown.
+
+## Developer guide
+
+Orient a new contributor to build, run, and change the project confidently.
+
+- Start from what the README already covers; the dev guide goes deeper, not in parallel.
+- Cover: environment setup, build/test/lint commands (from evidence), project structure and module boundaries, how to run locally, how to add a feature or fix, and where to find things.
+- Explain the non-obvious architecture decisions and their rationale — the "why" a README omits.
+- Link to ADRs, architecture docs, or `docs/` when they exist; create them only when the repo convention supports it.
+- Keep it current: a dev guide that describes a build command that no longer works is worse than none.
+
+## PR description
+
+Write the body of a pull request so a reviewer can assess it in minutes.
+
+- **What** changed, in one or two sentences.
+- **Why** — the problem or requirement, with the issue/link if one exists.
+- **How** — the approach taken, and any notable design decisions.
+- **Risk / blast radius** — what else could be affected; call out migrations, schema changes, config, or behavior changes explicitly.
+- **How to review** — the files or paths that matter most, and any test commands to run.
+- **Verification** — what you ran (tests, manual steps) and the result.
+- Keep it grounded in the actual diff; never claim a change the PR doesn't make.
+
+## PR comment
+
+Write a review comment, reply, or summary for a pull request.
+
+- Match the comment to its purpose: approve summary, change request, inline finding, or reply.
+- Reference exact file:line for any claim; never speak in general impressions.
+- Be specific and actionable: say what's wrong and what to do about it, not just "this looks off."
+- Stay within the PR's scope; flag out-of-scope issues separately rather than blocking.
+- When posting, use the invoking agent's GitHub permissions; never post secrets, credentials, or internal links.
+
+## Multi-doc pass
+
+When a task spans several surfaces, plan before writing so they stay consistent.
+
+- List the surfaces to produce or update (README, CONTRIBUTING, API docs, dev guide, docstrings, etc.).
+- Inspect the repository once; build a single evidence map shared across all surfaces.
+- Write the highest-leverage surface first (usually README), then derive the others from the same facts.
+- Cross-check terminology, commands, and claims so no two docs contradict each other.
+- Deliver each artifact explicitly; don't bury one inside another's explanation.
+
 ## Output contract
 
-When the user asks to **generate or rewrite** a README, return the finished `README.md` as the primary artifact. Do not bury it beneath a long explanation.
+Return the finished artifact for the requested surface as the primary deliverable; do not bury it beneath a long explanation.
+
+- **README** → `README.md` (or the repo's entry doc).
+- **API reference** → `docs/api.md` or an in-repo reference; concise in the README, detailed elsewhere when large.
+- **Developer guide** → `CONTRIBUTING.md`, `docs/DEVELOPMENT.md`, or the repo's convention.
+- **Docstrings** → edits to the source files themselves, next to the code.
+- **PR description** → the PR body text, ready to paste.
+- **PR comment** → the comment text (or posted via the invoking agent's GitHub permissions).
+- **Multi-doc pass** → each artifact listed explicitly.
 
 When the user asks for an **audit**, return:
 1. overall assessment

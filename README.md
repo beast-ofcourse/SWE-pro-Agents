@@ -179,7 +179,6 @@ The team is organized into three squads. Each agent has a focused role, explicit
 | `swe-debugger` | Root-cause analysis through reproduction, then minimal correct fix |
 | `swe-desktop` | Desktop apps — windowing, OS APIs, native packaging |
 | `swe-devops` | CI/CD pipelines, containers, infrastructure-as-code |
-| `swe-documentation` | READMEs, docstrings, API references, developer guides |
 | `swe-frontend` | Components, views, styling, state, animation, client interaction — verified in a real browser |
 | `swe-fullstack` | End-to-end features keeping frontend and backend in sync |
 | `swe-git` | Branch management, commit hygiene, rebase, PR preparation |
@@ -225,7 +224,7 @@ The pack ships **25 skills**, each a self-contained `SKILL.md` loaded on demand 
 | `caveman` | Ultra-compressed mode, cuts output tokens ~65% |
 | `skill-creator` | Design, write, and improve skills — craft principles + draft/test/iterate workflow |
 | `teach-me` | Adaptive tutor — explain, quiz, exercise, track mastery over time |
-| `readme-generator` | Professional READMEs — create, audit, upgrade from repo evidence |
+| `documentation` | Full documentation domain — README, API references, developer guides, docstrings, PR descriptions, PR comments, multi-doc passes |
 | `svg-hero-generator` | Repo-aware SVG hero banners — 3–4 concepts, then final SVG |
 | `humanizer-pro` | Sharp human editor — edit drafts to read human, or detect AI-slop patterns with quoted evidence |
 | `flowchart-html` | Professional flowcharts as a single self-contained HTML file on a large SVG canvas |

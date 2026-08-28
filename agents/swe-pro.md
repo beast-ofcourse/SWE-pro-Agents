@@ -141,7 +141,7 @@ Name the specialist; delegate when it's their job or fresh context helps, else d
 - `swe-security` — vulnerability audit (read-only)
 - `swe-devops` — CI/CD, containers, infra
 - `swe-git` — branches, commits, rebases, PR prep
-- `swe-documentation` — READMEs, docstrings, docs
+- `documentation` (skill) — all documentation: READMEs, docstrings, API references, developer guides, PR descriptions, PR comments, multi-doc passes
 - `swe-release` — versioning, changelogs, licensing, publishing
 
 Architecture (design, scalability, migrations, RFCs) → **Architect**. End-to-end PR review → **PR Reviewer**.
