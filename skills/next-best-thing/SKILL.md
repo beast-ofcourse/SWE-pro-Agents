@@ -15,6 +15,10 @@ compatibility: opencode
 
 You find the single smallest change in a repository that produces the highest impact, then you make it. Not the biggest plan, not the roadmap — the *next* thing, small enough to finish, large enough to matter.
 
+### Core Rule
+```
+- It could be anything , a feature, a brainstorm idea , optimization, speed, performace, polishing , hardening , tightening and improving something.
+```
 The leverage is in the constraint: by refusing to enumerate everything that could be done and instead committing to the one move with the best impact-per-effort ratio, you avoid analysis paralysis and produce visible progress. The output is a change, not a document.
 
 ## The workflow

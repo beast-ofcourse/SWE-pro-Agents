@@ -14,7 +14,7 @@
 [![CI](https://img.shields.io/github/actions/workflow/status/beast-ofcourse/SWE-pro-Agents/ci.yml?style=flat-square)](https://github.com/beast-ofcourse/SWE-pro-Agents/actions)
 [![license](https://img.shields.io/github/license/beast-ofcourse/SWE-pro-Agents?style=flat-square)](LICENSE)
 
-**25 OpenCode agent profiles (22 subagents + 3 primary) + 25 skills — a full engineering team in your terminal.**
+**25 OpenCode agent profiles (22 subagents + 3 primary) + 26 skills — a full engineering team in your terminal.**
 
 </div>
 
@@ -111,7 +111,7 @@ Windows is supported end to end.
 npm install -g swe-pro-agents
 ```
 
-The postinstall hook copies agents to `~/.config/opencode/agents/swe-pro-agents/`, all 25 skills to `~/.config/opencode/skills/`, and this pack's `AGENTS.md` to the pack's own config dir (`~/.config/swe-pro-agents/` — deliberately *not* the agents dir, where OpenCode would load it as a phantom agent). That last file matters: every agent is intentionally short because it assumes the Engineering Operating System is loaded. If you have no global `~/.config/opencode/AGENTS.md`, copy the installed one into place:
+The postinstall hook copies agents to `~/.config/opencode/agents/swe-pro-agents/`, all 26 skills to `~/.config/opencode/skills/`, and this pack's `AGENTS.md` to the pack's own config dir (`~/.config/swe-pro-agents/` — deliberately *not* the agents dir, where OpenCode would load it as a phantom agent). That last file matters: every agent is intentionally short because it assumes the Engineering Operating System is loaded. If you have no global `~/.config/opencode/AGENTS.md`, copy the installed one into place:
 
 ```bash
 cp ~/.config/swe-pro-agents/AGENTS.md ~/.config/opencode/AGENTS.md
@@ -217,7 +217,7 @@ Three of the 25 profiles are **primary** agents (selectable as your main agent):
 
 ## Skills
 
-The pack ships **25 skills**, each a self-contained `SKILL.md` loaded on demand via OpenCode's `skill` tool:
+The pack ships **26 skills**, each a self-contained `SKILL.md` loaded on demand via OpenCode's `skill` tool:
 
 | Skill | Purpose |
 | --- | --- |
@@ -229,6 +229,7 @@ The pack ships **25 skills**, each a self-contained `SKILL.md` loaded on demand 
 | `humanizer-pro` | Sharp human editor — edit drafts to read human, or detect AI-slop patterns with quoted evidence |
 | `flowchart-html` | Professional flowcharts as a single self-contained HTML file on a large SVG canvas |
 | `high-quality-flowcharts` | Publication-grade PDF flowcharts/roadmaps — HTML+SVG source, PDF export, verification preview |
+| `next-best-thing` | Find the smallest highest-impact next change in a repo, then ship it |
 | `opencode-skill-creator` | Create, test, evaluate, and optimize OpenCode skills — evals, benchmarks, description tuning |
 | `brandkit` | Premium brand-kit image generation — guidelines boards, logo systems, identity decks |
 | `design-taste-frontend` | Anti-slop frontend skill — landing pages, portfolios, redesigns that don't look templated |
@@ -326,7 +327,7 @@ The tests simulate install/update/uninstall against a **throwaway `HOME`/`USERPR
 ```text
 SWE-pro-Agents/
 ├── agents/       25 agent profiles (3 primary, 22 subagents)
-├── skills/       25 skills
+├── skills/       26 skills
 ├── scripts/      install.js (postinstall), uninstall.js (preuninstall), validate.js (pack validator)
 ├── bin/          swe-pro-agents CLI
 ├── test/         installer lifecycle tests + validator self-tests

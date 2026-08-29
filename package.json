@@ -1,7 +1,7 @@
 {
   "name": "swe-pro-agents",
   "version": "3.0.0",
-  "description": "25 OpenCode agent profiles (22 subagents + 3 primary) + 25 skills (caveman,skill-creator, teach-me, documentation, svg-hero-generator, humanizer-pro, flowchart-html, high-quality-flowcharts, opencode-skill-creator, brandkit, design-taste-frontend, design-taste-frontend-v1, full-output-enforcement, gpt-taste, high-end-visual-design, image-to-code, imagegen-frontend-mobile, imagegen-frontend-web, industrial-brutalist-ui, mcp-builder, minimalist-ui, redesign-existing-projects, sketch, stitch-design-taste, youtube-to-skill) — SWE roles, deep research, and architecture agents",
+  "description": "25 OpenCode agent profiles (22 subagents + 3 primary) + 26 skills (caveman, skill-creator, teach-me, documentation, svg-hero-generator, humanizer-pro, flowchart-html, high-quality-flowcharts, next-best-thing, opencode-skill-creator, brandkit, design-taste-frontend, design-taste-frontend-v1, full-output-enforcement, gpt-taste, high-end-visual-design, image-to-code, imagegen-frontend-mobile, imagegen-frontend-web, industrial-brutalist-ui, mcp-builder, minimalist-ui, redesign-existing-projects, sketch, stitch-design-taste, youtube-to-skill) — SWE roles, deep research, and architecture agents",
   "keywords": [
     "opencode",
     "agents",
