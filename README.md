@@ -229,7 +229,7 @@ The pack ships **26 skills**, each a self-contained `SKILL.md` loaded on demand 
 | `humanizer-pro` | Sharp human editor — edit drafts to read human, or detect AI-slop patterns with quoted evidence |
 | `flowchart-html` | Professional flowcharts as a single self-contained HTML file on a large SVG canvas |
 | `high-quality-flowcharts` | Publication-grade PDF flowcharts/roadmaps — HTML+SVG source, PDF export, verification preview |
-| `next-best-thing` | Find the smallest highest-impact next change in a repo, then ship it |
+| `next-best-thing` | Find the smallest highest-impact next change in a repo, then ship it. Opt-in loop: `/next-best-thing loop N` repeats it N times, one best move per pass |
 | `opencode-skill-creator` | Create, test, evaluate, and optimize OpenCode skills — evals, benchmarks, description tuning |
 | `brandkit` | Premium brand-kit image generation — guidelines boards, logo systems, identity decks |
 | `design-taste-frontend` | Anti-slop frontend skill — landing pages, portfolios, redesigns that don't look templated |

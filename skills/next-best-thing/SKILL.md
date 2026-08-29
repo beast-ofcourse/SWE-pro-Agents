@@ -6,7 +6,8 @@ description: >
   high-impact step", "what's the highest-leverage change", or when a project feels stuck
   and needs the one right move. The move can be anything: a feature, an optimization, a
   speedup, tightening, polishing, or hardening. Trigger proactively when the user wants
-  direction, not a full plan.
+  direction, not a full plan. Opt-in loop: "/next-best-thing loop N" repeats the workflow
+  N times, one best move per iteration.
 license: MIT
 compatibility: opencode
 ---
@@ -47,6 +48,34 @@ Completion criterion: the change is complete, the relevant tests/build pass, and
 Run the lightest verification that fits the change (tests, build, lint, type check, or a runtime check). Report what you changed, the impact you expected, and what you actually verified.
 
 Completion criterion: verification succeeded (or you explicitly state what could not be verified), and the report names the move, the evidence, and any residual risk.
+
+## Opt-in Loop Mode
+
+Run the workflow more than once in a row so the repo keeps improving move by move. The loop is **strictly opt-in** — never loop unless the user explicitly opted in.
+
+### Trigger
+- Explicit count: `/next-best-thing loop 5` runs the full 5-step workflow **5 times**, each pass against the repo *as it stands after the previous move*.
+- Natural-language equivalent (`"run this 3 times"`, `"keep going for 5 iterations"`) counts as opt-in with that N.
+
+### Opt-in gate (when no count was given)
+If the user did not supply a loop count, ask exactly one clarifying question before starting:
+
+> **Loop?** No loop (single best move) — or loop N times? (suggest N from how much low-hanging fruit the scan surfaced, typically 3–5)
+
+Only loop after the user answers with a positive integer, or a plain "no" / "just one". Do not assume a loop.
+
+### How each iteration runs
+- Re-run steps 1–5 from scratch every pass. The previous move changed the repo, so the next scan and candidate list must be freshly derived — never reuse the earlier candidate list or ranking.
+- Decrement the remaining count by one after each completed move.
+- Stop early (before N) if any of these hold:
+  - verification fails and the move can't be made safe in-session,
+  - no candidate clears the "genuinely small / finishable" bar (the repo is clean for now),
+  - the user says stop.
+
+### Guardrails
+- One move per iteration. Never batch a candidate list into a single pass.
+- Keep the same tight blast radius and contribution conventions every pass.
+- Report each iteration's move, evidence, and residual risk; end with a short cumulative summary of all moves shipped.
 
 ## Principles
 
