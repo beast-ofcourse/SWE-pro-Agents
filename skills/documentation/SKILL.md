@@ -2,7 +2,6 @@
 name: documentation
 description: "Single documentation skill for the whole doc domain. Use when a task needs any of: README or repository documentation, API references, developer guides, docstrings, PR descriptions, PR comments, or a multi-documentation pass. Also handles documentation audits and upgrades. Inspect the repository first; never invent project facts, commands, features, metrics, links, versions, badges, screenshots, or roadmap items."
 license: MIT
-compatibility: opencode
 ---
 
 # Documentation

@@ -10,7 +10,6 @@ description: >
   publication, when a user asks "does this read as AI?" or wants text
   humanized, or when auditing prose for AI tells.
 license: MIT
-compatibility: opencode
 ---
 
 # Humanizer Pro

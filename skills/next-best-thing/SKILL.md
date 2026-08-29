@@ -9,7 +9,6 @@ description: >
   direction, not a full plan. Opt-in loop: "/next-best-thing loop N" repeats the workflow
   N times, one best move per iteration.
 license: MIT
-compatibility: opencode
 ---
 
 # Next Best Thing

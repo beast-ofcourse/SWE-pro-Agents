@@ -16,7 +16,7 @@
  *           A6 permission task refs known · A7 frontmatter name matches filename
  *           A8 no duplicate names
  *   Skills  S1 SKILL.md exists · S2 frontmatter parseable · S3 name valid+matches dir
- *           S4 description required/≤1024 · S5 license MIT · S6 compatibility opencode
+ *           S4 description required/≤1024 · S5 license MIT
  *           S7 no duplicate names · S8 description has trigger language
    *   Cross   C2 no stray files
  *
@@ -276,13 +276,6 @@ function validateSkillDir(dirPath) {
     rule('S5', 'missing license');
   } else if (d.license !== 'MIT') {
     rule('S5', `license '${d.license}' != MIT`);
-  }
-
-  // S6 — compatibility must be opencode.
-  if (!d.compatibility) {
-    rule('S6', 'missing compatibility');
-  } else if (d.compatibility !== 'opencode') {
-    rule('S6', `compatibility '${d.compatibility}' != opencode`);
   }
 
   // S8 — description must contain trigger language.

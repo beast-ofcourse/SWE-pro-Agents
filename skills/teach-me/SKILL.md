@@ -2,7 +2,6 @@
 name: teach-me
 description: Facilitate deep, adaptive learning of any concept, topic, or skill through explanations, examples, quizzes, and hands-on exercises, while tracking mastery over time in a persistent progress file. Use this whenever a user wants to learn, study, understand, practice, or get better at something — including explicit requests ("teach me X", "help me learn Y", "quiz me on Z", "explain X to me") and implicit ones ("I don't really get how X works", "I want to get good at Y", "can you help me study for...", "drill me on..."). Also use to resume or continue a learning session referencing a topic already in progress, or when the user references a "learning_progress" file.
 license: MIT
-compatibility: opencode
 ---
 
 # Teach Me

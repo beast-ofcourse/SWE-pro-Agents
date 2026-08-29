@@ -4,7 +4,6 @@ description: "Rapid throwaway HTML prototyping for UI/frontend — generate 2-3 
 version: 2.0.0
 author: Hermes Agent (adapted from gsd-build/get-shit-done)
 license: MIT
-compatibility: opencode
 platforms: [linux, macos, windows]
 metadata:
   hermes:

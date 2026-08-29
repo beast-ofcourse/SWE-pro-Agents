@@ -102,7 +102,6 @@ const VALID_SKILL = `---
 name: my-skill
 description: "Use when the user asks for a thing."
 license: MIT
-compatibility: opencode
 ---
 # My Skill
 `;
@@ -206,12 +205,11 @@ test('valid skill passes', () => {
   assert.deepStrictEqual(v, []);
 });
 
-test('broken skill is flagged for name, license, compatibility, trigger language', () => {
+test('broken skill is flagged for name, license, trigger language', () => {
   const v = validateSkillDir(path.dirname(fixture(BROKEN_SKILL, 'broken-skill/SKILL.md')));
   const rules = v.map((x) => x.rule);
   assert.ok(rules.includes('S3'), 'invalid name flagged (S3)');
   assert.ok(rules.includes('S5'), 'non-MIT license flagged (S5)');
-  assert.ok(rules.includes('S6'), 'missing compatibility flagged (S6)');
   assert.ok(rules.includes('S8'), 'missing trigger language flagged (S8)');
 });
 
@@ -263,7 +261,7 @@ function buildPack({ agentCount = 26, skillCount = 25, dupAgentName = false, dup
     const skillDir = path.join(skillsDir, `skill-${String(i).padStart(2, '0')}`);
     fs.mkdirSync(skillDir, { recursive: true });
     const declaredName = path.basename(skillDir) === dupSkillTarget ? 'skill-01' : path.basename(skillDir);
-    const content = `---\nname: ${declaredName}\ndescription: "Use when the user asks for a thing."\nlicense: MIT\ncompatibility: opencode\n---\n# ${path.basename(skillDir)}\n`;
+    const content = `---\nname: ${declaredName}\ndescription: "Use when the user asks for a thing."\nlicense: MIT\n---\n# ${path.basename(skillDir)}\n`;
     fs.writeFileSync(path.join(skillDir, 'SKILL.md'), content);
   }
 

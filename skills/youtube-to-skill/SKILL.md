@@ -2,7 +2,6 @@
 name: youtube-to-skill
 description: Converts a YouTube video into a new, reusable, installable skill by extracting the process actually demonstrated in the video and writing instructions for redoing it — identifying whether the video is a procedural walkthrough, a decision framework, a code-along, or has no repeatable process at all, matching the output to that shape, and reporting known gaps (unclear audio, unnarrated on-screen code) instead of guessing. Use this whenever the user gives a YouTube URL and asks to "turn this into a skill," "make this reusable," "learn from this video," or wants a repeatable/master skill built from a tutorial, walkthrough, workflow demo, or how-to video. Also trigger on phrases like "package this video into a skill," "create a skill from this YouTube video," or when the user pastes a youtube.com/youtu.be link alongside reuse language. Requires a YouTube MCP tool to fetch the transcript — if none is connected, this skill's job is to say so clearly rather than guess at the content.
 license: MIT
-compatibility: opencode
 ---
 
 # YouTube → Skill
@@ -22,7 +21,7 @@ This check comes first because the whole skill depends on getting the real trans
 - Use web search to find blog posts or comments describing the video and treat that as the transcript
 - Ask the user to paste the transcript manually as a fallback — the point of this skill is that it's automatic
 
-If no YouTube MCP tool is found in your tool list, stop and tell the user plainly: they need a YouTube MCP server connected to OpenCode (via the `"mcp"` key in `opencode.json` or `opencode mcp add`, then a restart) before you can build the skill. Don't attempt a partial or best-guess skill in the meantime.
+If no YouTube MCP tool is found in your tool list, stop and tell the user plainly: they need a YouTube MCP server connected to their agent (the exact way depends on the agent — e.g. the `"mcp"` key in an agent's config file, or that agent's MCP add command, then a restart) before you can build the skill. Don't attempt a partial or best-guess skill in the meantime.
 
 If a YouTube tool *is* available, proceed to Step 2.
 
@@ -107,7 +106,7 @@ If any step is risky, revise it or block it — and tell the user what you found
 
 ## Step 8: Package and deliver
 
-Once the SKILL.md is written to a proper skill folder (`<skill-name>/SKILL.md`), deliver it the way OpenCode installs skills: the user copies the folder to `~/.config/opencode/skills/<skill-name>/` and OpenCode picks it up automatically — no registry, manifest, or config step. If the user wants a distributable archive instead of a direct install, follow the installed `skill-creator` skill's packaging step ("Package and present" in its workflow) to produce a `.skill` file.
+Once the SKILL.md is written to a proper skill folder (`<skill-name>/SKILL.md`), deliver it the way the user's agent installs skills — give them a folder they can drop into that agent's skills directory (for example `~/.config/opencode/skills/<skill-name>/` for OpenCode, `.claude/skills/<skill-name>/` for Claude Code, or `.agents/skills/<skill-name>/` for Cursor/Codex), and the agent picks it up automatically — no registry, manifest, or config step. If the pack is published to the skills directory, the user can also run `npx skills add <owner>/<repo> --skill <skill-name>` to install it into whichever agents they use. If the user wants a portable, distributable archive instead of a direct folder install, follow the installed `skill-creator` skill's packaging step ("Package and present" in its workflow) to produce a `.skill` file.
 
 Don't just print the SKILL.md contents into the chat as the final deliverable — the user asked for a reusable skill, and a reusable skill is a file they can save and install, not markdown they have to manually copy into a folder themselves.
 

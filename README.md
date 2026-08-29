@@ -13,6 +13,7 @@
 [![npm downloads](https://img.shields.io/npm/dt/swe-pro-agents?style=flat-square)](https://www.npmjs.com/package/swe-pro-agents)
 [![CI](https://img.shields.io/github/actions/workflow/status/beast-ofcourse/SWE-pro-Agents/ci.yml?style=flat-square)](https://github.com/beast-ofcourse/SWE-pro-Agents/actions)
 [![license](https://img.shields.io/github/license/beast-ofcourse/SWE-pro-Agents?style=flat-square)](LICENSE)
+[![skills.sh](https://skills.sh/b/beast-ofcourse/SWE-pro-Agents)](https://skills.sh/beast-ofcourse/SWE-pro-Agents)
 
 **25 OpenCode agent profiles (22 subagents + 3 primary) + 26 skills — a full engineering team in your terminal.**
 
@@ -135,6 +136,20 @@ swe-pro-agents setup --apply
 
 **That's it.** Restart OpenCode and your agent team is ready.
 
+### Install skills only (skills.sh)
+
+Want just the skills, without the OpenCode agent profiles? Install them into any AI coding agent with the [skills.sh](https://skills.sh) CLI — it discovers every `SKILL.md` in `skills/` and installs them without touching your config:
+
+```bash
+# All 26 skills, into the agents the CLI detects on your machine
+npx skills add beast-ofcourse/SWE-pro-Agents
+
+# Just the skills you want, into specific agents
+npx skills add beast-ofcourse/SWE-pro-Agents --skill caveman --skill next-best-thing -a claude-code -a opencode
+```
+
+This installs **only the skills** — the `agents/` profiles are OpenCode-only and are not part of the skills.sh install. See [Skills](#skills) for the full list and per-agent notes.
+
 ## Quick Start
 
 ```bash
@@ -217,7 +232,27 @@ Three of the 25 profiles are **primary** agents (selectable as your main agent):
 
 ## Skills
 
-The pack ships **26 skills**, each a self-contained `SKILL.md` loaded on demand via OpenCode's `skill` tool:
+The pack ships **26 skills**, each a self-contained `SKILL.md` that follows the open [Agent Skills specification](https://agentskills.io) (`name` + `description` frontmatter, no agent-specific coupling) — so any compliant coding agent can load them.
+
+### Install skills with skills.sh (any agent)
+
+Every skill is auto-discovered in `skills/` and published to the [skills.sh](https://skills.sh) directory, so you can install them into 90+ agents with one command — no manual path copying, no registry account:
+
+```bash
+# All 26 skills, into the agents the CLI detects on your machine
+npx skills add beast-ofcourse/SWE-pro-Agents
+
+# Just the skills you want, into specific agents
+npx skills add beast-ofcourse/SWE-pro-Agents --skill caveman --skill next-best-thing -a claude-code -a opencode
+```
+
+Use one without installing: `npx skills use beast-ofcourse/SWE-pro-Agents --skill caveman --agent claude-code`. Run `npx skills add beast-ofcourse/SWE-pro-Agents --list` to see every skill. The [skills.sh badge](https://skills.sh/beast-ofcourse/SWE-pro-Agents) above tracks live install counts.
+
+`opencode-skill-creator` is OpenCode-specific (it drives OpenCode's skill tooling / `opencode.json`); the other 25 skills — including `youtube-to-skill` — are agent-agnostic and work the same in Claude Code, Cursor, Codex, Windsurf, and more.
+
+### Install skills the OpenCode way (manual)
+
+When this pack is installed via its npm CLI, skills auto-install to `~/.config/opencode/skills/` and are picked up automatically — no config needed.
 
 | Skill | Purpose |
 | --- | --- |
@@ -247,8 +282,6 @@ The pack ships **26 skills**, each a self-contained `SKILL.md` loaded on demand 
 | `sketch` | Rapid throwaway HTML prototyping — 2-3 interactive variants to compare design directions |
 | `stitch-design-taste` | Semantic design system for Google Stitch — agent-friendly `DESIGN.md` files |
 | `youtube-to-skill` | Turn a YouTube video into a reusable skill — transcript → process extraction → `SKILL.md`, handling walkthroughs, decision frameworks, and code-alongs (needs a YouTube MCP server) |
-
-Skills auto-install to `~/.config/opencode/skills/` and are picked up automatically — no config needed.
 
 ### Agents vs. skills
 

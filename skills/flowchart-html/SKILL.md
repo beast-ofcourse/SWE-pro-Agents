@@ -2,7 +2,6 @@
 name: flowchart-html
 description: Use this skill to create beautiful, professional flowcharts, process diagrams, decision trees, org charts, or workflow diagrams as a single self-contained HTML file with a large canvas. Trigger this whenever the user asks for a "flowchart", "process diagram", "workflow diagram", "decision tree", "org chart", or wants to visualize steps/logic/a process — whether for technical documentation, software/system workflows, business presentations, or general process mapping. Also trigger if the user asks to visualize any sequential, branching, or hierarchical process as a diagram, even if they don't say the word "flowchart" explicitly (e.g. "show the steps for X and where it branches", "diagram how this decision gets made"). Produces a polished single-file .html deliverable — not Mermaid code, not an image.
 license: MIT
-compatibility: opencode
 ---
 
 # Flowchart HTML Generator

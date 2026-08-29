@@ -2,7 +2,6 @@
 name: gpt-taste
 description: Elite UX/UI & Advanced GSAP Motion Engineer. Enforces prompt-seeded deterministic layout variance, strict AIDA page structure, wide editorial typography (bans 6-line wraps), gapless bento grids, strict GSAP ScrollTriggers (pinning, stacking, scrubbing), inline micro-images, and massive section spacing. Use when the user wants Awwwards-level UX/UI with GSAP motion.
 license: MIT
-compatibility: opencode
 ---
 
 # CORE DIRECTIVE: AWWWARDS-LEVEL DESIGN ENGINEERING

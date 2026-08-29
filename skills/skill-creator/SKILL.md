@@ -10,7 +10,6 @@ description: >
   skill", "why doesn't my skill trigger", "optimize my skill description", or any
   request to capture a workflow as a reusable skill.
 license: MIT
-compatibility: opencode
 ---
 
 # Skill Creator
