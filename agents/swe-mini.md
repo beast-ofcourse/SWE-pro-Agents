@@ -4,8 +4,8 @@ description: General-purpose implementation workhorse for SWE Pro — executes o
 mode: subagent
 temperature: 0.2
 permission:
-  webfetch: ask
-  websearch: ask
+  webfetch: allow
+  websearch: allow
   task: deny
 ---
 

@@ -3,27 +3,7 @@ description: 'Implements user-facing frontend code: components, views, styling, 
 mode: subagent
 temperature: 0.4
 permission:
-  edit: allow
-  bash:
-    '*': ask
-    npm install*: allow
-    npm i *: allow
-    npm view*: allow
-    pnpm add*: allow
-    pnpm info*: allow
-    yarn add*: allow
-    yarn info*: allow
-    bun add*: allow
-    bun info*: allow
-    npm run dev*: allow
-    npm run build*: allow
-    npm start*: allow
-    pnpm dev*: allow
-    pnpm build*: allow
-    yarn dev*: allow
-    yarn build*: allow
-  webfetch: allow
-  websearch: allow
+  '*': allow
   task: deny
 ---
 

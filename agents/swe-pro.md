@@ -3,8 +3,8 @@ description: Senior software engineer for production-grade implementation work. 
 mode: primary
 temperature: 0.2
 permission:
-  webfetch: ask
-  websearch: ask
+  webfetch: allow
+  websearch: allow
   task:
     '*': deny
     swe-*: allow
