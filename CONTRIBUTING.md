@@ -120,7 +120,7 @@ machinery:
 
 ```text
 agents/        Agent profiles (25: 22 subagents + 3 primary)
-skills/        Skills: caveman, skill-creator, teach-me, documentation, svg-hero-generator, humanizer-pro, flowchart-html, high-quality-flowcharts, next-best-thing, opencode-skill-creator, brandkit, design-taste-frontend, design-taste-frontend-v1, full-output-enforcement, gpt-taste, high-end-visual-design, image-to-code, imagegen-frontend-mobile, imagegen-frontend-web, industrial-brutalist-ui, mcp-builder, minimalist-ui, redesign-existing-projects, sketch, stitch-design-taste, youtube-to-skill
+skills/        Skills: caveman, skill-creator, teach-me, documentation, svg-hero-generator, humanizer-pro, flowchart-html, high-quality-flowcharts, next-best-thing, opencode-skill-creator, mcp-builder, sketch, youtube-to-skill
 scripts/       install.js (postinstall), uninstall.js (preuninstall), validate.js (pack validator)
 bin/           swe-pro-agents CLI
 test/          Installer lifecycle tests + validator self-tests

@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Background engine modules require siblings normally: `scripts/build-plugin.js` replaces each single-line scripts-relative `require('./<name>')` with a `// (see scripts/<name>.js region — provides <names>)` comment (target must exist, plugin region must exist, cycles fail), and the ambient typeof-guard wiring in `scripts/background-delegate.js` is deleted in favor of normal requires with `deps.<x>` overrides first.
 
+### Removed
+
+- 13 design/image-generation skills with unrecorded upstream provenance: `brandkit`, `design-taste-frontend` (+ `-v1`), `full-output-enforcement`, `gpt-taste`, `high-end-visual-design`, `image-to-code`, `imagegen-frontend-mobile`, `imagegen-frontend-web`, `industrial-brutalist-ui`, `minimalist-ui`, `redesign-existing-projects`, `stitch-design-taste`. Pack is now **13 skills** (was 26); `package.json`, README, CONTRIBUTING, and `docs/architecture.html` updated to match. Already-installed copies are pruned automatically on the next update via the install manifest.
+
 ## [3.0.0] - 2026-09-06
 
 ### Added
