@@ -5,8 +5,9 @@
  *
  * Proves the validator itself works by running it against fixture files:
  * a valid agent, a broken agent, a valid skill, a broken skill — plus unit
- * checks for the frontmatter parser, task-ref parser, and the pack-level
- * validatePack() rules (A8 duplicate agent names, S7 duplicate skill names, C2 stray entries).
+ * checks for the frontmatter parser, task-ref parser, permission-action
+ * parser, and the pack-level validatePack() rules (A8 duplicate agent names,
+ * S7 duplicate skill names, C2 stray entries).
  *
  * Zero dependencies: node:assert + node:child_process + node:fs + node:os + node:path.
  * Run with: node test/validate.test.js
@@ -24,6 +25,7 @@ const {
   slugify,
   parseFrontmatter,
   parseTaskRefs,
+  parsePermissionActions,
   validateAgentFile,
   validateSkillDir,
   validatePack,
@@ -195,6 +197,119 @@ test('broken agent is flagged for folded description and unknown task ref', () =
 test('agent missing frontmatter is flagged (A1)', () => {
   const v = validateAgentFile(fixture('# No Frontmatter\n', 'no-fm.md'), KNOWN_SUBAGENTS);
   assert.ok(v.some((x) => x.rule === 'A1'));
+});
+
+test('parsePermissionActions accepts tool names, wildcards, and patterns', () => {
+  const actions = parsePermissionActions([
+    "permission:",
+    "  '*': allow",
+    "  edit: deny",
+    "  bash:",
+    "    'npm run build*': allow",
+    "  task: deny",
+    "description: done",
+  ]);
+  assert.deepStrictEqual(actions, [
+    { key: "'*'", action: 'allow' },
+    { key: 'edit', action: 'deny' },
+    { key: "'npm run build*'", action: 'allow' },
+    { key: 'task', action: 'deny' },
+  ]);
+});
+
+test('agent with an unknown permission action is flagged (A9)', () => {
+  const bad = `---
+description: A valid agent for testing.
+mode: subagent
+permission:
+  edit: allow
+  webfetch: sometimes
+  task: deny
+---
+# Bad Action
+`;
+  const v = validateAgentFile(fixture(bad, 'bad-action.md'), KNOWN_SUBAGENTS);
+  assert.ok(v.some((x) => x.rule === 'A9'), 'expected an A9 violation');
+});
+
+test('permission actions with trailing comments still validate (A9)', () => {
+  const commented = `---
+description: A valid agent for testing.
+mode: subagent
+permission:
+  edit: allow # full file access
+  webfetch: sometimes # not a real action
+---
+# Commented Actions
+`;
+  const v = validateAgentFile(fixture(commented, 'commented-action.md'), KNOWN_SUBAGENTS);
+  assert.ok(v.some((x) => x.rule === 'A9'), 'trailing comment must not exempt a bad action');
+  const clean = `---
+description: A valid agent for testing.
+mode: subagent
+permission:
+  edit: allow # full file access
+  task: deny
+---
+# Commented Clean
+`;
+  assert.deepStrictEqual(validateAgentFile(fixture(clean, 'commented-clean.md'), KNOWN_SUBAGENTS), []);
+});
+
+test('agent with a numeric permission action is flagged (A9)', () => {
+  const bad = `---
+description: A valid agent for testing.
+mode: subagent
+permission:
+  edit: 1
+  task: deny
+---
+# Numeric Action
+`;
+  const v = validateAgentFile(fixture(bad, 'numeric-action.md'), KNOWN_SUBAGENTS);
+  assert.ok(v.some((x) => x.rule === 'A9'), 'expected an A9 violation');
+});
+
+test('agent with a quoted invalid permission action is flagged (A9)', () => {
+  const bad = `---
+description: A valid agent for testing.
+mode: subagent
+permission:
+  edit: "sometimes"
+  task: deny
+---
+# Quoted Bad Action
+`;
+  const v = validateAgentFile(fixture(bad, 'quoted-bad-action.md'), KNOWN_SUBAGENTS);
+  assert.ok(v.some((x) => x.rule === 'A9'), 'expected an A9 violation');
+});
+
+test('agent with a quoted valid permission action passes (A9)', () => {
+  const good = `---
+description: A valid agent for testing.
+mode: subagent
+permission:
+  edit: "allow"
+  task: deny
+---
+# Quoted Good Action
+`;
+  const v = validateAgentFile(fixture(good, 'quoted-good-action.md'), KNOWN_SUBAGENTS);
+  assert.deepStrictEqual(v, []);
+});
+
+test('agent with granular allow-all permission passes (A9)', () => {
+  const good = `---
+description: A valid agent for testing.
+mode: subagent
+permission:
+  '*': allow
+  task: deny
+---
+# Allow All
+`;
+  const v = validateAgentFile(fixture(good, 'allow-all.md'), KNOWN_SUBAGENTS);
+  assert.deepStrictEqual(v, []);
 });
 
 // ---------------------------------------------------------------------------

@@ -10,6 +10,7 @@ const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
+const { execFileSync } = require('child_process');
 const { createBackgroundDelegate } = require('../plugins/swe-pro-agents.js');
 
 // Isolate delegations from the real store and disable the supervisor timer so the
@@ -33,6 +34,9 @@ function makeFakeClient() {
         sessions[id]._result = text || 'RESULT';
       }
     },
+    _setPartial: (id, text) => {
+      if (sessions[id]) sessions[id]._partial = text;
+    },
     session: {
       async create() {
         createCount += 1;
@@ -54,6 +58,7 @@ function makeFakeClient() {
       },
       async messages({ path }) {
         const s = sessions[path.id];
+        if (s && s._partial) return { data: [{ role: 'assistant', content: s._partial }] };
         if (s && s._result) return { data: [{ role: 'assistant', content: s._result }] };
         return { data: [] };
       },
@@ -111,7 +116,7 @@ async function run() {
   await check('bg_stop cancels and aborts the child', async () => {
     const ret = await tools.bg_delegate.execute({ prompt: 'long task' }, { sessionID: 'parent1' });
     const id = ret.match(/delegated (bg_\S+)/)[1];
-    const stopRet = await tools.bg_stop.execute({ id });
+    const stopRet = await tools.bg_stop.execute({ id, signal: 'hard' });
     assert.ok(stopRet.includes('stopped'), 'stop returns stopped status');
     assert.ok(stopRet.includes('cancelled'), 'state cancelled');
     assert.strictEqual(client._stats().createCount, 3, 'three children created total');
@@ -138,6 +143,122 @@ async function run() {
     const ret = await tools.bg_list.execute({});
     const arr = JSON.parse(ret);
     assert.ok(Array.isArray(arr), 'bg_list returns an array');
+  });
+
+  await check('bg_merge --check returns diff report and never merges (fake worktree)', async () => {
+    // Real temp repo + real branch, but a FAKE worktree record (path never
+    // created on disk): the check needs only repoDir + branch, no checkout.
+    const repo = fs.mkdtempSync(path.join(os.tmpdir(), 'bg-pl-wt-'));
+    execFileSync('git', ['init', '-q'], { cwd: repo });
+    execFileSync('git', ['config', 'user.email', 'test@test'], { cwd: repo });
+    execFileSync('git', ['config', 'user.name', 'Test'], { cwd: repo });
+    fs.writeFileSync(path.join(repo, 'README.md'), 'init\n');
+    execFileSync('git', ['add', 'README.md'], { cwd: repo });
+    execFileSync('git', ['commit', '-q', '-m', 'init'], { cwd: repo });
+    execFileSync('git', ['checkout', '-q', '-b', 'bg-fake1'], { cwd: repo });
+    fs.writeFileSync(path.join(repo, 'feature.txt'), 'a\nb\n');
+    execFileSync('git', ['add', 'feature.txt'], { cwd: repo });
+    execFileSync('git', ['commit', '-q', '-m', 'feature'], { cwd: repo });
+    execFileSync('git', ['checkout', '-q', '-'], { cwd: repo }); // HEAD back to base so merge-base is the fork point
+    const headBefore = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo }).toString().trim();
+    const branchTipBefore = execFileSync('git', ['rev-parse', 'bg-fake1'], { cwd: repo }).toString().trim();
+
+    // Second engine sharing the plugin store, with a stub worktreeManager
+    // whose setup records a FAKE worktree (never touches disk).
+    const fakePath = path.join(repo, '.worktrees', 'bg-fake1');
+    const stubManager = {
+      setup: async () => ({ path: fakePath, branch: 'bg-fake1', repoDir: repo }),
+      remove: async () => {},
+    };
+    const bg2 = createBackgroundDelegate({
+      client: makeFakeClient(),
+      storeDir: process.env.SWE_PRO_DELEGATIONS_DIR,
+      directory: repo,
+      repoDir: repo,
+      worktreeManager: stubManager,
+    });
+    const id = await bg2.createDelegation({ prompt: 'write code', mode: 'worktree' });
+    assert.ok(!fs.existsSync(fakePath), 'worktree path is fake (never on disk)');
+    const stateFile = path.join(process.env.SWE_PRO_DELEGATIONS_DIR, id + '.json');
+    const journalFile = path.join(process.env.SWE_PRO_DELEGATIONS_DIR, id + '.journal.jsonl');
+    const stateBefore = fs.readFileSync(stateFile, 'utf-8');
+    const journalBefore = fs.existsSync(journalFile) ? fs.readFileSync(journalFile, 'utf-8') : '';
+
+    const ret = await tools.bg_merge.execute({ id, check: true });
+    const report = JSON.parse(ret);
+    assert.strictEqual(report.filesChanged, 1, 'one file changed: ' + ret);
+    assert.strictEqual(report.insertions, 2, 'two insertions: ' + ret);
+    assert.strictEqual(report.deletions, 0, 'zero deletions: ' + ret);
+    assert.ok(report.conflictProbability === 'low' || report.conflictProbability === 'high', 'conflictProbability present: ' + ret);
+    assert.ok(typeof report.base === 'string' && report.base.length > 0, 'base present: ' + ret);
+
+    // Never merges: no state/journal writes, HEAD and branch tip untouched.
+    assert.strictEqual(fs.readFileSync(stateFile, 'utf-8'), stateBefore, 'state file untouched');
+    const journalAfter = fs.existsSync(journalFile) ? fs.readFileSync(journalFile, 'utf-8') : '';
+    assert.strictEqual(journalAfter, journalBefore, 'journal untouched (read-only query)');
+    assert.strictEqual(execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo }).toString().trim(), headBefore, 'HEAD untouched');
+    assert.strictEqual(execFileSync('git', ['rev-parse', 'bg-fake1'], { cwd: repo }).toString().trim(), branchTipBefore, 'branch tip untouched');
+  });
+
+  await check('bg_merge on readonly delegation returns not-applicable', async () => {
+    const ret = await tools.bg_delegate.execute({ prompt: 'research Y' }, { sessionID: 'parent1' });
+    const id = ret.match(/delegated (bg_\S+)/)[1];
+    const out = await tools.bg_merge.execute({ id, check: true });
+    const parsed = JSON.parse(out);
+    assert.strictEqual(parsed.applicable, false, 'readonly → applicable false: ' + out);
+    assert.ok(/merge not applicable/.test(parsed.reason || ''), 'reason states merge not applicable: ' + out);
+  });
+
+  await check('bg_resume on readonly delegation returns cannot_resume (passthrough)', async () => {
+    assert.ok(tools.bg_resume, 'bg_resume tool defined');
+    const ret = await tools.bg_delegate.execute({ prompt: 'research Z' }, { sessionID: 'parent1' });
+    const id = ret.match(/delegated (bg_\S+)/)[1];
+    const out = await tools.bg_resume.execute({ id });
+    assert.ok(out.includes('cannot_resume'), 'readonly resume must report cannot_resume (got ' + out + ')');
+    assert.ok(out.includes('no_worktree'), 'reason must be no_worktree (got ' + out + ')');
+  });
+
+  await check('bg_dashboard prints a tree with delegation fields', async () => {
+    assert.ok(tools.bg_dashboard, 'bg_dashboard tool defined');
+    const ret = await tools.bg_delegate.execute({ prompt: 'dashboard work', agent: 'swe-dash' }, { sessionID: 'parent1' });
+    const id = ret.match(/delegated (bg_\S+)/)[1];
+    const tree = await tools.bg_dashboard.execute({});
+    assert.ok(tree.includes(id), 'tree lists the new delegation: ' + tree);
+    assert.ok(tree.includes('running'), 'tree shows state: ' + tree);
+    assert.ok(tree.includes('swe-dash'), 'tree shows agent: ' + tree);
+    assert.ok(!tree.includes('no active delegations'), 'non-empty store never prints the empty line');
+  });
+
+  await check('bg_status --json returns logPath per item', async () => {
+    const ret = await tools.bg_delegate.execute({ prompt: 'json work' }, { sessionID: 'parent1' });
+    const id = ret.match(/delegated (bg_\S+)/)[1];
+    const single = JSON.parse(await tools.bg_status.execute({ id, json: true }));
+    assert.strictEqual(single.id, id, 'single-item json keeps the id');
+    assert.ok(typeof single.logPath === 'string' && single.logPath.endsWith(id + '.log'), 'single logPath: ' + single.logPath);
+    const all = JSON.parse(await tools.bg_status.execute({ json: true }));
+    assert.ok(Array.isArray(all) && all.length > 0, 'array json is non-empty');
+    for (const item of all) {
+      assert.ok(typeof item.logPath === 'string' && item.logPath.endsWith(item.id + '.log'), 'every item carries logPath: ' + JSON.stringify(item));
+    }
+    const plain = JSON.parse(await tools.bg_status.execute({ id }));
+    assert.strictEqual(plain.id, id, 'plain (non-json) status shape unchanged');
+  });
+
+  await check('bg_read stream:true appends partials to the task log', async () => {
+    // Fresh server instance (fresh scheduler): earlier checks leave running
+    // delegations behind and the engine caps parallelism, so this guarantees
+    // the new delegation actually starts instead of queueing as `registered`.
+    const streamClient = makeFakeClient();
+    const streamTools = (await plugin.server({ client: streamClient, directory: '/tmp' })).tool;
+    const ret = await streamTools.bg_delegate.execute({ prompt: 'streaming work' }, { sessionID: 'parent1' });
+    const id = ret.match(/delegated (bg_\S+)/)[1];
+    const st = JSON.parse(await streamTools.bg_status.execute({ id }));
+    assert.ok(st.childSessionID, 'delegation started (slot free on the fresh scheduler)');
+    streamClient._setPartial(st.childSessionID, 'PLUGIN-STREAM-PARTIAL');
+    const outcome = await streamTools.bg_read.execute({ id, timeoutMs: 150, stream: true });
+    assert.strictEqual(outcome, 'timeout: still running', 'read still returns normally: ' + outcome);
+    const logText = fs.readFileSync(path.join(process.env.SWE_PRO_DELEGATIONS_DIR, id + '.log'), 'utf-8');
+    assert.ok(logText.includes('PLUGIN-STREAM-PARTIAL'), 'streaming partial reached the log: ' + logText);
   });
 
   console.log('\n' + passed + ' passed, ' + failed + ' failed');

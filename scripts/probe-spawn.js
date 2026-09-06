@@ -9,7 +9,7 @@
  * `node scripts/probe-spawn.js` — use plugins/swe-pro-probe.js (a dev-only
  * plugin harness) to invoke it from within a real opencode session.
  *
- * Assertions (plans/background-subagents.md Phase 0):
+ * Assertions (background-subagent Phase 0 hard gate):
  *   A1 — child executes: a NEW child session, created via
  *        ctx.client.session.create + prompted, reaches `completed` with
  *        >0 assistant parts.

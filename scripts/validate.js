@@ -14,7 +14,7 @@
  *   Agents  A1 frontmatter parseable · A2 description required/single-line/≤1024
  *           A3 mode valid
  *           A6 permission task refs known · A7 frontmatter name matches filename
- *           A8 no duplicate names
+ *           A8 no duplicate names · A9 permission actions are allow|ask|deny
  *   Skills  S1 SKILL.md exists · S2 frontmatter parseable · S3 name valid+matches dir
  *           S4 description required/≤1024 · S5 license MIT
  *           S7 no duplicate names · S8 description has trigger language
@@ -181,6 +181,54 @@ function isValidTaskRef(name, knownSubagents) {
   return false;
 }
 
+/** Permission actions OpenCode accepts (shorthand or per-pattern). */
+const VALID_PERMISSION_ACTIONS = new Set(['allow', 'ask', 'deny']);
+
+/**
+ * Extract permission action assignments from the `permission:` frontmatter
+ * block. Returns [{ key, action }]. Keys may be tool names (`edit`), the
+ * global wildcard (`*`), or bash/file patterns (`npm run build*`); only the
+ * ACTION is validated — any key is accepted. Lines outside the permission
+ * block are ignored.
+ */
+function parsePermissionActions(frontmatterLines) {
+  const actions = [];
+  let permIndent = -1;
+  for (const line of frontmatterLines) {
+    const indent = line.match(/^[ \t]*/)[0].length;
+    const trimmed = line.trim();
+    if (trimmed === '' || trimmed.startsWith('#')) {
+      continue;
+    }
+    if (permIndent < 0) {
+      if (/^permission:\s*$/.test(trimmed)) {
+        permIndent = indent;
+      }
+      continue;
+    }
+    // A line at or above `permission:`'s indent ends the block.
+    if (indent <= permIndent) {
+      permIndent = -1;
+      continue;
+    }
+    const m = trimmed.match(/^(['"]?).+?\1\s*:\s*(.+?)\s*$/);
+    if (!m) continue;
+    let action = m[2].trim();
+    if (action === '') continue;
+    if (
+      action.length >= 2 &&
+      ((action.startsWith('"') && action.endsWith('"')) ||
+        (action.startsWith("'") && action.endsWith("'")))
+    ) {
+      action = action.slice(1, -1).trim();
+    }
+    action = action.replace(/\s+#.*$/, '').trim();
+    if (action === '') continue;
+    actions.push({ key: trimmed.slice(0, trimmed.lastIndexOf(':')).trim(), action });
+  }
+  return actions;
+}
+
 /** Validate a single agent file. Returns an array of { rule, file, detail }. */
 function validateAgentFile(filePath, knownSubagents) {
   const violations = [];
@@ -216,6 +264,20 @@ function validateAgentFile(filePath, knownSubagents) {
     for (const ref of parseTaskRefs(fmLines)) {
       if (!isValidTaskRef(ref.name, knownSubagents)) {
         rule('A6', `task ${ref.action} references unknown agent '${ref.name}'`);
+      }
+    }
+
+    // A9 — every permission action must be allow|ask|deny (any key accepted:
+    // tool names, `*`, bash/file patterns). Catches typos like `webfetch: yes`.
+    if (typeof d.permission === 'string' && d.permission !== '') {
+      if (!VALID_PERMISSION_ACTIONS.has(d.permission)) {
+        rule('A9', `permission action '${d.permission}' must be allow|ask|deny`);
+      }
+    } else {
+      for (const entry of parsePermissionActions(fmLines)) {
+        if (!VALID_PERMISSION_ACTIONS.has(entry.action)) {
+          rule('A9', `permission '${entry.key}' has unknown action '${entry.action}' (want allow|ask|deny)`);
+        }
       }
     }
   }
@@ -389,6 +451,7 @@ module.exports = {
   extractFrontmatterLines,
   parseFrontmatter,
   parseTaskRefs,
+  parsePermissionActions,
   isValidTaskRef,
   validateAgentFile,
   validateSkillDir,
