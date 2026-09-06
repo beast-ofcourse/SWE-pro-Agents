@@ -67,6 +67,17 @@ async function run() {
     assert.strictEqual(redactDeep(null), null, 'redactDeep null should pass through');
   });
 
+  await check('redact masks quoted JSON secret key', async () => {
+    const out = redact('{"api_key":"sk-abc"}');
+    assert.ok(!out.includes('sk-abc'), 'quoted JSON secret value should be masked');
+    assert.ok(out.includes('<redacted>'), 'quoted key form should contain redacted token');
+  });
+
+  await check('redactDeep masks secret-named key with plain value', async () => {
+    assert.strictEqual(redactDeep({ apiKey: 'sk-abc' }).apiKey, '<redacted>', 'secret-named key should be masked');
+    assert.strictEqual(redactDeep({ title: 'hello' }).title, 'hello', 'non-secret key should pass through');
+  });
+
   console.log('\n' + passed + ' passed, ' + failed + ' failed');
   if (failed > 0) process.exit(1);
 }

@@ -422,6 +422,112 @@ async function run() {
     assert.strictEqual(client._stats().abortCount, 1, 'child should be aborted');
   });
 
+  // Review M1: bg_delegate passes a SESSION id as parentID — it must resolve
+  // via childSessionID match for depth + children wiring.
+  await check('M1-review session-id parent resolves depth + children', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp' });
+    const parent = await bg.createDelegation({ prompt: 'parent' });
+    const parentState = bg._internals.readState(parent);
+    assert.ok(parentState.childSessionID, 'parent should have a child session');
+    const child = await bg.createDelegation({ prompt: 'child', parentID: parentState.childSessionID });
+    assert.strictEqual(bg._internals.readState(child).depth, 2, 'session-id parent should yield depth 2');
+    assert.ok(bg._internals.readState(parent).children.includes(child), 'parent.children should include the child');
+  });
+
+  // Review M1: an unresolvable parentID starts a depth-1 root (no phantom depth).
+  await check('M1-review unresolved parent starts depth-1 root', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp' });
+    const id = await bg.createDelegation({ prompt: 'orphan', parentID: 'sess_ghost' });
+    assert.strictEqual(bg._internals.readState(id).depth, 1, 'unresolved parent should yield depth 1');
+  });
+
+  // Review M2: stopping a completed delegation preserves it (no abort rewrite,
+  // no worktree removal, no bogus cancelled line).
+  await check('M2-review stop preserves completed state + worktree', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const worktreeRoot = tmpDir();
+    let removeCalls = 0;
+    const fakeWorktreeManager = {
+      setup: async (repoDir, id) => {
+        const wtPath = path.join(worktreeRoot, String(id).replace(/[^a-zA-Z0-9_-]/g, ''));
+        fs.mkdirSync(wtPath, { recursive: true });
+        return { path: wtPath, branch: 'bg-' + id, repoDir };
+      },
+      remove: async (worktree) => {
+        removeCalls += 1;
+        fs.rmSync(worktree.path, { recursive: true, force: true });
+      },
+    };
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp', repoDir: worktreeRoot, worktreeManager: fakeWorktreeManager });
+    const id = await bg.createDelegation({ prompt: 'x', mode: 'worktree' });
+    await bg.finalizeDelegation(id, 'done result');
+    const wtPath = bg._internals.readState(id).worktree.path;
+    await bg.stopDelegation(id);
+    const st = bg._internals.readState(id);
+    assert.strictEqual(st.state, 'completed', 'completed must survive stop (got ' + st.state + ')');
+    assert.strictEqual(removeCalls, 0, 'worktree must not be removed');
+    assert.ok(fs.existsSync(wtPath), 'worktree path must remain on disk');
+  });
+
+  // Review M2: a child that completes during the breach await keeps its outcome.
+  // (Flips running states on EVERY poll: the spawn-success token estimate also
+  // polls getActivity during creation, so a flip-once fake would fire too early
+  // and be overwritten by the in-flight creation.)
+  await check('M2-review enforce preserves completed race winner', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const spawner = {
+      getActivity: async () => {
+        for (const f of fs.readdirSync(store).filter((x) => x.endsWith('.json'))) {
+          const p = path.join(store, f);
+          const s = JSON.parse(fs.readFileSync(p, 'utf-8'));
+          if (s.state === 'running') {
+            s.state = 'completed';
+            s.summary = 'done ok';
+            fs.writeFileSync(p, JSON.stringify(s, null, 2));
+          }
+        }
+        return { state: 'running', tokens: { input: 60, output: 40 }, lastActivityAt: Date.now() };
+      },
+    };
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp', spawner });
+    const id = await bg.createDelegation({ prompt: 'x', capabilities: { maxTokens: 10 } });
+    await bg.reconcileOrphans();
+    const st = bg._internals.readState(id);
+    assert.strictEqual(st.state, 'completed', 'completed race winner must survive enforce (got ' + st.state + ')');
+    assert.strictEqual(st.summary, 'done ok', 'summary must not become capability_breach');
+  });
+
+  // Review M3: a truly queued delegation (registered, no child) hits admission timeout.
+  await check('M3-review queued registered hits admission timeout', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const spawner = { getActivity: async () => ({ state: 'running', tokens: { output: 0 }, lastActivityAt: Date.now() }) };
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp', spawner });
+    for (let i = 0; i < 4; i += 1) {
+      await bg.createDelegation({ prompt: 'filler-' + i });
+    }
+    const queued = await bg.createDelegation({ prompt: 'queued', admissionTimeoutMs: 100 });
+    const fresh = await bg.createDelegation({ prompt: 'fresh-queued' });
+    const queuedState = bg._internals.readState(queued);
+    assert.strictEqual(queuedState.state, 'registered', 'over-capacity delegation should queue as registered');
+    assert.strictEqual(queuedState.childSessionID, null, 'queued delegation should have no child');
+    await new Promise((r) => setTimeout(r, 200));
+    await bg.reconcileOrphans();
+    const q = bg._internals.readState(queued);
+    assert.strictEqual(q.state, 'error', 'expired queued delegation should be error');
+    assert.strictEqual(q.summary, 'admission_failed', 'summary should be admission_failed');
+    // The freed capacity may admit the fresh task (it starts) or leave it
+    // queued — either way it must stay alive, never fail spuriously.
+    const freshState = bg._internals.readState(fresh).state;
+    assert.ok(freshState === 'registered' || freshState === 'running', 'fresh queued delegation must stay alive (got ' + freshState + ')');
+  });
+
   // m1: one poisoned orphan must not abort the supervisor pass for the rest.
   await check('m1 reconcile survives one orphan start failure', async () => {
     const client = makeFakeClient();

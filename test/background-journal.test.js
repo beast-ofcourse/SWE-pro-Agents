@@ -52,6 +52,18 @@ async function run() {
     assert.deepStrictEqual(journal.replay('nope'), []);
   });
 
+  await check('replay skips a torn tail line after a crash', async () => {
+    const store = tmpDir();
+    const journal = createJournal({ storeDir: store });
+    journal.append('torn', 'registered', { n: 1 });
+    journal.append('torn', 'running', { n: 2 });
+    fs.appendFileSync(path.join(store, 'torn.journal.jsonl'), '{"t":123,"type":"runni');
+    const events = journal.replay('torn');
+    assert.strictEqual(events.length, 2);
+    assert.strictEqual(events[0].type, 'registered');
+    assert.strictEqual(events[1].type, 'running');
+  });
+
   await check('prune missing file no-ops', async () => {
     const journal = createJournal({ storeDir: tmpDir() });
     journal.prune('nope', 1000, true);

@@ -40,7 +40,7 @@ npm test
 - `npm test` runs the full zero-dependency suite: `test/installer.test.js` (14
   tests — the install/uninstall lifecycle: fresh install, idempotent reinstall,
   stale-file pruning, no-manifest safety, uninstall isolation, manifest-less
-  uninstall, and plugin-file handling), `test/validate.test.js` (19 tests — the
+  uninstall, and plugin-file handling), `test/validate.test.js` (23 tests — the
   pack validator's self-tests), `test/validate-plan.test.js` (12 tests — the plan
   validator), `test/loop-logic.test.js` (57 tests — the loop's pure logic),
   `test/ledger.test.js` (8 tests — the ledger store), `test/loop-gate.test.js`
@@ -50,14 +50,14 @@ npm test
   plugin's goal-gated idle nudge, including feature-flag gating),
   `test/pack-config.test.js` (14 tests — the `features.goal` config reader),
   `test/probe-spawn.test.js` (6 tests — the child-session spawn hard-gate probe),
-  `test/background-delegate.test.js` (32 tests — the delegation engine),
+  `test/background-delegate.test.js` (37 tests — the delegation engine),
   `test/background-plugin.test.js` (12 tests — the background plugin tools),
   `test/background-worktree.test.js` (9 tests — worktree isolation), and
   `test/background-integration.test.js` (5 tests — end-to-end plugin lifecycle),
-  `test/build-plugin.test.js` (3 tests — plugin codegen byte-identical rebuild),
-  `test/background-journal.test.js` (6 tests — append-only journal),
+  `test/build-plugin.test.js` (5 tests — plugin codegen byte-identical rebuild),
+  `test/background-journal.test.js` (7 tests — append-only journal),
   `test/background-spawner.test.js` (5 tests — spawner seam),
-  `test/background-results.test.js` (6 tests — result schemas + redaction),
+  `test/background-results.test.js` (8 tests — result schemas + redaction),
   `test/background-scheduler.test.js` (8 tests — concurrency + backpressure), and
   `test/background-dashboard.test.js` (8 tests — dashboard views + task logs).
 - `npm run validate` runs `scripts/validate.js`, the **strict** pack validator: it

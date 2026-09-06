@@ -211,8 +211,20 @@ function parsePermissionActions(frontmatterLines) {
       permIndent = -1;
       continue;
     }
-    const m = trimmed.match(/^(['"]?).+?\1\s*:\s*([A-Za-z]+)(\s+#.*)?\s*$/);
-    if (m) actions.push({ key: trimmed.slice(0, trimmed.lastIndexOf(':')).trim(), action: m[2] });
+    const m = trimmed.match(/^(['"]?).+?\1\s*:\s*(.+?)\s*$/);
+    if (!m) continue;
+    let action = m[2].trim();
+    if (action === '') continue;
+    if (
+      action.length >= 2 &&
+      ((action.startsWith('"') && action.endsWith('"')) ||
+        (action.startsWith("'") && action.endsWith("'")))
+    ) {
+      action = action.slice(1, -1).trim();
+    }
+    action = action.replace(/\s+#.*$/, '').trim();
+    if (action === '') continue;
+    actions.push({ key: trimmed.slice(0, trimmed.lastIndexOf(':')).trim(), action });
   }
   return actions;
 }

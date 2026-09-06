@@ -137,9 +137,12 @@ async function run() {
     assert.ok(st2.worktree && st2.worktree.path, 'worktree path recorded in state');
     assert.ok(fs.existsSync(st2.worktree.path), 'worktree persists after completion (parent merges manually)');
 
-    // bg_stop cancels and removes the worktree.
+    // Review M2: bg_stop on a TERMINAL delegation is a no-op — the completed
+    // outcome and its worktree (the operator's inspection copy) are preserved,
+    // not rewritten to cancelled / removed.
     await tools2.bg_stop.execute({ id: id2 });
-    assert.ok(!fs.existsSync(st2.worktree.path), 'worktree removed after bg_stop');
+    assert.ok(fs.existsSync(st2.worktree.path), 'worktree preserved after bg_stop on completed');
+    assert.strictEqual(JSON.parse(fs.readFileSync(stateFile, 'utf-8')).state, 'completed', 'completed outcome preserved after bg_stop');
   });
 
   await check('bg_delegate default mode stays readonly; capabilities/budget stored (depth/priority informational)', async () => {

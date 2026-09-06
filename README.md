@@ -101,6 +101,7 @@ Quality is **machine-checked, not claimed**. A zero-dependency validator (`npm r
 | Requirement | Version / notes |
 | ----------- | --------------- |
 | Node.js | ≥ 18 (stdlib only — zero dependencies) |
+| Git | ≥ 2.38 (the worktree tooling uses `git merge-tree --write-tree`) |
 | OpenCode | A recent release |
 | npm | Any current version |
 
@@ -349,7 +350,7 @@ The plugin ships a background-subagent engine: delegate coding work to child ses
 
 **No-auto-merge guarantee.** The engine never merges a worktree into the parent branch and never auto-retries a quarantined task — both need an explicit parent call (`git merge`, `bg_resume`).
 
-**Reliability.** Completion is detected by finish state, not output heuristics, so tool-only children still complete. Silent children are marked `interrupt` (reasons `stale`/`ttl`), never-admitted queue entries fail as `admission_failed`, vanished sessions as `session_gone`, over-budget children as `capability_breach`. Repeated failures quarantine after 2 retries; provider 429/5xx responses back off per model key; secrets (`api_key`, `token`, `secret`, … in `key=value` shapes — bare tokens like `sk-…`/`ghp_…` are not matched) are redacted from everything persisted to disk (store dir is `0700`).
+**Reliability.** Completion is detected by finish state, not output heuristics, so tool-only children still complete. Silent children are marked `interrupt` (reasons `stale`/`ttl`), never-admitted queue entries fail as `admission_failed`, vanished sessions as `session_gone`, over-budget children as `capability_breach`. Repeated failures quarantine after 2 retries; provider 429/5xx responses back off per model key; secrets (`api_key`, `token`, `secret`, … in `key=value` and `"key":"value"` shapes, plus secret-named object keys) are redacted from everything persisted to disk — bare tokens like `sk-…`/`ghp_…` with no key name are not matched (store dir is `0700`).
 
 **Tuning (env vars).** `SWE_PRO_BG_MAX_PARALLEL` (4), `SWE_PRO_BG_PER_KEY` (5), `SWE_PRO_BG_FAIR_SHARE` (0.75), `SWE_PRO_BG_TOKEN_BUDGET` (200000), `SWE_PRO_BG_BACKOFF_BASE`/`SWE_PRO_BG_BACKOFF_MAX` (5000/120000), `SWE_PRO_BG_CB_THRESHOLD` (5), `SWE_PRO_BG_MAX_DEPTH` (2), `SWE_PRO_BG_RETRY` (2), `SWE_PRO_BG_STALE_MS` (45 min), `SWE_PRO_BG_TTL_MS` (30 min), `SWE_PRO_BG_ADMIT_MS` (5 min), `SWE_PRO_BG_SESSION_WAIT_MS` (4000), `SWE_PRO_BG_SOFT_GRACE_MS` (3000), `SWE_PRO_BG_JOURNAL_PRUNE_DAYS` (7), `SWE_PRO_DELEGATIONS_DIR` (store location override). `SWE_PRO_BG_SUPERVISOR=0` disables the 5 s supervisor reconcile pass (`SWE_PRO_BG_SUPERVISOR_MS` sets the interval).
 

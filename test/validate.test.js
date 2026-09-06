@@ -256,6 +256,48 @@ permission:
   assert.deepStrictEqual(validateAgentFile(fixture(clean, 'commented-clean.md'), KNOWN_SUBAGENTS), []);
 });
 
+test('agent with a numeric permission action is flagged (A9)', () => {
+  const bad = `---
+description: A valid agent for testing.
+mode: subagent
+permission:
+  edit: 1
+  task: deny
+---
+# Numeric Action
+`;
+  const v = validateAgentFile(fixture(bad, 'numeric-action.md'), KNOWN_SUBAGENTS);
+  assert.ok(v.some((x) => x.rule === 'A9'), 'expected an A9 violation');
+});
+
+test('agent with a quoted invalid permission action is flagged (A9)', () => {
+  const bad = `---
+description: A valid agent for testing.
+mode: subagent
+permission:
+  edit: "sometimes"
+  task: deny
+---
+# Quoted Bad Action
+`;
+  const v = validateAgentFile(fixture(bad, 'quoted-bad-action.md'), KNOWN_SUBAGENTS);
+  assert.ok(v.some((x) => x.rule === 'A9'), 'expected an A9 violation');
+});
+
+test('agent with a quoted valid permission action passes (A9)', () => {
+  const good = `---
+description: A valid agent for testing.
+mode: subagent
+permission:
+  edit: "allow"
+  task: deny
+---
+# Quoted Good Action
+`;
+  const v = validateAgentFile(fixture(good, 'quoted-good-action.md'), KNOWN_SUBAGENTS);
+  assert.deepStrictEqual(v, []);
+});
+
 test('agent with granular allow-all permission passes (A9)', () => {
   const good = `---
 description: A valid agent for testing.

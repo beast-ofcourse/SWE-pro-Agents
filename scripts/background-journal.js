@@ -25,7 +25,14 @@ function createJournal({ storeDir }) {
     const lines = raw.split('\n');
     for (const line of lines) {
       if (!line) continue;
-      events.push(JSON.parse(line));
+      let event;
+      try {
+        event = JSON.parse(line);
+      } catch {
+        // Skip torn tail line after a crash — a partial write must not break recovery.
+        continue;
+      }
+      events.push(event);
     }
     return events;
   }

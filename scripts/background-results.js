@@ -3,7 +3,8 @@
 // ---------------------------------------------------------------------------
 // Deep module: background-results (typed result registry + secret redaction)
 // ---------------------------------------------------------------------------
-const SECRET_PATTERN = /(api[_-]?key|secret|token|password|authorization)\s*[:=]\s*['"]?[^\s'"]+/gi;
+const SECRET_PATTERN = /(api[_-]?key|secret|token|password|authorization)["']?\s*[:=]\s*['"]?[^\s'"]+/gi;
+const SECRET_KEY_PATTERN = /(api[_-]?key|secret|token|password|authorization)/i;
 const SUMMARY_MAX_LENGTH = 2000;
 const REDACTED_TOKEN = '<redacted>';
 
@@ -52,7 +53,7 @@ function redactDeep(value) {
       const out = {};
       for (const key of Object.keys(value)) {
         const prop = value[key];
-        if (typeof prop === 'string') out[key] = redact(prop);
+        if (typeof prop === 'string') out[key] = SECRET_KEY_PATTERN.test(key) ? REDACTED_TOKEN : redact(prop);
         else if (Array.isArray(prop)) out[key] = redactDeep(prop);
         else if (prop !== null && typeof prop === 'object' && !(prop instanceof Date) && !(prop instanceof RegExp)) out[key] = redactDeep(prop);
         else out[key] = prop;

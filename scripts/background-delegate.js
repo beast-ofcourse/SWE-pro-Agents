@@ -119,6 +119,35 @@ function createBackgroundDelegate(deps) {
     }
   }
 
+  // Parent resolution (review M1): opts.parentID may be a delegation id
+  // (direct API/tests) or a SESSION id (bg_delegate passes toolCtx.sessionID),
+  // while states are keyed by bg_uuid. Try a direct read first; otherwise scan
+  // states for a matching childSessionID. Unresolved → null (the child is then
+  // treated as a depth-1 root). Scan is guarded throughout — a missing or
+  // corrupt store never throws here.
+  function readParentState(parentID) {
+    if (!parentID) return null;
+    const direct = readState(parentID);
+    if (direct) return direct;
+    let files = [];
+    try {
+      ensureStore();
+      files = fs.readdirSync(storeDir).filter((f) => f.endsWith('.json'));
+    } catch {
+      return null;
+    }
+    for (const f of files) {
+      let st = null;
+      try {
+        st = JSON.parse(fs.readFileSync(path.join(storeDir, f), 'utf-8'));
+      } catch {
+        continue;
+      }
+      if (st && st.childSessionID === parentID) return st;
+    }
+    return null;
+  }
+
   function writeState(state) {
     state.updatedAt = Date.now();
     // T-013: redact secrets at the persist boundary. Only the free-text
@@ -313,7 +342,11 @@ function createBackgroundDelegate(deps) {
 
   async function createDelegation(opts = {}) {
     ensureStore();
-    const parentDepth = opts.parentID ? (readState(opts.parentID)?.depth || 1) : 0;
+    // Depth via resolved parent (delegation id or session id); an unresolved
+    // parentID means an unknown parent — the child starts as a depth-1 root
+    // rather than inheriting a phantom depth.
+    const resolvedParent = opts.parentID ? readParentState(opts.parentID) : null;
+    const parentDepth = resolvedParent ? (resolvedParent.depth || 1) : 0;
     if (parentDepth + 1 > maxDepth) throw new Error('maxDepth exceeded');
     const delegationDepth = opts.parentID ? parentDepth + 1 : 1;
     const id = 'bg_' + crypto.randomUUID();
@@ -365,15 +398,15 @@ function createBackgroundDelegate(deps) {
       quarantined: false,
     };
     transition(state, 'registered', { title: state.title, agent: state.agent, parentID: state.parentID });
-    if (opts.parentID) {
-      const parentState = readState(opts.parentID);
-      if (parentState) {
-        if (!Array.isArray(parentState.children)) parentState.children = [];
-        parentState.children.push(id);
-        // Parent bookkeeping only — not a lifecycle transition of the parent,
-        // so no journal line here.
-        writeState(parentState);
-      }
+    // Children wiring uses the SAME resolved parent as the depth computation
+    // above (session ids resolve via childSessionID match) so cascade cancel
+    // works for bg_delegate-created trees, not just direct-API ones.
+    if (resolvedParent) {
+      if (!Array.isArray(resolvedParent.children)) resolvedParent.children = [];
+      if (!resolvedParent.children.includes(id)) resolvedParent.children.push(id);
+      // Parent bookkeeping only — not a lifecycle transition of the parent,
+      // so no journal line here.
+      writeState(resolvedParent);
     }
 
     try {
@@ -491,6 +524,12 @@ function createBackgroundDelegate(deps) {
     const reason = opts && opts.reason != null ? opts.reason : null;
     const state = readState(id);
     if (!state) throw new Error('stopDelegation: unknown id ' + id);
+    // Review M2: terminal states are returned untouched — stopping a completed
+    // delegation must not abort (child gone), must not remove its worktree
+    // (operator's inspection copy), and must not rewrite its outcome.
+    if (state.state === 'completed' || state.state === 'error' || state.state === 'cancelled' || state.state === 'interrupt') {
+      return state;
+    }
     if (signal === 'soft' && state.childSessionID && client.session && typeof client.session.prompt === 'function') {
       try {
         await client.session.prompt({
@@ -549,7 +588,7 @@ function createBackgroundDelegate(deps) {
   }
 
   // Layered terminal detection (T-010): admission timeout for never-admitted
-  // scheduled tasks, heartbeat-stale interrupt, session-gone error, and whole-
+  // scheduled AND queued-registered tasks, heartbeat-stale interrupt, session-gone error, and whole-
   // delegation ttl interrupt. A null lastActivityAt (spawner found no real
   // timestamp field) disables ONLY the stale leg — ttl still applies — so we
   // never false-interrupt a live child. Refreshes heartbeatAt from the live
@@ -559,7 +598,7 @@ function createBackgroundDelegate(deps) {
   async function evaluateTerminal(id) {
     const state = readState(id);
     if (!state) return null;
-    if (state.state !== 'scheduled' && state.state !== 'running') return null;
+    if (state.state !== 'scheduled' && state.state !== 'registered' && state.state !== 'running') return null;
     const now = Date.now();
     const staleTimeoutMs = typeof state.staleTimeoutMs === 'number'
       ? state.staleTimeoutMs
@@ -570,7 +609,12 @@ function createBackgroundDelegate(deps) {
     const admissionTimeoutMs = typeof state.admissionTimeoutMs === 'number'
       ? state.admissionTimeoutMs
       : (parseInt(env.SWE_PRO_BG_ADMIT_MS, 10) || 300000);
-    if (state.state === 'scheduled' && now - state.createdAt > admissionTimeoutMs) {
+    // Review M3: queued delegations stay `registered` (no `scheduled` write
+    // exists) with no child yet — they must reach this leg or admission
+    // timeouts never fire. The !childSessionID qualifier keeps admitted
+    // delegations on the heartbeat/ttl legs below.
+    if ((state.state === 'scheduled' || (state.state === 'registered' && !state.childSessionID))
+      && now - state.createdAt > admissionTimeoutMs) {
       state.state = 'error';
       state.summary = 'admission_failed';
       transition(state, 'error', { summary: state.summary, childSessionID: state.childSessionID });
@@ -857,6 +901,10 @@ function createBackgroundDelegate(deps) {
     await stopDelegation(id, { signal: 'hard', reason: 'capability_breach' });
     const breached = readState(id);
     if (!breached) return null;
+    // Review M2: the child may have completed during the activity awaits above
+    // (stopDelegation then returns it untouched) — only a freshly-cancelled
+    // delegation becomes error: capability_breach. Never overwrite terminal.
+    if (breached.state !== 'cancelled') return breached;
     breached.state = 'error';
     // Summary already 'capability_breach' via the reason param — keep it.
     transition(breached, 'error', { summary: breached.summary, childSessionID: breached.childSessionID });
