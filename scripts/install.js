@@ -29,6 +29,17 @@
  * If no manifest exists (first install, or an upgrade from a pre-manifest
  * version), nothing is pruned — the installer never guesses ownership.
  *
+ * COMPONENT SELECTION: users pick exactly which agents, skills, and systems
+ * (background tools, goal system) to install. Sources in precedence order:
+ * SWE_PRO_AGENTS_SELECT env (JSON, from `swe-pro-agents setup`), the previous
+ * manifest (reinstalls preserve the pick; brand-new pack files auto-install,
+ * deselected ones stay out and get pruned), an interactive picker (first
+ * install on a TTY only — "Customize? [y/N]", default no), else everything
+ * with the goal on (all non-interactive/CI runs). A deselected goal system
+ * writes { features: { goal: false } } to the global config beside the
+ * manifest; an explicit project-level flag always wins over it. Reselect
+ * anytime with `swe-pro-agents setup --select`.
+ *
  * User still needs to add the agent path to their opencode.json, and merge in
  * (or point OpenCode at) the shipped AGENTS.md once. `swe-pro-agents setup`
  * prints the config snippet; `swe-pro-agents setup --apply` writes it.
@@ -63,6 +74,14 @@ const PACK_AGENTS_MD_DEST = path.join(MANIFEST_DIR, 'AGENTS.md');
 const LEGACY_AGENTS_MD = path.join(AGENTS_DIR, 'AGENTS.md');
 
 const pkg = require(path.join(__dirname, '..', 'package.json'));
+const packConfig = require('./pack-config.js');
+const installSelect = require('./install-select.js');
+
+// Selection from `swe-pro-agents setup` (JSON) — when present the install is
+// non-interactive and applies exactly this pick. Shape:
+// {"agents":[...]|"all"|"none", "skills":..., "background":bool, "goal":bool}
+// Keys may be omitted (setup fills them); unknown names fail loudly.
+const SELECT_ENV = 'SWE_PRO_AGENTS_SELECT';
 
 function pkgDir() {
   return path.resolve(__dirname, '..');
@@ -133,7 +152,7 @@ function readManifest() {
   return null;
 }
 
-function writeManifest(agents, skills, plugins) {
+function writeManifest(agents, skills, plugins, extra) {
   fs.mkdirSync(MANIFEST_DIR, { recursive: true });
   const manifest = {
     packageVersion: pkg.version,
@@ -147,6 +166,13 @@ function writeManifest(agents, skills, plugins) {
     agents,
     skills,
     plugins,
+    // Pack universe + system picks at install time. Lets later runs tell
+    // brand-new pack files (auto-installed — never deselected) apart from
+    // user-deselected ones (stay out until reselected). Older manifests lack
+    // these keys; readers must tolerate their absence.
+    packAgents: extra && Array.isArray(extra.packAgents) ? extra.packAgents : undefined,
+    packSkills: extra && Array.isArray(extra.packSkills) ? extra.packSkills : undefined,
+    systems: extra && extra.systems ? extra.systems : undefined,
   };
   fs.writeFileSync(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + '\n');
 }
@@ -179,19 +205,33 @@ function prune(previousNames, currentNames, baseDir, kind, prefix) {
   return removed;
 }
 
-function copySkills() {
+function copySkills(names) {
   const src = path.join(pkgDir(), 'skills');
   if (!fs.existsSync(src)) return 0;
-
-  // Each subdirectory under skills/ is a skill (has a SKILL.md)
-  const skills = fs.readdirSync(src, { withFileTypes: true })
-    .filter(e => e.isDirectory());
-
   let count = 0;
-  for (const skill of skills) {
-    const skillSrc = path.join(src, skill.name);
-    const skillDest = path.join(SKILLS_DIR, skill.name);
-    count += copyRecursive(skillSrc, skillDest);
+  for (const name of names) {
+    if (!name || name === '.' || name === '..') continue;
+    if (name.includes('/') || name.includes('\\')) continue;
+    const skillSrc = path.join(src, name);
+    if (!fs.existsSync(path.join(skillSrc, 'SKILL.md'))) continue;
+    count += copyRecursive(skillSrc, path.join(SKILLS_DIR, name));
+  }
+  return count;
+}
+
+/** Copies exactly the given agent files (basenames, .md) into AGENTS_DIR. */
+function copyAgents(files) {
+  const src = path.join(pkgDir(), 'agents');
+  let count = 0;
+  for (const file of files) {
+    if (!file || file === '.' || file === '..') continue;
+    if (file.includes('/') || file.includes('\\')) continue;
+    if (!file.endsWith('.md') || file === 'AGENTS.md') continue;
+    const srcPath = path.join(src, file);
+    if (!fs.existsSync(srcPath)) continue;
+    fs.mkdirSync(AGENTS_DIR, { recursive: true });
+    fs.copyFileSync(srcPath, path.join(AGENTS_DIR, file));
+    count++;
   }
   return count;
 }
@@ -232,7 +272,104 @@ function installAgentsMd() {
   return { copied: true, globalExists, legacyRemoved };
 }
 
-function main() {
+/**
+ * Determine exactly what to install.
+ *
+ * Sources, in precedence order:
+ *   1. SWE_PRO_AGENTS_SELECT env (JSON from `swe-pro-agents setup`) — keys it
+ *      names win; keys it omits fall through to (2)/(3).
+ *   2. Previous manifest — reinstalls preserve the user's pick: installed
+ *      names intersected with the current pack, PLUS pack files added since
+ *      that install (tracked via manifest.packAgents/packSkills — never
+ *      deselected, so auto-included). Manifests predating universe tracking
+ *      cannot distinguish new from deselected: those stay out until reselected.
+ *   3. Interactive prompt — first install on a TTY only
+ *      ("Customize the install? [y/N]", default no).
+ *   4. Defaults — everything, goal on (historic behavior; all non-interactive
+ *      and CI runs land here).
+ *
+ * Manual edits to the global goal file are sticky: when no explicit goal
+ * value is given, the current on-disk global value wins over the manifest.
+ */
+function determineSelection(packAgents, packSkills, previous) {
+  const envRaw = process.env[SELECT_ENV];
+  let explicit = {};
+  if (envRaw) {
+    try {
+      const parsed = JSON.parse(envRaw);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+        throw new Error('must be a JSON object');
+      }
+      explicit = parsed;
+    } catch (err) {
+      console.error(`[${PACKAGE_NAME}] ERROR: ${SELECT_ENV} is not valid JSON: ${err.message}`);
+      process.exit(1);
+    }
+  }
+  let resolved = { agents: null, skills: null, background: null, goal: null };
+  try {
+    resolved = installSelect.resolveSelection(explicit, { agents: packAgents, skills: packSkills });
+  } catch (err) {
+    console.error(`[${PACKAGE_NAME}] ERROR: bad selection: ${err.message}`);
+    process.exit(1);
+  }
+
+  const intersect = (names, pack) => (names || []).filter((n) => pack.includes(n));
+  const addedSince = (pack, universe) => {
+    if (!Array.isArray(universe)) return [];
+    return pack.filter((n) => !universe.includes(n));
+  };
+
+  let agents;
+  let skills;
+  let addedAgents = [];
+  let addedSkills = [];
+  if (resolved.agents !== null) {
+    agents = resolved.agents;
+  } else if (previous) {
+    agents = [...new Set([...intersect(previous.agents, packAgents), ...addedSince(packAgents, previous.packAgents)])];
+  } else {
+    agents = [...packAgents];
+  }
+  if (resolved.skills !== null) {
+    skills = resolved.skills;
+  } else if (previous) {
+    skills = [...new Set([...intersect(previous.skills, packSkills), ...addedSince(packSkills, previous.packSkills)])];
+  } else {
+    skills = [...packSkills];
+  }
+  if (previous && previous.packAgents) {
+    addedAgents = addedSince(packAgents, previous.packAgents);
+  }
+  if (previous && previous.packSkills) {
+    addedSkills = addedSince(packSkills, previous.packSkills);
+  }
+
+  let background;
+  let goal;
+  if (resolved.background !== null) {
+    background = resolved.background;
+  } else if (previous && previous.systems && typeof previous.systems.background === 'boolean') {
+    background = previous.systems.background;
+  } else {
+    background = true;
+  }
+  if (resolved.goal !== null) {
+    goal = resolved.goal;
+  } else {
+    const onDisk = packConfig.readGoalValue(packConfig.globalConfigPath());
+    if (onDisk !== undefined) {
+      goal = onDisk;
+    } else if (previous && previous.systems && typeof previous.systems.goal === 'boolean') {
+      goal = previous.systems.goal;
+    } else {
+      goal = true;
+    }
+  }
+  return { agents, skills, background, goal, addedAgents, addedSkills };
+}
+
+async function main() {
   const agentSrc = path.join(pkgDir(), 'agents');
 
   if (!fs.existsSync(agentSrc)) {
@@ -242,38 +379,85 @@ function main() {
 
   try {
     const previous = readManifest();
-    const newAgents = listPackAgents();
-    const newSkills = listPackSkills();
-    const newPlugins = listPackPlugins();
+    const packAgents = listPackAgents();
+    const packSkills = listPackSkills();
+    const packPlugins = listPackPlugins();
+
+    let sel = determineSelection(packAgents, packSkills, previous);
+
+    // First install on an interactive terminal: offer the component picker.
+    // Default (empty answer) installs everything — historic behavior.
+    // Upgrades never prompt: the preserved pick applies silently.
+    if (!previous && !process.env[SELECT_ENV] && installSelect.shouldPrompt()) {
+      const customize = await installSelect.promptYesNo(
+        `[${PACKAGE_NAME}] Customize the install (choose agents/skills/systems)?`,
+        false
+      );
+      if (customize) {
+        const picked = await installSelect.promptSelection();
+        sel = {
+          agents: picked.agents,
+          skills: picked.skills,
+          background: picked.background,
+          goal: picked.goal,
+          addedAgents: [],
+          addedSkills: [],
+        };
+      }
+    }
+
+    const selPlugins = sel.background || sel.goal ? [...packPlugins] : [];
 
     if (previous) {
-      prune(previous.agents, newAgents, AGENTS_DIR, 'agent');
-      prune(previous.skills, newSkills, SKILLS_DIR, 'skill');
-      prune(previous.plugins, newPlugins, PLUGIN_DIR, 'plugin', 'swe-pro-agents');
+      // Prune against the SELECTED sets (not the full pack): deselected
+      // components leave the machine on reinstall.
+      prune(previous.agents, sel.agents, AGENTS_DIR, 'agent');
+      prune(previous.skills, sel.skills, SKILLS_DIR, 'skill');
+      prune(previous.plugins, selPlugins, PLUGIN_DIR, 'plugin', 'swe-pro-agents');
     } else {
       console.log(`[${PACKAGE_NAME}] No manifest found — first install or upgrade`);
       console.log(`  from a pre-manifest version; nothing pruned.`);
     }
 
-    // Copy agents
-    const agentCount = copyRecursive(agentSrc, AGENTS_DIR);
+    // Copy agents (selected files only)
+    const agentCount = copyAgents(sel.agents);
     console.log(`[${PACKAGE_NAME}] Installed ${agentCount} agent files to:`);
     console.log(`  ${AGENTS_DIR}`);
     console.log();
 
-    // Copy skills
-    const skillCount = copySkills();
+    // Copy skills (selected directories only)
+    const skillCount = copySkills(sel.skills);
     if (skillCount > 0) {
       console.log(`[${PACKAGE_NAME}] Installed ${skillCount} skill files to:`);
       console.log(`  ${SKILLS_DIR}`);
       console.log();
+    } else {
+      console.log(`[${PACKAGE_NAME}] No skills selected — skipping.`);
+      console.log();
     }
 
-    // Copy plugins
-    const pluginCount = copyPlugins();
+    // Copy plugins (only when background tools or goal system is selected)
+    let pluginCount = 0;
+    if (selPlugins.length > 0) {
+      pluginCount = copyPlugins();
+    }
     if (pluginCount > 0) {
       console.log(`[${PACKAGE_NAME}] Installed ${pluginCount} plugin files to:`);
       console.log(`  ${PLUGIN_DIR}`);
+      console.log();
+    } else {
+      console.log(`[${PACKAGE_NAME}] Plugin not installed (background tools and goal system deselected).`);
+      console.log();
+    }
+
+    // Global goal flag: records an explicit pick; a manual on-disk edit is
+    // sticky (determineSelection reads it back). Skipped when the outcome is
+    // the default with no file yet — keeps fresh machines clean.
+    const globalPath = packConfig.globalConfigPath();
+    const globalExists = globalPath && fs.existsSync(globalPath);
+    if (!sel.goal || globalExists) {
+      packConfig.writeGlobalConfig({ goal: sel.goal });
+      console.log(`[${PACKAGE_NAME}] Goal system (/goal + idle nudges): ${sel.goal ? 'enabled' : 'disabled'} (global).`);
       console.log();
     }
 
@@ -308,16 +492,30 @@ function main() {
       console.log();
     }
 
-    // Record exactly what we installed, so update can prune and uninstall can clean up
-    writeManifest(newAgents, newSkills, newPlugins);
+    // Record exactly what we installed, so update can prune and uninstall can clean up.
+    // The manifest also stores the pack universe + system picks so later runs
+    // preserve deselections while auto-including brand-new pack files.
+    writeManifest(sel.agents, sel.skills, selPlugins, {
+      packAgents,
+      packSkills,
+      systems: { background: sel.background, goal: sel.goal },
+    });
     console.log(`[${PACKAGE_NAME}] Manifest updated: ${MANIFEST_PATH}`);
     console.log();
+
+    const newItems = [...sel.addedAgents, ...sel.addedSkills];
+    if (previous && newItems.length > 0) {
+      console.log(`  New in this pack version (installed — never deselected):`);
+      for (const name of newItems) console.log(`    + ${name}`);
+      console.log();
+    }
 
     // Next steps
     console.log(`  Next step: add the agent path to your opencode.json:`);
     console.log(`  { "agents": [{ "path": "${AGENTS_DIR.replace(/\\/g, '\\\\')}" }] }`);
     console.log();
     console.log(`  Or run:  swe-pro-agents setup --apply`);
+    console.log(`  Reselect components anytime:  swe-pro-agents setup --select`);
     console.log();
     console.log(`  Skills are auto-discovered — no config needed.`);
     console.log();
@@ -327,4 +525,7 @@ function main() {
   }
 }
 
-main();
+main().catch((err) => {
+  console.error(`[${PACKAGE_NAME}] Install failed:`, err && err.message ? err.message : err);
+  process.exit(1);
+});

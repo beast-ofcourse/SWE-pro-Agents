@@ -59,6 +59,7 @@ jobs:
           node --check test/background-results.test.js
           node --check test/background-scheduler.test.js
           node --check test/background-dashboard.test.js
+          node --check test/install-select.test.js
       - name: Plugin freshness (codegen in sync)
         run: node scripts/build-plugin.js --check
       - name: Plugin codegen tests
@@ -105,3 +106,5 @@ jobs:
         run: node test/background-scheduler.test.js
       - name: Background dashboard tests
         run: node test/background-dashboard.test.js
+      - name: Install selection tests
+        run: node test/install-select.test.js

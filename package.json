@@ -1,7 +1,7 @@
 {
   "name": "swe-pro-agents",
-  "version": "3.0.0",
-  "description": "25 OpenCode agent profiles (22 subagents + 3 primary) + 13 skills (caveman, skill-creator, teach-me, documentation, svg-hero-generator, humanizer-pro, flowchart-html, high-quality-flowcharts, next-best-thing, opencode-skill-creator, mcp-builder, sketch, youtube-to-skill) — SWE roles, deep research, and architecture agents",
+  "version": "3.0.1",
+  "description": "25 OpenCode agent profiles (22 subagents + 3 primary) + 14 skills (caveman, skill-creator, teach-me, documentation, svg-hero-generator, humanizer-pro, flowchart-html, high-quality-flowcharts, next-best-thing, nextreme-optimization, opencode-skill-creator, mcp-builder, sketch, youtube-to-skill) — SWE roles, deep research, and architecture agents",
   "keywords": [
     "opencode",
     "agents",
@@ -42,7 +42,7 @@
   "scripts": {
     "postinstall": "node scripts/install.js",
     "preuninstall": "node scripts/uninstall.js",
-    "test": "node test/installer.test.js && node test/validate.test.js && node test/validate-plan.test.js && node test/loop-logic.test.js && node test/ledger.test.js && node test/loop-gate.test.js && node test/run-loop.test.js && node test/bin.test.js && node test/continuation.test.js && node test/pack-config.test.js && node test/probe-spawn.test.js && node test/background-delegate.test.js && node test/background-plugin.test.js && node test/background-worktree.test.js && node test/background-integration.test.js && node test/build-plugin.test.js && node test/background-journal.test.js && node test/background-spawner.test.js && node test/background-results.test.js && node test/background-scheduler.test.js && node test/background-dashboard.test.js",
+    "test": "node test/installer.test.js && node test/validate.test.js && node test/validate-plan.test.js && node test/loop-logic.test.js && node test/ledger.test.js && node test/loop-gate.test.js && node test/run-loop.test.js && node test/bin.test.js && node test/continuation.test.js && node test/pack-config.test.js && node test/probe-spawn.test.js && node test/background-delegate.test.js && node test/background-plugin.test.js && node test/background-worktree.test.js && node test/background-integration.test.js && node test/build-plugin.test.js && node test/background-journal.test.js && node test/background-spawner.test.js && node test/background-results.test.js && node test/background-scheduler.test.js && node test/background-dashboard.test.js && node test/install-select.test.js",
     "validate": "node scripts/validate.js",
     "validate:plan": "node scripts/validate-plan.js"
   },

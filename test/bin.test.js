@@ -203,5 +203,40 @@ test('setup --apply --no-goal preserves other config keys', () => {
   assert.strictEqual(cfg.otherKey, 'keep-me');
 });
 
+// ---------------------------------------------------------------------------
+// setup — component selection
+// ---------------------------------------------------------------------------
+
+test('setup --global-no-goal writes the global flag without reinstalling', () => {
+  const dir = tempDir('bin-select-');
+  const r = runSetup(['--global-no-goal'], dir);
+  assert.strictEqual(r.status, 0, `expected exit 0, got ${r.status}: ${r.stderr}`);
+  const cfg = JSON.parse(
+    fs.readFileSync(path.join(dir, '.config', 'swe-pro-agents', GOAL_CONFIG), 'utf8')
+  );
+  assert.strictEqual(cfg.features.goal, false);
+  assert.ok(
+    !fs.existsSync(path.join(dir, '.config', 'opencode', 'agents')),
+    'no reinstall should happen for a flag-only invocation'
+  );
+});
+
+test('setup --agents/--skills reinstalls exactly the named components', () => {
+  const dir = tempDir('bin-select-');
+  const r = runSetup(['--agents', 'swe-mini.md', '--skills', 'caveman'], dir);
+  assert.strictEqual(r.status, 0, `expected exit 0, got ${r.status}: ${r.stderr}`);
+  const agentFiles = fs.readdirSync(path.join(dir, '.config', 'opencode', 'agents', 'swe-pro-agents')).sort();
+  assert.deepStrictEqual(agentFiles, ['swe-mini.md']);
+  const skillDirs = fs.readdirSync(path.join(dir, '.config', 'opencode', 'skills')).sort();
+  assert.deepStrictEqual(skillDirs, ['caveman']);
+});
+
+test('setup --select without a TTY exits 2 with guidance', () => {
+  const dir = tempDir('bin-select-');
+  const r = runSetup(['--select'], dir);
+  assert.strictEqual(r.status, 2, `expected exit 2, got ${r.status}: ${r.stderr}`);
+  assert.ok(r.stderr.includes('--select needs an interactive terminal'), 'guidance on stderr');
+});
+
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed > 0 ? 1 : 0);

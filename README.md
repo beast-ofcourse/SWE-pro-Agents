@@ -15,7 +15,7 @@
 [![license](https://img.shields.io/github/license/beast-ofcourse/SWE-pro-Agents?style=flat-square)](LICENSE)
 [![skills.sh](https://skills.sh/b/beast-ofcourse/SWE-pro-Agents)](https://skills.sh/beast-ofcourse/SWE-pro-Agents)
 
-**25 OpenCode agent profiles (22 subagents + 3 primary) + 13 skills — a full engineering team in your terminal.**
+**25 OpenCode agent profiles (22 subagents + 3 primary) + 14 skills — a full engineering team in your terminal.**
 
 </div>
 
@@ -77,7 +77,7 @@ Short highlights of what's changed recently. Full detail lives in [CHANGELOG.md]
 Most AI coding assistants start blank — no domain expertise, no engineering discipline. SWE Pro Agents fixes that: each agent is a **loaded expert** with a curated system prompt, tool permissions, and behavioral rules baked in. You don't ask a model to "review this PR"; you invoke `swe-reviewer`, which already knows how to assess blast radius and enforce your standards.
 
 - **25 agent profiles** — 22 subagents + 3 primary (`swe-pro`, `architect`, `pr-reviewer`), each with a focused role and scoped tool permissions.
-- **13 on-demand skills** — token compression, skill authoring, tutoring, README/SVG/flowchart generation, an anti-AI-slop editor, OpenCode skill creation, MCP server building, video-to-skill conversion, and rapid UI prototyping.
+- **14 on-demand skills** — token compression, skill authoring, tutoring, README/SVG/flowchart generation, an anti-AI-slop editor, OpenCode skill creation, MCP server building, video-to-skill conversion, and rapid UI prototyping.
 - **Manifest-based installer & safe uninstaller** — records what it installs, prunes stale files on update, removes only what it owns.
 - **Status/setup CLI** — checks install state, writes the config with a backup, checks for updates (offline-safe).
 - **Zero runtime dependencies** — Node ≥ 18, plain stdlib.
@@ -113,7 +113,7 @@ Windows is supported end to end.
 npm install -g swe-pro-agents
 ```
 
-The postinstall hook copies agents to `~/.config/opencode/agents/swe-pro-agents/`, all 13 skills to `~/.config/opencode/skills/`, and this pack's `AGENTS.md` to the pack's own config dir (`~/.config/swe-pro-agents/` — deliberately *not* the agents dir, where OpenCode would load it as a phantom agent). That last file matters: every agent is intentionally short because it assumes the Engineering Operating System is loaded. If you have no global `~/.config/opencode/AGENTS.md`, copy the installed one into place:
+The postinstall hook copies agents to `~/.config/opencode/agents/swe-pro-agents/`, all 14 skills to `~/.config/opencode/skills/`, and this pack's `AGENTS.md` to the pack's own config dir (`~/.config/swe-pro-agents/` — deliberately *not* the agents dir, where OpenCode would load it as a phantom agent). That last file matters: every agent is intentionally short because it assumes the Engineering Operating System is loaded. If you have no global `~/.config/opencode/AGENTS.md`, copy the installed one into place:
 
 ```bash
 cp ~/.config/swe-pro-agents/AGENTS.md ~/.config/opencode/AGENTS.md
@@ -137,12 +137,38 @@ swe-pro-agents setup --apply
 
 **That's it.** Restart OpenCode and your agent team is ready.
 
+### Choose what gets installed
+
+On a first install in an interactive terminal, the installer asks whether
+to customize — pick exactly which agents, skills, and systems land on your
+machine (numbered lists; `all`, `none`, ranges like `1,3,5-8`, `-N` to
+exclude). Declining (or any non-interactive/CI install) installs everything,
+as before. The two systems are independent checkboxes:
+
+- **Background subagent tools** (`bg_delegate`, `bg_read`, …) — the plugin file.
+- **Goal system** (`/goal` command + idle nudges) — off writes a global
+  `{ "features": { "goal": false } }` beside the install manifest; an
+  explicit project-level flag still wins per project. Nothing is forced.
+
+Reselect anytime without reinstalling the package:
+
+```bash
+swe-pro-agents setup --select          # interactive picker, reinstalls the pick
+swe-pro-agents setup --all             # reset to the full pack
+swe-pro-agents setup --agents swe-mini,swe-frontend --skills caveman
+swe-pro-agents setup --global-no-goal  # goal off everywhere (project flags still win)
+```
+
+Deselected components are pruned on reinstall; brand-new pack files added by
+an update install automatically (deselections persist). Non-interactive runs
+never prompt — set `SWE_PRO_AGENTS_NO_PROMPT=1` to silence even TTY installs.
+
 ### Install skills only (skills.sh)
 
 Want just the skills, without the OpenCode agent profiles? Install them into any AI coding agent with the [skills.sh](https://skills.sh) CLI — it discovers every `SKILL.md` in `skills/` and installs them without touching your config:
 
 ```bash
-# All 13 skills, into the agents the CLI detects on your machine
+# All 14 skills, into the agents the CLI detects on your machine
 npx skills add beast-ofcourse/SWE-pro-Agents
 
 # Just the skills you want, into specific agents
@@ -233,14 +259,14 @@ Three of the 25 profiles are **primary** agents (selectable as your main agent):
 
 ## Skills
 
-The pack ships **13 skills**, each a self-contained `SKILL.md` that follows the open [Agent Skills specification](https://agentskills.io) (`name` + `description` frontmatter, no agent-specific coupling) — so any compliant coding agent can load them.
+The pack ships **14 skills**, each a self-contained `SKILL.md` that follows the open [Agent Skills specification](https://agentskills.io) (`name` + `description` frontmatter, no agent-specific coupling) — so any compliant coding agent can load them.
 
 ### Install skills with skills.sh (any agent)
 
 Every skill is auto-discovered in `skills/` and published to the [skills.sh](https://skills.sh) directory, so you can install them into 90+ agents with one command — no manual path copying, no registry account:
 
 ```bash
-# All 13 skills, into the agents the CLI detects on your machine
+# All 14 skills, into the agents the CLI detects on your machine
 npx skills add beast-ofcourse/SWE-pro-Agents
 
 # Just the skills you want, into specific agents
@@ -249,7 +275,7 @@ npx skills add beast-ofcourse/SWE-pro-Agents --skill caveman --skill next-best-t
 
 Use one without installing: `npx skills use beast-ofcourse/SWE-pro-Agents --skill caveman --agent claude-code`. Run `npx skills add beast-ofcourse/SWE-pro-Agents --list` to see every skill. The [skills.sh badge](https://skills.sh/beast-ofcourse/SWE-pro-Agents) above tracks live install counts.
 
-`opencode-skill-creator` is OpenCode-specific (it drives OpenCode's skill tooling / `opencode.json`); the other 12 skills — including `youtube-to-skill` — are agent-agnostic and work the same in Claude Code, Cursor, Codex, Windsurf, and more.
+`opencode-skill-creator` is OpenCode-specific (it drives OpenCode's skill tooling / `opencode.json`); the other 13 skills — including `youtube-to-skill` — are agent-agnostic and work the same in Claude Code, Cursor, Codex, Windsurf, and more.
 
 ### Install skills the OpenCode way (manual)
 
@@ -266,6 +292,7 @@ When this pack is installed via its npm CLI, skills auto-install to `~/.config/o
 | `flowchart-html` | Professional flowcharts as a single self-contained HTML file on a large SVG canvas |
 | `high-quality-flowcharts` | Publication-grade PDF flowcharts/roadmaps — HTML+SVG source, PDF export, verification preview |
 | `next-best-thing` | Find the smallest highest-impact next change in a repo, then ship it. Opt-in loop: `/next-best-thing loop N` repeats it N times, one best move per pass |
+| `nextreme-optimization` | Extreme performance directive — hard correctness floor, impact-ordered tiers, measure-first verification, attempt ledger |
 | `opencode-skill-creator` | Create, test, evaluate, and optimize OpenCode skills — evals, benchmarks, description tuning |
 | `mcp-builder` | Build high-quality MCP servers — tool design, TypeScript/Python SDKs, testing, evals |
 | `sketch` | Rapid throwaway HTML prototyping — 2-3 interactive variants to compare design directions |
@@ -364,7 +391,7 @@ The preuninstall hook removes everything this pack installed: the agent files, t
 Plain Node.js (≥ 18), zero dependencies, no build step — the tests are the entry point:
 
 ```bash
-npm test          # 21 suites, 270 tests — installer, validators, loop engine, CLI, plugins, background subagents, codegen
+npm test          # 22 suites, 310 tests — installer, validators, loop engine, CLI, plugins, background subagents, codegen, install selection
 npm run validate  # strict pack validation (exits 1 on any violation)
 ```
 
@@ -373,7 +400,7 @@ The tests simulate install/update/uninstall against a **throwaway `HOME`/`USERPR
 ```text
 SWE-pro-Agents/
 ├── agents/       25 agent profiles (3 primary, 22 subagents)
-├── skills/       13 skills
+├── skills/       14 skills
 ├── scripts/      install.js (postinstall), uninstall.js (preuninstall), validate.js (pack validator)
 ├── bin/          swe-pro-agents CLI
 ├── test/         installer lifecycle tests + validator self-tests

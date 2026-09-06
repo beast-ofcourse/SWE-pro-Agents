@@ -14,6 +14,10 @@
  *                                      feature flag in swe-pro-agents.config.json
  *                                      (default on; --goal/--no-goal or a [Y/n]
  *                                      prompt when run interactively)
+ *   swe-pro-agents setup --select | --all | [--agents <csv>] [--skills <csv>]
+ *                              [--global-goal|--global-no-goal]
+ *                                    — Component picker: reinstall exactly the
+ *                                      chosen agents/skills/systems (see USAGE)
  *   swe-pro-agents status            — Show installation status + update check
  *   swe-pro-agents version           — Show version
  *   swe-pro-agents help              — Show this help
@@ -26,6 +30,7 @@
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const { spawnSync } = require('child_process');
 
 const {
   initState,
@@ -44,6 +49,7 @@ const {
 
 const { DEFAULT_PLAN_DIR, LEDGER_FILE, PLAN_FILE, stopReason, emit } = require('../scripts/cli-shared.js');
 const packConfig = require('../scripts/pack-config.js');
+const installSelect = require('../scripts/install-select.js');
 
 const PACKAGE_NAME = 'swe-pro-agents';
 const AGENTS_DIR = path.join(__dirname, '..', 'agents');
@@ -170,8 +176,94 @@ function promptGoalDefault(defaultValue) {
   });
 }
 
+/** Read a `--name value` or `--name=value` flag; undefined when absent. */
+function flagValue(argv, name) {
+  for (let i = 0; i < argv.length; i++) {
+    if (argv[i] === `--${name}` && i + 1 < argv.length && !argv[i + 1].startsWith('--')) {
+      return argv[i + 1];
+    }
+    if (argv[i].startsWith(`--${name}=`)) {
+      return argv[i].slice(name.length + 3);
+    }
+  }
+  return undefined;
+}
+
+function parseSelectionFlags(argv) {
+  const select = argv.includes('--select');
+  const all = argv.includes('--all');
+  const agents = flagValue(argv, 'agents');
+  const skills = flagValue(argv, 'skills');
+  const globalGoal = argv.includes('--global-goal');
+  const globalNoGoal = argv.includes('--global-no-goal');
+  return {
+    select,
+    all,
+    agents,
+    skills,
+    globalGoal,
+    globalNoGoal,
+    wantsSelection: select || all || agents !== undefined || skills !== undefined || globalGoal || globalNoGoal,
+  };
+}
+
+/**
+ * Component selection: reinstall exactly the chosen agents/skills/systems.
+ * `--select` prompts interactively (TTY required); `--all` resets to
+ * everything; `--agents/--skills` take csv names, `all`, or `none`;
+ * `--global-goal/--global-no-goal` flip the global goal flag (alone: just
+ * writes the flag; combined: folded into the reinstall).
+ */
+async function cmdSelect(opts) {
+  if (opts.globalGoal && opts.globalNoGoal) {
+    console.error('  ERROR: --global-goal and --global-no-goal are mutually exclusive.');
+    return 2;
+  }
+  const onlyFlag = !opts.select && !opts.all && opts.agents === undefined && opts.skills === undefined;
+  if (onlyFlag) {
+    const enabled = opts.globalGoal ? true : false;
+    packConfig.writeGlobalConfig({ goal: enabled });
+    console.log(`\n  Goal system (/goal + idle nudges): ${enabled ? 'enabled' : 'disabled'} (global).`);
+    console.log(`  (A project-level swe-pro-agents.config.json still overrides this per project.)`);
+    return 0;
+  }
+  let partial;
+  if (opts.select) {
+    if (!process.stdin.isTTY) {
+      console.error('  ERROR: --select needs an interactive terminal. Use --all, --agents, --skills, or --global-goal/--global-no-goal instead.');
+      return 2;
+    }
+    const picked = await installSelect.promptSelection();
+    partial = { agents: picked.agents, skills: picked.skills, background: picked.background, goal: picked.goal };
+  } else {
+    partial = {};
+    if (opts.all) {
+      partial = { agents: 'all', skills: 'all', background: true, goal: true };
+    } else {
+      if (opts.agents !== undefined) partial.agents = opts.agents;
+      if (opts.skills !== undefined) partial.skills = opts.skills;
+    }
+    if (opts.globalGoal) partial.goal = true;
+    if (opts.globalNoGoal) partial.goal = false;
+  }
+  const installJs = path.join(__dirname, '..', 'scripts', 'install.js');
+  const res = spawnSync(process.execPath, [installJs], {
+    env: { ...process.env, SWE_PRO_AGENTS_SELECT: JSON.stringify(partial) },
+    stdio: 'inherit',
+  });
+  if (res.status !== 0) {
+    console.error(`  Reinstall exited ${res.status === null ? 'by signal' : res.status}.`);
+    return 1;
+  }
+  return 0;
+}
+
 async function cmdSetup(argv) {
-  console.log(`\n  Add this to your opencode.json:\n`);
+  // --- Component selection (independent of --apply) ---
+  const selectFlags = parseSelectionFlags(argv);
+  if (selectFlags.wantsSelection) {
+    return cmdSelect(selectFlags);
+  }  console.log(`\n  Add this to your opencode.json:\n`);
   console.log(`  {`);
   console.log(`    "agents": [{ "path": "${configEntryPath()}" }]`);
   console.log(`  }\n`);
@@ -480,10 +572,19 @@ Commands:
       --json               Machine-readable output (JSON on stdout, human text
                            on stderr)
   setup [--apply]          Show the opencode.json config snippet; --apply
-                            writes it (with a .bak backup). Also toggles the
-                            /goal autonomous-loop feature flag via
-                            [--goal|--no-goal] (or a [Y/n] prompt); writes
-                            swe-pro-agents.config.json (default on)
+                             writes it (with a .bak backup). Also toggles the
+                             /goal autonomous-loop feature flag via
+                             [--goal|--no-goal] (or a [Y/n] prompt); writes
+                             swe-pro-agents.config.json (default on)
+  setup --select           Interactive component picker: choose exactly which
+                             agents, skills, and systems (background tools,
+                             goal system) to install; reinstalls the pick
+  setup --all              Reset to the full pack (all agents/skills, goal on)
+  setup --agents <csv>     Install exactly these agents (names, all, or none)
+  setup --skills <csv>     Install exactly these skills (names, all, or none)
+  setup --global-goal | --global-no-goal
+                             Flip the global goal flag (alone: just writes it;
+                             combined with the above: folded into reinstall)
   status                   Show installation status + update check
   version                  Show package version
   help                     Show this help

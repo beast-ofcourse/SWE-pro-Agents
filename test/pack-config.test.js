@@ -105,6 +105,67 @@ test('writeConfig is atomic (tmp renamed over target)', () => {
   assert.strictEqual(fs.existsSync(path.join(dir, config.CONFIG_FILE + '.tmp')), false, 'temp file should be renamed away');
 });
 
+/** Run fn with HOME/USERPROFILE pointed at dir (os.homedir follows on Windows). */
+function withHome(dir, fn) {
+  const savedHome = process.env.HOME;
+  const savedProfile = process.env.USERPROFILE;
+  process.env.HOME = dir;
+  process.env.USERPROFILE = dir;
+  try {
+    fn();
+  } finally {
+    if (savedHome === undefined) delete process.env.HOME;
+    else process.env.HOME = savedHome;
+    if (savedProfile === undefined) delete process.env.USERPROFILE;
+    else process.env.USERPROFILE = savedProfile;
+  }
+}
+
+test('global flag off disables goal with no project file', () => {
+  const home = tempDir('cfg-global-home-');
+  const project = tempDir('cfg-global-proj-');
+  withHome(home, () => {
+    config.writeGlobalConfig({ goal: false });
+    assert.strictEqual(config.isGoalEnabled(project), false);
+  });
+});
+
+test('explicit project flag wins over the global flag', () => {
+  const home = tempDir('cfg-precedence-home-');
+  const project = tempDir('cfg-precedence-proj-');
+  fs.writeFileSync(
+    path.join(project, config.CONFIG_FILE),
+    JSON.stringify({ features: { goal: true } }),
+    'utf8'
+  );
+  withHome(home, () => {
+    config.writeGlobalConfig({ goal: false });
+    assert.strictEqual(config.isGoalEnabled(project), true);
+  });
+});
+
+test('corrupt project file falls through to the global flag', () => {
+  const home = tempDir('cfg-fallthrough-home-');
+  const project = tempDir('cfg-fallthrough-proj-');
+  fs.writeFileSync(path.join(project, config.CONFIG_FILE), '{ not json', 'utf8');
+  withHome(home, () => {
+    config.writeGlobalConfig({ goal: false });
+    assert.strictEqual(config.isGoalEnabled(project), false);
+  });
+});
+
+test('writeGlobalConfig merges beside the manifest dir', () => {
+  const home = tempDir('cfg-global-write-');
+  withHome(home, () => {
+    config.writeGlobalConfig({ goal: false });
+    const p = config.globalConfigPath();
+    assert.ok(p && fs.existsSync(p), 'global config file written');
+    const parsed = JSON.parse(fs.readFileSync(p, 'utf8'));
+    assert.strictEqual(parsed.features.goal, false);
+    assert.strictEqual(fs.existsSync(p + '.tmp'), false, 'temp file renamed away');
+  });
+});
+
 if (failed > 0) {
   console.error(`\n${passed} passed, ${failed} failed`);
   process.exit(1);

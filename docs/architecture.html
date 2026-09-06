@@ -82,7 +82,7 @@
     <p>A distribution pack for the OpenCode agent runtime: agents, skills, a CLI, and plugins bound by a shared Engineering Operating System (EOS) and a plan-driven execution loop.</p>
     <p>
       <span class="tag">25 agents</span>
-      <span class="tag">13 skills</span>
+      <span class="tag">14 skills</span>
       <span class="tag">zero runtime deps</span>
       <span class="tag">Node CJS</span>
       <span class="tag">plain-node tests</span>
@@ -186,6 +186,7 @@ plans/state.json  (ledger, schema v1)      test/loop-logic.test.js
     <li>The flag is <strong>re-read on every idle</strong> (not cached at load), so flipping it takes effect without restarting OpenCode.</li>
     <li><code>/goal show</code> / <code>status</code> / <code>help</code> are <strong>neutral</strong> — they report state without arming or disarming (previously <code>show</code> armed the gate).</li>
     <li><code>swe-pro-agents setup --goal|--no-goal</code> (or an interactive <code>[Y/n]</code> prompt) writes the flag; <code>--apply</code> also writes the opencode.json entry.</li>
+    <li>Install-time selection can disable the goal system globally (<code>~/.config/swe-pro-agents/swe-pro-agents.config.json</code>); an explicit project-level flag always wins over the global one.</li>
     <li>Single source of truth: <code>scripts/pack-config.js</code> owns read+write for the CLI; the plugin inlines its own copy (OpenCode plugins can only require sibling files).</li>
   </ul>
   <p class="note">R6 risk (documented, not fixed): <code>setup</code> writes to <code>process.cwd()</code> while the plugin reads OpenCode's <code>directory</code>. If they differ, the flag fails open to <code>true</code> and silently has no effect — mitigated by docs ("run setup from the project root").</p>
@@ -237,7 +238,7 @@ plans/state.json  (ledger, schema v1)      test/loop-logic.test.js
   <table>
     <tr><th>Path</th><th>What's inside</th></tr>
     <tr><td><code>agents/</code></td><td>26 agent profiles (orchestrator, architecture, review, research, 19 domain subagents).</td></tr>
-    <tr><td><code>skills/</code></td><td>13 skills, each a <code>SKILL.md</code> + assets.</td></tr>
+    <tr><td><code>skills/</code></td><td>14 skills, each a <code>SKILL.md</code> + assets.</td></tr>
     <tr><td><code>scripts/loop-logic.js</code></td><td>Pure ledger logic core (no I/O except load/save).</td></tr>
     <tr><td><code>scripts/loop-gate.js</code></td><td>Arm/disarm state + neutral subcommands (show/status/help).</td></tr>
     <tr><td><code>scripts/run-loop.js</code></td><td>Multi-iteration headless loop runner.</td></tr>

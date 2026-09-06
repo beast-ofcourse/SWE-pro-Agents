@@ -37,7 +37,7 @@ npm test
 
 ## Testing
 
-- `npm test` runs the full zero-dependency suite: `test/installer.test.js` (14
+- `npm test` runs the full zero-dependency suite: `test/installer.test.js` (17
   tests — the install/uninstall lifecycle: fresh install, idempotent reinstall,
   stale-file pruning, no-manifest safety, uninstall isolation, manifest-less
   uninstall, and plugin-file handling), `test/validate.test.js` (23 tests — the
@@ -45,10 +45,11 @@ npm test
   validator), `test/loop-logic.test.js` (57 tests — the loop's pure logic),
   `test/ledger.test.js` (8 tests — the ledger store), `test/loop-gate.test.js`
   (14 tests — the goal gate), `test/run-loop.test.js` (10 tests — the loop runner
-  end to end), `test/bin.test.js` (10 tests — the CLI, including the `setup`
-  feature-flag toggle), `test/continuation.test.js` (14 tests — the continuation
+  end to end), `test/bin.test.js` (13 tests — the CLI: loop runner plus
+  `setup` selection flags), `test/continuation.test.js` (14 tests — the continuation
   plugin's goal-gated idle nudge, including feature-flag gating),
-  `test/pack-config.test.js` (14 tests — the `features.goal` config reader),
+  `test/pack-config.test.js` (18 tests — the `features.goal` config reader
+  plus the global flag),
   `test/probe-spawn.test.js` (6 tests — the child-session spawn hard-gate probe),
   `test/background-delegate.test.js` (37 tests — the delegation engine),
   `test/background-plugin.test.js` (12 tests — the background plugin tools),
@@ -59,7 +60,8 @@ npm test
   `test/background-spawner.test.js` (5 tests — spawner seam),
   `test/background-results.test.js` (8 tests — result schemas + redaction),
   `test/background-scheduler.test.js` (8 tests — concurrency + backpressure), and
-  `test/background-dashboard.test.js` (8 tests — dashboard views + task logs).
+  `test/background-dashboard.test.js` (8 tests — dashboard views + task logs),
+  `test/install-select.test.js` (14 tests — pick parsing, flag resolution, option listing).
 - `npm run validate` runs `scripts/validate.js`, the **strict** pack validator: it
   lints every agent and skill and exits 1 on any violation. The validator is wired
   into CI, so the pack must stay green there too.
@@ -120,7 +122,7 @@ machinery:
 
 ```text
 agents/        Agent profiles (25: 22 subagents + 3 primary)
-skills/        Skills: caveman, skill-creator, teach-me, documentation, svg-hero-generator, humanizer-pro, flowchart-html, high-quality-flowcharts, next-best-thing, opencode-skill-creator, mcp-builder, sketch, youtube-to-skill
+skills/        Skills: caveman, skill-creator, teach-me, documentation, svg-hero-generator, humanizer-pro, flowchart-html, high-quality-flowcharts, next-best-thing, nextreme-optimization, opencode-skill-creator, mcp-builder, sketch, youtube-to-skill
 scripts/       install.js (postinstall), uninstall.js (preuninstall), validate.js (pack validator)
 bin/           swe-pro-agents CLI
 test/          Installer lifecycle tests + validator self-tests

@@ -7,13 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.0.1] - 2026-09-06
+
 ### Added
 
+- **Install-time component selection** — first install on a TTY offers a picker for exactly which agents, skills, and systems land on the machine (`all`/`none`/numbers/ranges/`-N` exclusions); declining or any non-interactive run installs everything as before. Systems are independent: background tools (plugin file) and the goal system (global flag off, project flags still win per project) — nothing is forced. `swe-pro-agents setup --select|--all|--agents|--skills|--global-goal|--global-no-goal` reselects anytime; deselected components prune on reinstall while brand-new pack files auto-install; `SWE_PRO_AGENTS_NO_PROMPT=1` silences even TTY installs.
 - Background engine modules require siblings normally: `scripts/build-plugin.js` replaces each single-line scripts-relative `require('./<name>')` with a `// (see scripts/<name>.js region — provides <names>)` comment (target must exist, plugin region must exist, cycles fail), and the ambient typeof-guard wiring in `scripts/background-delegate.js` is deleted in favor of normal requires with `deps.<x>` overrides first.
+- `nextreme-optimization` — extreme-performance skill: hard correctness floor, 5-tier priority doctrine (algorithm → elimination → layout → concurrency → micro), measure-first verification with neutral-is-a-revert and attempt ledger, compact fix catalog, budgets + CI/field guards, and an explicit readability-for-speed trade.
 
 ### Removed
 
-- 13 design/image-generation skills with unrecorded upstream provenance: `brandkit`, `design-taste-frontend` (+ `-v1`), `full-output-enforcement`, `gpt-taste`, `high-end-visual-design`, `image-to-code`, `imagegen-frontend-mobile`, `imagegen-frontend-web`, `industrial-brutalist-ui`, `minimalist-ui`, `redesign-existing-projects`, `stitch-design-taste`. Pack is now **13 skills** (was 26); `package.json`, README, CONTRIBUTING, and `docs/architecture.html` updated to match. Already-installed copies are pruned automatically on the next update via the install manifest.
+- 13 design/image-generation skills with unrecorded upstream provenance: `brandkit`, `design-taste-frontend` (+ `-v1`), `full-output-enforcement`, `gpt-taste`, `high-end-visual-design`, `image-to-code`, `imagegen-frontend-mobile`, `imagegen-frontend-web`, `industrial-brutalist-ui`, `minimalist-ui`, `redesign-existing-projects`, `stitch-design-taste`. Pack is now **14 skills** (was 26): 13 removed, 1 added (`nextreme-optimization`). `package.json`, README, CONTRIBUTING, and `docs/architecture.html` updated to match. Already-installed copies are pruned automatically on the next update via the install manifest.
 
 ## [3.0.0] - 2026-09-06
 

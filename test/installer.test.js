@@ -79,7 +79,7 @@ process.on('exit', () => {
 });
 
 /** Run one of the lifecycle scripts with HOME/USERPROFILE redirected to `home`. */
-function run(script, home) {
+function run(script, home, extraEnv) {
   const res = spawnSync(NODE, [script], {
     env: {
       ...process.env,
@@ -87,6 +87,7 @@ function run(script, home) {
       USERPROFILE: home,
       HOMEDRIVE: path.parse(home).root,
       HOMEPATH: home.replace(path.parse(home).root, ''),
+      ...(extraEnv || {}),
     },
     encoding: 'utf8',
   });
@@ -393,6 +394,64 @@ test('uninstall skips non-string manifest.plugins entries without throwing', () 
 
   assert.ok(!fs.existsSync(path.join(pluginsDir(home), 'swe-pro-agents-continuation.js')), 'valid recorded plugin removed');
   assert.ok(fs.existsSync(path.join(pluginsDir(home), 'my-own-plugin.js')), 'user plugin untouched');
+});
+
+test('selective install via SWE_PRO_AGENTS_SELECT installs only the pick', () => {
+  const home = tempHome();
+  run(INSTALL, home, {
+    SWE_PRO_AGENTS_SELECT: JSON.stringify({
+      agents: ['swe-mini.md'],
+      skills: ['caveman'],
+      background: false,
+      goal: false,
+    }),
+  });
+
+  assert.deepStrictEqual(listDirFiles(agentsDir(home)), ['swe-mini.md'], 'only the picked agent lands');
+  assert.deepStrictEqual(listDirFiles(skillsDir(home)), ['caveman'], 'only the picked skill lands');
+  assert.ok(!fs.existsSync(path.join(pluginsDir(home), 'swe-pro-agents.js')), 'plugin skipped when both systems are off');
+  const manifest = readManifest(home);
+  assert.deepStrictEqual(manifest.agents, ['swe-mini.md'], 'manifest records the agent pick');
+  assert.deepStrictEqual(manifest.skills, ['caveman'], 'manifest records the skill pick');
+  assert.deepStrictEqual(manifest.plugins, [], 'manifest records no plugins');
+  const globalConfig = JSON.parse(
+    fs.readFileSync(path.join(packConfigDir(home), 'swe-pro-agents.config.json'), 'utf8')
+  );
+  assert.strictEqual(globalConfig.features.goal, false, 'deselected goal writes the global flag off');
+});
+
+test('reselecting narrower prunes the deselected components', () => {
+  const home = tempHome();
+  run(INSTALL, home, {
+    SWE_PRO_AGENTS_SELECT: JSON.stringify({
+      agents: ['swe-mini.md', 'swe-pro.md'],
+      skills: ['caveman', 'teach-me'],
+      background: true,
+      goal: true,
+    }),
+  });
+  assert.ok(fs.existsSync(path.join(agentsDir(home), 'swe-pro.md')), 'setup: both agents installed');
+
+  run(INSTALL, home, {
+    SWE_PRO_AGENTS_SELECT: JSON.stringify({
+      agents: ['swe-mini.md'],
+      skills: ['caveman'],
+      background: true,
+      goal: true,
+    }),
+  });
+  assert.ok(!fs.existsSync(path.join(agentsDir(home), 'swe-pro.md')), 'deselected agent pruned on reselect');
+  assert.ok(!fs.existsSync(path.join(skillsDir(home), 'teach-me')), 'deselected skill pruned on reselect');
+  assert.deepStrictEqual(readManifest(home).agents, ['swe-mini.md'], 'manifest follows the reselect');
+});
+
+test('default install writes no global goal file (fail-open default)', () => {
+  const home = tempHome();
+  run(INSTALL, home);
+  assert.ok(
+    !fs.existsSync(path.join(packConfigDir(home), 'swe-pro-agents.config.json')),
+    'no global config file on a default install'
+  );
 });
 
 // ---------------------------------------------------------------------------

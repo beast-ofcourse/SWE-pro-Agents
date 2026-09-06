@@ -13,7 +13,8 @@
  *      swe-pro-agents-* prefixed files, so user plugins are never touched,
  *   4. removes the manifest dir — including the pack's own AGENTS.md copy,
  *      which lives there (never inside the agents dir, where OpenCode would
- *      load it as an agent).
+ *      load it as an agent), and any global component-selection / goal-flag
+ *      config written beside the manifest.
  *
  * If no manifest is found, the agents directory is still removed (it is
  * package-scoped by contract) and the user is told that pack skills and
