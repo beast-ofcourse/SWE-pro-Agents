@@ -330,6 +330,31 @@ A `plans/` plan can run end to end without a human in the loop. Three pieces mak
 
 Plan files are machine-checked by `npm run validate:plan`: **P1** plan presence, **P2** task shape (every `### T-###` task needs **Build.**, **Acceptance criteria.**, and **Verify.** sections), **P3** ledger consistency with `tasks.md`.
 
+## Background Subagents
+
+The plugin ships a background-subagent engine: delegate coding work to child sessions running in isolated git worktrees, then read typed results, check merge safety, and resume crashed tasks. Ten tools:
+
+| Tool | What it does |
+| --- | --- |
+| `bg_delegate` | Launches a child session (`prompt`, `agent`, `mode: readonly\|worktree`, `capabilities`, `budget: {maxTokens,maxToolCalls}`, `priority`, `depth`). Returns immediately with an id — never blocks. |
+| `bg_status` | One delegation's state; `json: true` returns machine-readable detail incl. the per-task log path. |
+| `bg_list` | All delegations (id, state, title, summary, branch). |
+| `bg_dashboard` | Text tree of all background work (state, agent, branch, tokens, activity age). |
+| `bg_read` | Blocks (up to `timeoutMs`, default 15 min) until terminal; returns the validated typed result. `stream: true` also appends progress partials to the task log. Never hangs forever — a hung child returns `timeout: still running`. |
+| `bg_stop` | Aborts the child (cascade-stops children too). `--signal soft` lets it finish the current step (3 s grace); `--signal hard` aborts now. `--keep` preserves the worktree for inspection. |
+| `bg_steer` | Sends a follow-up prompt to a running child (best-effort — may interrupt it). |
+| `bg_merge` | With `check: true`, reports files changed, insertions/deletions, and conflict probability for the worktree branch. **It never merges** — merging is always the parent's explicit call. |
+| `bg_resume` | Restarts an errored or quarantined worktree delegation from its existing worktree (never from scratch). Readonly delegations return `cannot_resume`. |
+| `bg_prune` | Deletes terminal delegations (default 30 days) and their journals (7 days). |
+
+**No-auto-merge guarantee.** The engine never merges a worktree into the parent branch and never auto-retries a quarantined task — both need an explicit parent call (`git merge`, `bg_resume`).
+
+**Reliability.** Completion is detected by finish state, not output heuristics, so tool-only children still complete. Silent children are marked `interrupt` (reasons `stale`/`ttl`), never-admitted queue entries fail as `admission_failed`, vanished sessions as `session_gone`, over-budget children as `capability_breach`. Repeated failures quarantine after 2 retries; provider 429/5xx responses back off per model key; secrets (`api_key`, `token`, `secret`, … in `key=value` shapes — bare tokens like `sk-…`/`ghp_…` are not matched) are redacted from everything persisted to disk (store dir is `0700`).
+
+**Tuning (env vars).** `SWE_PRO_BG_MAX_PARALLEL` (4), `SWE_PRO_BG_PER_KEY` (5), `SWE_PRO_BG_FAIR_SHARE` (0.75), `SWE_PRO_BG_TOKEN_BUDGET` (200000), `SWE_PRO_BG_BACKOFF_BASE`/`SWE_PRO_BG_BACKOFF_MAX` (5000/120000), `SWE_PRO_BG_CB_THRESHOLD` (5), `SWE_PRO_BG_MAX_DEPTH` (2), `SWE_PRO_BG_RETRY` (2), `SWE_PRO_BG_STALE_MS` (45 min), `SWE_PRO_BG_TTL_MS` (30 min), `SWE_PRO_BG_ADMIT_MS` (5 min), `SWE_PRO_BG_SESSION_WAIT_MS` (4000), `SWE_PRO_BG_SOFT_GRACE_MS` (3000), `SWE_PRO_BG_JOURNAL_PRUNE_DAYS` (7), `SWE_PRO_DELEGATIONS_DIR` (store location override). `SWE_PRO_BG_SUPERVISOR=0` disables the 5 s supervisor reconcile pass (`SWE_PRO_BG_SUPERVISOR_MS` sets the interval).
+
+**Migration note.** State files gain new fields (`heartbeatAt`, `budget`, `depth`, `journalPath`, `children`, `retryCount`, `quarantined`, `prompt`, `tokens`, `result`); old state files without them are tolerated (code defaults them), so no manual migration is needed. Journals prune at 7 days while state lives 30 — replay is impossible for delegations older than 7 days (accepted).
+
 ## Updating
 
 ```bash
@@ -351,7 +376,7 @@ The preuninstall hook removes everything this pack installed: the agent files, t
 Plain Node.js (≥ 18), zero dependencies, no build step — the tests are the entry point:
 
 ```bash
-npm test          # 7 suites, 127 tests — installer, validator, plan validator, loop logic, loop runner, CLI, continuation plugin
+npm test          # 21 suites, 270 tests — installer, validators, loop engine, CLI, plugins, background subagents, codegen
 npm run validate  # strict pack validation (exits 1 on any violation)
 ```
 

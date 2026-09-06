@@ -40,14 +40,26 @@ npm test
 - `npm test` runs the full zero-dependency suite: `test/installer.test.js` (14
   tests — the install/uninstall lifecycle: fresh install, idempotent reinstall,
   stale-file pruning, no-manifest safety, uninstall isolation, manifest-less
-  uninstall, and plugin-file handling), `test/validate.test.js` (18 tests — the
+  uninstall, and plugin-file handling), `test/validate.test.js` (19 tests — the
   pack validator's self-tests), `test/validate-plan.test.js` (12 tests — the plan
   validator), `test/loop-logic.test.js` (57 tests — the loop's pure logic),
-  `test/run-loop.test.js` (10 tests — the loop runner end to end),
-  `test/bin.test.js` (10 tests — the CLI, including the `setup` feature-flag
-  toggle), `test/continuation.test.js` (14 tests — the continuation plugin's
-  goal-gated idle nudge, including feature-flag gating), and
-  `test/pack-config.test.js` (11 tests — the `features.goal` config reader).
+  `test/ledger.test.js` (8 tests — the ledger store), `test/loop-gate.test.js`
+  (14 tests — the goal gate), `test/run-loop.test.js` (10 tests — the loop runner
+  end to end), `test/bin.test.js` (10 tests — the CLI, including the `setup`
+  feature-flag toggle), `test/continuation.test.js` (14 tests — the continuation
+  plugin's goal-gated idle nudge, including feature-flag gating),
+  `test/pack-config.test.js` (14 tests — the `features.goal` config reader),
+  `test/probe-spawn.test.js` (6 tests — the child-session spawn hard-gate probe),
+  `test/background-delegate.test.js` (32 tests — the delegation engine),
+  `test/background-plugin.test.js` (12 tests — the background plugin tools),
+  `test/background-worktree.test.js` (9 tests — worktree isolation), and
+  `test/background-integration.test.js` (5 tests — end-to-end plugin lifecycle),
+  `test/build-plugin.test.js` (3 tests — plugin codegen byte-identical rebuild),
+  `test/background-journal.test.js` (6 tests — append-only journal),
+  `test/background-spawner.test.js` (5 tests — spawner seam),
+  `test/background-results.test.js` (6 tests — result schemas + redaction),
+  `test/background-scheduler.test.js` (8 tests — concurrency + backpressure), and
+  `test/background-dashboard.test.js` (8 tests — dashboard views + task logs).
 - `npm run validate` runs `scripts/validate.js`, the **strict** pack validator: it
   lints every agent and skill and exits 1 on any violation. The validator is wired
   into CI, so the pack must stay green there too.
@@ -108,7 +120,7 @@ machinery:
 
 ```text
 agents/        Agent profiles (25: 22 subagents + 3 primary)
-skills/        Skills: caveman, skill-creator, teach-me, documentation, svg-hero-generator, humanizer-pro, flowchart-html, high-quality-flowcharts, opencode-skill-creator, brandkit, design-taste-frontend, design-taste-frontend-v1, full-output-enforcement, gpt-taste, high-end-visual-design, image-to-code, imagegen-frontend-mobile, imagegen-frontend-web, industrial-brutalist-ui, mcp-builder, minimalist-ui, redesign-existing-projects, stitch-design-taste
+skills/        Skills: caveman, skill-creator, teach-me, documentation, svg-hero-generator, humanizer-pro, flowchart-html, high-quality-flowcharts, next-best-thing, opencode-skill-creator, brandkit, design-taste-frontend, design-taste-frontend-v1, full-output-enforcement, gpt-taste, high-end-visual-design, image-to-code, imagegen-frontend-mobile, imagegen-frontend-web, industrial-brutalist-ui, mcp-builder, minimalist-ui, redesign-existing-projects, sketch, stitch-design-taste, youtube-to-skill
 scripts/       install.js (postinstall), uninstall.js (preuninstall), validate.js (pack validator)
 bin/           swe-pro-agents CLI
 test/          Installer lifecycle tests + validator self-tests
@@ -141,10 +153,10 @@ Rules:
 - **Permissions match the role.** Read-only agents (review, security, research)
   get `edit: deny` and narrow `bash`; implementers get scoped allow-lists.
 - **Keep counts in sync.** The roster appears in `package.json` (description),
-  the README agent tables, and this structure map — and it is enforced by
-  `npm run validate` (counts are integrity-checked against `package.json` and the
-  README in CI). Changing the roster means updating all three and keeping the
-  validator green.
+  the README agent tables, and this structure map — keep all three accurate by
+  hand when the roster changes. `npm run validate` enforces per-file rules
+  (frontmatter, permission refs and actions, no duplicate names) but does not
+  check roster counts.
 - If the change is behavior users rely on, add a CHANGELOG entry (see below).
 
 ## Adding or changing a skill
