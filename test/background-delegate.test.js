@@ -12,6 +12,8 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { createBackgroundDelegate } = require('../plugins/swe-pro-agents.js');
+const { createJournal } = require('../scripts/background-journal.js');
+const { registerSchema, validateResult } = require('../scripts/background-results.js');
 
 function tmpDir() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'bg-test-'));
@@ -97,6 +99,19 @@ async function run() {
     assert.strictEqual(st.state, 'completed', 'state should be completed after read');
     const md = fs.readFileSync(path.join(store, id + '.md'), 'utf-8');
     assert.strictEqual(md, 'DONE RESULT', 'markdown result file should match');
+    // T-004 extended state shape.
+    assert.strictEqual(st.heartbeatAt, null, 'heartbeatAt is null at creation');
+    assert.ok(st.journalPath, 'journalPath should be set');
+    assert.ok(fs.existsSync(st.journalPath), 'journal file should exist after registered event');
+    assert.ok(fs.readFileSync(st.journalPath, 'utf-8').includes('registered'), 'journal should contain a registered line');
+    // T-004 parent.children wiring.
+    const parent = await bg.createDelegation({ prompt: 'parent work', title: 'PARENT' });
+    const child = await bg.createDelegation({ prompt: 'child work', title: 'CHILD', parentID: parent });
+    const parentState = bg._internals.readState(parent);
+    assert.ok(parentState.children.includes(child), 'parent children should include the child id');
+    const childState = bg._internals.readState(child);
+    assert.strictEqual(childState.heartbeatAt, null, 'child heartbeatAt is null at creation');
+    assert.ok(childState.journalPath, 'child journalPath should be set');
   });
 
   // 2. Terminal-state protection: finalize twice does not overwrite.
@@ -269,6 +284,509 @@ async function run() {
     assert.strictEqual(removed, 1, 'only the old delegation should be pruned');
     assert.ok(!fs.existsSync(path.join(store, old + '.json')), 'old state removed');
     assert.ok(fs.existsSync(path.join(store, fresh + '.json')), 'fresh state kept');
+  });
+
+  // T-010 (1) terminal state with zero tokens -> completed (no token heuristic).
+  await check('T-010 terminal state tokens 0 -> completed', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const spawner = { getActivity: async () => ({ state: 'completed', tokens: { output: 0 }, lastActivityAt: null }) };
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp', spawner });
+    const id = await bg.createDelegation({ prompt: 'x' });
+    await bg.readDelegation(id, 2000);
+    const st = bg._internals.readState(id);
+    assert.strictEqual(st.state, 'completed', 'terminal state with zero tokens must complete');
+  });
+
+  // T-010 (2) recent lastActivityAt past staleTimeoutMs -> still running (no false interrupt).
+  await check('T-010 recent activity past stale stays running', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const spawner = { getActivity: async () => ({ state: 'running', tokens: { output: 0 }, lastActivityAt: Date.now() }) };
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp', spawner });
+    const id = await bg.createDelegation({ prompt: 'x', staleTimeoutMs: 50 });
+    await new Promise((r) => setTimeout(r, 150));
+    const res = await bg.readDelegation(id, 800);
+    assert.strictEqual(res, 'timeout: still running', 'fresh activity must not interrupt');
+    const st = bg._internals.readState(id);
+    assert.strictEqual(st.state, 'running', 'delegation stays running');
+  });
+
+  // Heartbeat refresh persists a tokens snapshot for dashboard observability.
+  await check('heartbeat refresh stores tokens snapshot', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const spawner = { getActivity: async () => ({ state: 'running', tokens: { input: 12, output: 34 }, lastActivityAt: Date.now() }) };
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp', spawner });
+    const id = await bg.createDelegation({ prompt: 'x', staleTimeoutMs: 60000, ttlMs: 60000 });
+    await bg.readDelegation(id, 1500);
+    const st = bg._internals.readState(id);
+    assert.deepStrictEqual(st.tokens, { input: 12, output: 34 }, 'tokens snapshot persisted (got ' + JSON.stringify(st.tokens) + ')');
+  });
+
+  // T-010 (3) old lastActivityAt -> interrupt with reason stale.
+  await check('T-010 old activity -> interrupt stale', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const old = Date.now() - 100000;
+    const spawner = { getActivity: async () => ({ state: 'running', tokens: { output: 0 }, lastActivityAt: old }) };
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp', spawner });
+    const id = await bg.createDelegation({ prompt: 'x', staleTimeoutMs: 1000 });
+    const res = await bg.readDelegation(id, 2000);
+    assert.ok(res.indexOf('terminal: interrupt') === 0, 'should return terminal interrupt (got ' + res + ')');
+    const st = bg._internals.readState(id);
+    assert.strictEqual(st.state, 'interrupt', 'state should be interrupt');
+    assert.strictEqual(st.interruptReason, 'stale', 'reason should be stale');
+  });
+
+  // T-010 (4) getActivity returns gone -> error session_gone.
+  await check('T-010 gone -> error session_gone', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const spawner = { getActivity: async () => ({ state: 'gone', lastActivityAt: null }) };
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp', spawner });
+    const id = await bg.createDelegation({ prompt: 'x' });
+    const res = await bg.readDelegation(id, 2000);
+    assert.ok(res.indexOf('terminal: error') === 0, 'should return terminal error (got ' + res + ')');
+    assert.ok(res.includes('session_gone'), 'should name session_gone (got ' + res + ')');
+    const st = bg._internals.readState(id);
+    assert.strictEqual(st.state, 'error', 'state should be error');
+    assert.strictEqual(st.summary, 'session_gone', 'summary should be session_gone');
+  });
+
+  // T-010 (5) scheduled past admissionTimeoutMs -> error admission_failed.
+  await check('T-010 scheduled past admission -> error admission_failed', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const spawner = { getActivity: async () => ({ state: 'running', tokens: { output: 0 }, lastActivityAt: Date.now() }) };
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp', spawner });
+    const id = await bg.createDelegation({ prompt: 'x', admissionTimeoutMs: 100 });
+    const scheduled = bg._internals.readState(id);
+    scheduled.state = 'scheduled';
+    scheduled.childSessionID = null;
+    scheduled.createdAt = Date.now() - 10000;
+    bg._internals.writeState(scheduled);
+    bg._internals.running.delete(id);
+    const res = await bg.readDelegation(id, 2000);
+    assert.ok(res.indexOf('terminal: error') === 0, 'should return terminal error (got ' + res + ')');
+    assert.ok(res.includes('admission_failed'), 'should name admission_failed (got ' + res + ')');
+    const st = bg._internals.readState(id);
+    assert.strictEqual(st.state, 'error', 'state should be error');
+    assert.strictEqual(st.summary, 'admission_failed', 'summary should be admission_failed');
+  });
+
+  // T-011 (1) depth guard rejects when parent already at maxDepth.
+  await check('T-011 depth guard rejects', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp' });
+    const parent = await bg.createDelegation({ prompt: 'parent' });
+    assert.strictEqual(bg._internals.readState(parent).depth, 1, 'parent depth should be 1');
+    const child = await bg.createDelegation({ prompt: 'child', parentID: parent });
+    assert.strictEqual(bg._internals.readState(child).depth, 2, 'child depth should be parentDepth + 1');
+    let threw = null;
+    try {
+      await bg.createDelegation({ prompt: 'grandchild', parentID: child });
+    } catch (err) {
+      threw = err;
+    }
+    assert.ok(threw, 'grandchild creation should throw');
+    assert.ok(threw.message.includes('maxDepth exceeded'), 'should throw maxDepth exceeded (got ' + (threw && threw.message) + ')');
+  });
+
+  // T-011 (2) capability breach -> error: capability_breach.
+  await check('T-011 capability breach -> error', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const spawner = { getActivity: async () => ({ state: 'running', tokens: { input: 6, output: 6 }, lastActivityAt: Date.now() }) };
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp', spawner });
+    const id = await bg.createDelegation({ prompt: 'x', capabilities: { maxTokens: 10 } });
+    await bg.reconcileOrphans();
+    const st = bg._internals.readState(id);
+    assert.strictEqual(st.state, 'error', 'state should be error after breach');
+    assert.strictEqual(st.summary, 'capability_breach', 'summary should be capability_breach');
+    assert.strictEqual(client._stats().abortCount, 1, 'child should be aborted');
+  });
+
+  // M1: budget-only cap (no capabilities manifest) is enforced like a manifest.
+  await check('M1 budget-only maxTokens enforced', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const spawner = { getActivity: async () => ({ state: 'running', tokens: { input: 60, output: 40 }, lastActivityAt: Date.now() }) };
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp', spawner });
+    const id = await bg.createDelegation({ prompt: 'x', maxTokens: 10 });
+    await bg.reconcileOrphans();
+    const st = bg._internals.readState(id);
+    assert.strictEqual(st.state, 'error', 'state should be error after budget breach');
+    assert.strictEqual(st.summary, 'capability_breach', 'summary should be capability_breach');
+    assert.strictEqual(client._stats().abortCount, 1, 'child should be aborted');
+  });
+
+  // m1: one poisoned orphan must not abort the supervisor pass for the rest.
+  await check('m1 reconcile survives one orphan start failure', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const old = Date.now() - 100000;
+    const spawner = { getActivity: async () => ({ state: 'running', tokens: { output: 0 }, lastActivityAt: old }) };
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp', spawner });
+    const poisoned = await bg.createDelegation({ prompt: 'poison', staleTimeoutMs: 1000 });
+    const stale = await bg.createDelegation({ prompt: 'stale', staleTimeoutMs: 1000 });
+    // Simulate a restart: disk state remains, in-memory running set is empty.
+    bg._internals.running.delete(poisoned);
+    bg._internals.running.delete(stale);
+    const ps = bg._internals.readState(poisoned);
+    ps.state = 'registered';
+    ps.childSessionID = null;
+    bg._internals.writeState(ps);
+    // Every future spawn fails (e.g. sustained 429 storm).
+    client.session.create = async () => { throw new Error('boom-429'); };
+    await bg.reconcileOrphans();
+    const a = bg._internals.readState(poisoned);
+    assert.strictEqual(a.state, 'error', 'poisoned orphan should be error (got ' + a.state + ')');
+    assert.strictEqual(a.summary, 'failed to start', 'poisoned summary should be failed to start (got ' + a.summary + ')');
+    const b = bg._internals.readState(stale);
+    assert.strictEqual(b.state, 'interrupt', 'stale orphan should still be interrupted (got ' + b.state + ')');
+    assert.strictEqual(b.interruptReason, 'stale', 'interrupt reason should be stale');
+  });
+
+  // T-012 (1) cascade stops 2 children via populated parent.children.
+  await check('T-012 cascade stops 2 children', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp' });
+    const parent = await bg.createDelegation({ prompt: 'parent' });
+    const child1 = await bg.createDelegation({ prompt: 'c1', parentID: parent });
+    const child2 = await bg.createDelegation({ prompt: 'c2', parentID: parent });
+    const parentState = bg._internals.readState(parent);
+    assert.deepStrictEqual(parentState.children.slice().sort(), [child1, child2].sort(), 'parent.children should hold both child ids');
+    const abortsBefore = client._stats().abortCount;
+    await bg.stopDelegation(parent);
+    assert.strictEqual(bg._internals.readState(parent).state, 'cancelled', 'parent should be cancelled');
+    assert.strictEqual(bg._internals.readState(child1).state, 'cancelled', 'child1 should be cascade-cancelled');
+    assert.strictEqual(bg._internals.readState(child2).state, 'cancelled', 'child2 should be cascade-cancelled');
+    assert.strictEqual(client._stats().abortCount, abortsBefore + 3, 'parent + 2 children aborted');
+    assert.strictEqual(bg._internals.readState(child1).cancelSignal, 'hard', 'default signal should be hard');
+  });
+
+  // T-012 (2) keep:true leaves worktree path on disk (fake worktreeManager).
+  await check('T-012 keep:true leaves worktree on disk', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const worktreeRoot = tmpDir();
+    let removeCalls = 0;
+    const fakeWorktreeManager = {
+      setup: async (repoDir, id) => {
+        const wtPath = path.join(worktreeRoot, String(id).replace(/[^a-zA-Z0-9_-]/g, ''));
+        fs.mkdirSync(wtPath, { recursive: true });
+        fs.writeFileSync(path.join(wtPath, 'marker.txt'), 'work');
+        return { path: wtPath, branch: 'bg-' + id, repoDir };
+      },
+      remove: async (worktree) => {
+        removeCalls += 1;
+        fs.rmSync(worktree.path, { recursive: true, force: true });
+      },
+    };
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp', repoDir: worktreeRoot, worktreeManager: fakeWorktreeManager });
+    const id = await bg.createDelegation({ prompt: 'x', mode: 'worktree' });
+    const st = bg._internals.readState(id);
+    assert.ok(st.worktree && st.worktree.path, 'worktree path should be recorded');
+    assert.ok(fs.existsSync(st.worktree.path), 'worktree should exist before stop');
+    await bg.stopDelegation(id, { signal: 'hard', keep: true });
+    assert.ok(fs.existsSync(st.worktree.path), 'keep:true must leave the worktree on disk');
+    assert.strictEqual(removeCalls, 0, 'worktreeManager.remove must not be called');
+    assert.strictEqual(bg._internals.readState(id).state, 'cancelled', 'delegation still cancelled');
+  });
+
+  // T-013 redaction on persist: secrets masked in state, journal, and markdown.
+  await check('T-013 redaction on persist', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp' });
+    const id = await bg.createDelegation({ prompt: 'x', title: 'api_key=SECRET' });
+    const st = bg._internals.readState(id);
+    assert.ok(!st.title.includes('SECRET') && st.title.includes('<redacted>'), 'title must be redacted (got ' + st.title + ')');
+    const journalText = fs.readFileSync(path.join(store, id + '.journal.jsonl'), 'utf-8');
+    assert.ok(journalText.includes('<redacted>') && !journalText.includes('SECRET'), 'journal must mask the secret');
+    await bg.finalizeDelegation(id, 'result api_key=SECRET');
+    const md = fs.readFileSync(path.join(store, id + '.md'), 'utf-8');
+    assert.ok(md.includes('<redacted>') && !md.includes('SECRET'), 'markdown must mask the secret');
+  });
+
+  // T-014 supervisor liveness + single-flight: concurrent reconciles finalize once.
+  await check('T-014 concurrent reconcile single-flight interrupt once', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const old = Date.now() - 100000;
+    const spawner = { getActivity: async () => ({ state: 'running', tokens: { output: 0 }, lastActivityAt: old }) };
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp', spawner });
+    const id = await bg.createDelegation({ prompt: 'x', staleTimeoutMs: 1000 });
+    await Promise.all([bg.reconcileOrphans(), bg.reconcileOrphans()]);
+    const st = bg._internals.readState(id);
+    assert.strictEqual(st.state, 'interrupt', 'state should be interrupt');
+    const lines = fs.readFileSync(path.join(store, id + '.journal.jsonl'), 'utf-8').trim().split('\n');
+    const interrupts = lines.filter((line) => {
+      try {
+        return JSON.parse(line).type === 'interrupt';
+      } catch {
+        return false;
+      }
+    });
+    assert.strictEqual(interrupts.length, 1, 'exactly one journal interrupt line (got ' + interrupts.length + ')');
+  });
+
+  // T-020 journal every transition: full lifecycle journals 3 events.
+  await check('T-020 full lifecycle journals every transition', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp' });
+    const id = await bg.createDelegation({ prompt: 'x', title: 'T-020' });
+    const child = bg._internals.readState(id).childSessionID;
+    client._markComplete(child, 'T-020 RESULT');
+    await bg.readDelegation(id, 2000);
+    // Counted from the implementation: createDelegation journals `registered`,
+    // startDelegation journals `running`, finalizeDelegation journals `completed` = 3.
+    const events = createJournal({ storeDir: store }).replay(id);
+    assert.strictEqual(events.length, 3, 'full lifecycle should journal 3 transitions (got ' + events.length + ')');
+    assert.deepStrictEqual(events.map((e) => e.type), ['registered', 'running', 'completed'], 'journal order should follow the lifecycle');
+  });
+
+  // T-025 bg_prune prunes terminal state (30d) AND journal (7d independently).
+  await check('T-025 bg_prune prunes state 30d and journal 7d', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp' });
+    const DAY = 24 * 60 * 60 * 1000;
+    // Backdate every journal line (no real waits): journal.prune keys off the
+    // newest event timestamp, not file mtime.
+    function backdateJournal(id, ageMs) {
+      const journalFile = path.join(store, id + '.journal.jsonl');
+      const lines = fs.readFileSync(journalFile, 'utf-8').trim().split('\n');
+      const old = Date.now() - ageMs;
+      fs.writeFileSync(journalFile, lines.map((line) => {
+        const ev = JSON.parse(line);
+        ev.t = old;
+        return JSON.stringify(ev);
+      }).join('\n') + '\n');
+    }
+    // Case 1: 40d-old state + 10d-old journal -> prune removes state AND journal.
+    const old = await bg.createDelegation({ prompt: 'old' });
+    await bg.finalizeDelegation(old, 'old result');
+    const oldState = bg._internals.readState(old);
+    oldState.updatedAt = Date.now() - 40 * DAY;
+    fs.writeFileSync(path.join(store, old + '.json'), JSON.stringify(oldState, null, 2));
+    backdateJournal(old, 10 * DAY);
+    // Case 2 (acceptance): 10d-old terminal keeps state, loses journal.
+    const mid = await bg.createDelegation({ prompt: 'mid' });
+    await bg.finalizeDelegation(mid, 'mid result');
+    const midState = bg._internals.readState(mid);
+    midState.updatedAt = Date.now() - 10 * DAY;
+    fs.writeFileSync(path.join(store, mid + '.json'), JSON.stringify(midState, null, 2));
+    backdateJournal(mid, 10 * DAY);
+    // Case 3: 40d-old interrupt is terminal too — pruned like other terminals.
+    const intr = await bg.createDelegation({ prompt: 'intr' });
+    await bg.finalizeDelegation(intr, 'intr result');
+    const intrState = bg._internals.readState(intr);
+    intrState.state = 'interrupt';
+    intrState.interruptReason = 'stale';
+    intrState.updatedAt = Date.now() - 40 * DAY;
+    fs.writeFileSync(path.join(store, intr + '.json'), JSON.stringify(intrState, null, 2));
+    backdateJournal(intr, 10 * DAY);
+    const removed = await bg.pruneDelegations(30);
+    assert.strictEqual(removed, 2, 'the 40d completed + 40d interrupt states should be pruned (got ' + removed + ')');
+    assert.ok(!fs.existsSync(path.join(store, old + '.json')), 'old state removed');
+    assert.ok(!fs.existsSync(path.join(store, old + '.journal.jsonl')), 'old journal removed');
+    assert.ok(!fs.existsSync(path.join(store, intr + '.json')), 'old interrupt state removed');
+    assert.ok(!fs.existsSync(path.join(store, intr + '.journal.jsonl')), 'old interrupt journal removed');
+    assert.ok(fs.existsSync(path.join(store, mid + '.json')), '10d-old terminal keeps state');
+    assert.ok(!fs.existsSync(path.join(store, mid + '.journal.jsonl')), '10d-old terminal loses journal');
+  });
+
+  // T-023 (1) retry-then-quarantine reuses the same worktree path across retries.
+  await check('T-023 retry then quarantine reuses worktree path', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const worktreeRoot = tmpDir();
+    let setupCalls = 0;
+    const fakeWorktreeManager = {
+      setup: async (repoDir, id) => {
+        setupCalls += 1;
+        const wtPath = path.join(worktreeRoot, String(id).replace(/[^a-zA-Z0-9_-]/g, ''));
+        fs.mkdirSync(wtPath, { recursive: true });
+        return { path: wtPath, branch: 'bg-' + id, repoDir };
+      },
+      remove: async (worktree) => {
+        fs.rmSync(worktree.path, { recursive: true, force: true });
+      },
+    };
+    // Default retry budget is 2: two auto-retries, then quarantine.
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp', repoDir: worktreeRoot, worktreeManager: fakeWorktreeManager });
+    const id = await bg.createDelegation({ prompt: 'x', mode: 'worktree' });
+    const first = bg._internals.readState(id);
+    assert.strictEqual(first.state, 'running', 'starts running');
+    const worktreePath = first.worktree.path;
+    assert.ok(worktreePath, 'worktree path should be recorded');
+    assert.strictEqual(setupCalls, 1, 'setup called once at creation');
+
+    async function failDelegation() {
+      const st = bg._internals.readState(id);
+      st.state = 'error';
+      st.summary = 'boom';
+      bg._internals.writeState(st);
+    }
+    const retryLines = () => createJournal({ storeDir: store }).replay(id).filter((e) => e.type === 'retry').length;
+
+    await failDelegation();
+    await bg.reconcileOrphans();
+    let st = bg._internals.readState(id);
+    assert.strictEqual(st.retryCount, 1, 'first failure retries (retryCount 1)');
+    assert.strictEqual(st.state, 'running', 'retried delegation restarts');
+    assert.strictEqual(st.worktree.path, worktreePath, 'worktree path reused on retry');
+    assert.strictEqual(setupCalls, 1, 'no new worktree on retry');
+
+    await failDelegation();
+    await bg.reconcileOrphans();
+    st = bg._internals.readState(id);
+    assert.strictEqual(st.retryCount, 2, 'second failure retries (retryCount 2)');
+    assert.strictEqual(st.state, 'running', 'retried delegation restarts again');
+    assert.strictEqual(st.worktree.path, worktreePath, 'worktree path still reused');
+    assert.strictEqual(setupCalls, 1, 'still no new worktree');
+    assert.strictEqual(retryLines(), 2, 'two retry journal lines (got ' + retryLines() + ')');
+
+    await failDelegation();
+    await bg.reconcileOrphans();
+    st = bg._internals.readState(id);
+    assert.strictEqual(st.state, 'error', 'over budget stays error');
+    assert.strictEqual(st.quarantined, true, 'over budget quarantines');
+    assert.strictEqual(st.worktree.path, worktreePath, 'quarantine keeps the worktree path');
+    assert.strictEqual(setupCalls, 1, 'quarantine creates no worktree');
+    const types = createJournal({ storeDir: store }).replay(id).map((e) => e.type);
+    assert.ok(types.includes('quarantined'), 'quarantined journal line present');
+
+    // Quarantined tasks are never auto-retried: further reconciles are no-ops.
+    const createsBefore = client._stats().createCount;
+    await bg.reconcileOrphans();
+    assert.strictEqual(client._stats().createCount, createsBefore, 'no new spawn after quarantine');
+    assert.strictEqual(retryLines(), 2, 'no new retry line after quarantine');
+    assert.strictEqual(bg._internals.readState(id).quarantined, true, 'still quarantined');
+  });
+
+  // T-030 (1) known agent -> typed result (schemas via deps injection, so the
+  // shared plugin registry is never mutated; uniquely-named fake agent).
+  await check('T-030 typed result for known agent', async () => {
+    registerSchema('t030-typed-agent', (raw) => ({ ok: true, value: { echo: String(raw) } }));
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp', validateResult });
+    const id = await bg.createDelegation({ prompt: 'x', agent: 't030-typed-agent' });
+    const child = bg._internals.readState(id).childSessionID;
+    client._markComplete(child, 'TYPED OUTPUT');
+    await bg.readDelegation(id, 2000);
+    const st = bg._internals.readState(id);
+    assert.strictEqual(st.result && st.result.kind, 'typed', 'known agent should persist a typed result (got ' + JSON.stringify(st.result) + ')');
+  });
+
+  // T-030 (2) unknown agent -> generic result, bg_read still readable text.
+  await check('T-030 generic result for unknown agent', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp', validateResult });
+    const id = await bg.createDelegation({ prompt: 'x', agent: 't030-unknown-agent' });
+    const child = bg._internals.readState(id).childSessionID;
+    client._markComplete(child, 'GENERIC OUTPUT');
+    const text = await bg.readDelegation(id, 2000);
+    assert.strictEqual(text, 'GENERIC OUTPUT', 'bg_read should still return readable text (got ' + text + ')');
+    const st = bg._internals.readState(id);
+    assert.strictEqual(st.result && st.result.kind, 'generic', 'unknown agent should persist a generic result (got ' + JSON.stringify(st.result) + ')');
+  });
+
+  // T-030 (3) streaming callback receives a partial string from fetchChildResult.
+  await check('T-030 streaming callback receives partial string', async () => {
+    const client = makeFakeClient();
+    const store = tmpDir();
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp' });
+    const id = await bg.createDelegation({ prompt: 'x' });
+    const child = bg._internals.readState(id).childSessionID;
+    // Seed a partial without completing: messages() returns it while get()
+    // still reports running, so the read keeps polling (and streaming).
+    client._injectSession(child, { id: child, tokens: { output: 0 }, state: 'running', _result: 'PARTIAL TEXT' });
+    const partials = [];
+    const res = await bg.readDelegation(id, 1200, (partial) => { partials.push(partial); });
+    assert.strictEqual(res, 'timeout: still running', 'streaming read still times out deterministically (got ' + res + ')');
+    assert.ok(partials.length >= 1, 'streaming callback should fire at least once');
+    assert.ok(partials.some((p) => typeof p === 'string' && p.indexOf('PARTIAL TEXT') !== -1), 'streaming callback should receive the partial string (got ' + JSON.stringify(partials) + ')');
+  });
+
+  // T-031 resume: errored + quarantined worktree delegation resumes in place
+  // (path reused, quarantine cleared, [Resume context] injected); readonly
+  // delegation returns cannot_resume: no_worktree.
+  await check('T-031 resume quarantined worktree reuses path; readonly cannot_resume', async () => {
+    const client = makeFakeClient();
+    // Capture child prompt bodies to verify the [Resume context] injection.
+    const childPrompts = [];
+    const innerPrompt = client.session.prompt;
+    client.session.prompt = async (args) => {
+      try {
+        const parts = args && args.body && args.body.parts;
+        if (Array.isArray(parts)) childPrompts.push(parts.map((p) => p.text).join('\n'));
+      } catch {
+        /* capture never breaks the fake */
+      }
+      return innerPrompt(args);
+    };
+    const store = tmpDir();
+    const worktreeRoot = tmpDir();
+    let setupCalls = 0;
+    const fakeWorktreeManager = {
+      setup: async (repoDir, id) => {
+        setupCalls += 1;
+        const wtPath = path.join(worktreeRoot, String(id).replace(/[^a-zA-Z0-9_-]/g, ''));
+        fs.mkdirSync(wtPath, { recursive: true });
+        return { path: wtPath, branch: 'bg-' + id, repoDir };
+      },
+      remove: async (worktree) => {
+        fs.rmSync(worktree.path, { recursive: true, force: true });
+      },
+    };
+    const bg = createBackgroundDelegate({ client, storeDir: store, directory: '/tmp', repoDir: worktreeRoot, worktreeManager: fakeWorktreeManager });
+    const id = await bg.createDelegation({ prompt: 'fix the bug', mode: 'worktree', title: 'T-031' });
+    const before = bg._internals.readState(id);
+    assert.strictEqual(before.prompt, 'fix the bug', 'original prompt must persist in state');
+    const worktreePath = before.worktree.path;
+    assert.ok(worktreePath, 'worktree path should be recorded');
+    assert.strictEqual(setupCalls, 1, 'setup called once at creation');
+    childPrompts.length = 0;
+    // Journal a partial summary, then force an errored + quarantined state
+    // (simulating the T-023 over-budget quarantine path).
+    createJournal({ storeDir: store }).append(id, 'error', { summary: 'half-fixed: parser done' });
+    const failed = bg._internals.readState(id);
+    failed.state = 'error';
+    failed.summary = 'boom';
+    failed.quarantined = true;
+    failed.retryCount = 2;
+    bg._internals.writeState(failed);
+
+    const resumed = await bg.resumeDelegation(id);
+    assert.strictEqual(resumed.state, 'running', 'resume must return the running delegation');
+    assert.ok(resumed.childSessionID, 'resume must spawn a new child');
+    assert.notStrictEqual(resumed.childSessionID, before.childSessionID, 'resumed child must be new');
+    assert.strictEqual(resumed.worktree.path, worktreePath, 'worktree path must be reused');
+    assert.strictEqual(resumed.quarantined, false, 'quarantine must be cleared');
+    assert.strictEqual(resumed.retryCount, 0, 'retryCount must reset');
+    assert.strictEqual(resumed.heartbeatAt, null, 'heartbeatAt must reset');
+    assert.strictEqual(resumed.prompt, 'fix the bug', 'stored prompt must stay the verbatim original');
+    assert.strictEqual(setupCalls, 1, 'no new worktree on resume');
+    assert.ok(childPrompts.length >= 1, 'resumed child must be prompted');
+    const lastPrompt = childPrompts[childPrompts.length - 1];
+    assert.ok(lastPrompt.includes('fix the bug'), 'resume prompt must carry the original prompt');
+    assert.ok(lastPrompt.includes('[Resume context]'), 'resume prompt must carry resume context');
+    assert.ok(lastPrompt.includes('half-fixed: parser done'), 'resume context must carry the last journal summary');
+    const types = createJournal({ storeDir: store }).replay(id).map((e) => e.type);
+    assert.ok(types.includes('resume'), 'resume journal line present');
+
+    // Readonly delegations cannot resume (no worktree).
+    const readonly = await bg.createDelegation({ prompt: 'research', title: 'RO' });
+    const refused = await bg.resumeDelegation(readonly);
+    assert.strictEqual(refused.cannot_resume, 'no_worktree', 'readonly must return cannot_resume: no_worktree (got ' + JSON.stringify(refused) + ')');
   });
 
   console.log('\n' + passed + ' passed, ' + failed + ' failed');

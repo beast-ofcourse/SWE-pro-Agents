@@ -165,6 +165,63 @@ async function run() {
     assert.strictEqual(state.state, 'error', 'delegation marked error');
   });
 
+  await check('diffReport reports committed change with correct counts', async () => {
+    const repo = initTempRepo();
+    const wm = createWorktreeManager();
+    const wt = await wm.setup(repo, 'bg_diff1');
+    try {
+      fs.writeFileSync(path.join(wt.path, 'feature.txt'), 'line1\nline2\nline3\n');
+      execFileSync('git', ['add', 'feature.txt'], { cwd: wt.path });
+      execFileSync('git', ['commit', '-q', '-m', 'add feature'], { cwd: wt.path });
+      const report = await wm.diffReport(repo, wt);
+      assert.strictEqual(report.filesChanged, 1, 'one file changed (got ' + JSON.stringify(report) + ')');
+      assert.strictEqual(report.insertions, 3, 'three insertions (got ' + JSON.stringify(report) + ')');
+      assert.strictEqual(report.deletions, 0, 'zero deletions (got ' + JSON.stringify(report) + ')');
+      assert.ok(report.conflictProbability === 'low' || report.conflictProbability === 'high', 'conflictProbability present');
+      assert.ok(typeof report.base === 'string' && report.base.length > 0, 'merge-base present');
+    } finally {
+      await wm.remove(wt);
+    }
+  });
+
+  await check('diffReport flags conflict output as high and never merges', async () => {
+    const calls = [];
+    const fakeExec = (args) => {
+      calls.push(args);
+      if (args[0] === 'merge-base') return 'base999\n';
+      if (args[0] === 'diff') return '1\t1\tfile.txt\n';
+      if (args[0] === 'merge-tree') return 'treeout\n+<<<<<<< ours\nCONFLICT (content): Merge conflict\n';
+      return '';
+    };
+    const wm = createWorktreeManager({ execGit: fakeExec });
+    const report = await wm.diffReport('/fake-repo', { path: '/fake-wt', branch: 'bg-fake', repoDir: '/fake-repo' });
+    assert.strictEqual(report.conflictProbability, 'high', 'conflict markers → high');
+    assert.strictEqual(report.filesChanged, 1, 'one file');
+    assert.strictEqual(report.insertions, 1, 'one insertion');
+    assert.strictEqual(report.deletions, 1, 'one deletion');
+    assert.ok(!calls.some((a) => a[0] === 'merge'), 'no git merge command issued (saw ' + JSON.stringify(calls) + ')');
+  });
+
+  await check('diffReport surfaces git failures as contextual Errors', async () => {
+    const missing = createWorktreeManager();
+    let threw = false;
+    try {
+      await missing.diffReport('/definitely-not-a-repo-bg-t024', { path: '/x', branch: 'bg-nope', repoDir: '/definitely-not-a-repo-bg-t024' });
+    } catch (err) {
+      threw = true;
+      assert.ok(/diffReport/.test(err.message), 'error names diffReport: ' + err.message);
+    }
+    assert.ok(threw, 'throws on git failure instead of swallowing');
+    let usageThrew = false;
+    try {
+      await missing.diffReport('/definitely-not-a-repo-bg-t024', null);
+    } catch (err) {
+      usageThrew = true;
+      assert.ok(/requires repoDir/.test(err.message), 'usage error is explicit: ' + err.message);
+    }
+    assert.ok(usageThrew, 'throws on missing worktree arg');
+  });
+
   console.log('\n' + passed + ' passed, ' + failed + ' failed');
   if (failed > 0) process.exit(1);
 }

@@ -35,6 +35,9 @@ jobs:
           node --check scripts/run-loop.js
           node --check scripts/validate-plan.js
           node --check scripts/pack-config.js
+          node --check scripts/probe-spawn.js
+          node --check scripts/cli-shared.js
+          node --check scripts/build-plugin.js
           node --check test/installer.test.js
           node --check test/validate.test.js
           node --check test/validate-plan.test.js
@@ -45,6 +48,21 @@ jobs:
           node --check test/bin.test.js
           node --check test/continuation.test.js
           node --check test/pack-config.test.js
+          node --check test/probe-spawn.test.js
+          node --check test/background-delegate.test.js
+          node --check test/background-plugin.test.js
+          node --check test/background-worktree.test.js
+          node --check test/background-integration.test.js
+          node --check test/build-plugin.test.js
+          node --check test/background-journal.test.js
+          node --check test/background-spawner.test.js
+          node --check test/background-results.test.js
+          node --check test/background-scheduler.test.js
+          node --check test/background-dashboard.test.js
+      - name: Plugin freshness (codegen in sync)
+        run: node scripts/build-plugin.js --check
+      - name: Plugin codegen tests
+        run: node test/build-plugin.test.js
       - name: Pack validation (agents + skills, strict)
         run: npm run validate
       - name: Installer lifecycle tests
@@ -67,3 +85,23 @@ jobs:
         run: node test/continuation.test.js
       - name: Config module tests
         run: node test/pack-config.test.js
+      - name: Spawn probe tests
+        run: node test/probe-spawn.test.js
+      - name: Background delegation tests
+        run: node test/background-delegate.test.js
+      - name: Background plugin tests
+        run: node test/background-plugin.test.js
+      - name: Background worktree tests
+        run: node test/background-worktree.test.js
+      - name: Background integration tests
+        run: node test/background-integration.test.js
+      - name: Background journal tests
+        run: node test/background-journal.test.js
+      - name: Background spawner tests
+        run: node test/background-spawner.test.js
+      - name: Background results tests
+        run: node test/background-results.test.js
+      - name: Background scheduler tests
+        run: node test/background-scheduler.test.js
+      - name: Background dashboard tests
+        run: node test/background-dashboard.test.js

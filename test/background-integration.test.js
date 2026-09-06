@@ -76,16 +76,17 @@ async function run() {
     }
   };
 
-  await check('plugin exposes 7 tools and full lifecycle works with real worktree', async () => {
+  await check('plugin exposes 10 tools and full lifecycle works with real worktree', async () => {
     const repoDir = tmpDir();
     initRepo(repoDir);
     const client = makeFakeClient();
     const server = await plugin.server({ client, directory: repoDir });
     const tools = server.tool;
 
-    for (const t of ['bg_delegate', 'bg_status', 'bg_read', 'bg_list', 'bg_stop', 'bg_steer', 'bg_prune']) {
+    for (const t of ['bg_delegate', 'bg_status', 'bg_read', 'bg_list', 'bg_stop', 'bg_steer', 'bg_prune', 'bg_merge', 'bg_resume', 'bg_dashboard']) {
       assert.ok(tools[t] && typeof tools[t].execute === 'function', 'missing tool ' + t);
     }
+    assert.strictEqual(Object.keys(tools).length, 10, 'exactly 10 tools, got ' + Object.keys(tools).join(','));
 
     const ret = await tools.bg_delegate.execute({ prompt: 'do work', agent: 'swe-mini' });
     const m = ret.match(/delegated (bg_\S+)/);
@@ -139,6 +140,93 @@ async function run() {
     // bg_stop cancels and removes the worktree.
     await tools2.bg_stop.execute({ id: id2 });
     assert.ok(!fs.existsSync(st2.worktree.path), 'worktree removed after bg_stop');
+  });
+
+  await check('bg_delegate default mode stays readonly; capabilities/budget stored (depth/priority informational)', async () => {
+    const repoDir = tmpDir();
+    initRepo(repoDir);
+    const client = makeFakeClient();
+    const server = await plugin.server({ client, directory: repoDir });
+    const tools = server.tool;
+
+    const ret = await tools.bg_delegate.execute({
+      prompt: 'research Y',
+      capabilities: { maxTokens: 1000 },
+      budget: { maxTokens: 2000, maxToolCalls: 50 },
+      priority: 1,
+      depth: 1,
+    });
+    const m = ret.match(/delegated (bg_\S+)/);
+    assert.ok(m, 'bg_delegate with new args returns an id');
+    const st = JSON.parse(fs.readFileSync(path.join(process.env.SWE_PRO_DELEGATIONS_DIR, m[1] + '.json'), 'utf-8'));
+    assert.strictEqual(st.mode, 'readonly', 'default mode is readonly (unchanged behavior — worktree stays explicit)');
+    assert.deepStrictEqual(st.capabilities, { maxTokens: 1000 }, 'capabilities stored');
+    assert.deepStrictEqual(st.budget, { maxTokens: 2000, maxToolCalls: 50 }, 'budget forwarded as the cap');
+  });
+
+  await check('bg_merge --check reports a committed change; dashboard/status-json/list render branch', async () => {
+    const repoDir = tmpDir();
+    initRepo(repoDir);
+    const client = makeFakeClient();
+    const server = await plugin.server({ client, directory: repoDir });
+    const tools = server.tool;
+
+    const ret = await tools.bg_delegate.execute({ prompt: 'write code', agent: 'swe-mini', mode: 'worktree' });
+    const id = ret.match(/delegated (bg_\S+)/)[1];
+    const st = JSON.parse(fs.readFileSync(path.join(process.env.SWE_PRO_DELEGATIONS_DIR, id + '.json'), 'utf-8'));
+    assert.ok(st.worktree && st.worktree.branch, 'worktree branch recorded');
+
+    fs.writeFileSync(path.join(st.worktree.path, 'feature.txt'), 'a\nb\n');
+    execSync('git add feature.txt', { cwd: st.worktree.path });
+    execSync('git -c user.email=t@t -c user.name=t commit -q -m feature', { cwd: st.worktree.path });
+
+    const mergeOut = await tools.bg_merge.execute({ id, check: true });
+    const report = JSON.parse(mergeOut);
+    assert.strictEqual(report.filesChanged, 1, 'one file changed: ' + mergeOut);
+    assert.strictEqual(report.insertions, 2, 'two insertions: ' + mergeOut);
+    assert.strictEqual(report.deletions, 0, 'zero deletions: ' + mergeOut);
+    assert.ok(report.conflictProbability === 'low' || report.conflictProbability === 'high', 'conflictProbability present: ' + mergeOut);
+    assert.ok(typeof report.base === 'string' && report.base.length > 0, 'base present: ' + mergeOut);
+
+    const tree = await tools.bg_dashboard.execute({});
+    assert.ok(tree.includes(id), 'dashboard lists the delegation: ' + tree);
+    assert.ok(tree.includes(st.worktree.branch), 'dashboard renders the worktree branch: ' + tree);
+
+    const single = JSON.parse(await tools.bg_status.execute({ id, json: true }));
+    assert.strictEqual(single.branch, st.worktree.branch, 'status json carries branch');
+    assert.ok(typeof single.logPath === 'string' && single.logPath.endsWith(id + '.log'), 'status json carries logPath');
+    assert.ok(single.createdAt && single.updatedAt, 'status json carries timestamps');
+    assert.ok('tokens' in single, 'status json carries the tokens key (null when unknown)');
+
+    const list = JSON.parse(await tools.bg_list.execute({}));
+    const item = list.find((l) => l.id === id);
+    assert.ok(item, 'bg_list includes the delegation');
+    assert.strictEqual(item.branch, st.worktree.branch, 'bg_list returns branch (Journey B)');
+
+    await tools.bg_stop.execute({ id });
+  });
+
+  await check('bg_resume: readonly reports cannot_resume; worktree resumes', async () => {
+    const repoDir = tmpDir();
+    initRepo(repoDir);
+    const client = makeFakeClient();
+    const server = await plugin.server({ client, directory: repoDir });
+    const tools = server.tool;
+
+    const roRet = await tools.bg_delegate.execute({ prompt: 'research Z' });
+    const roId = roRet.match(/delegated (bg_\S+)/)[1];
+    const roOut = await tools.bg_resume.execute({ id: roId });
+    assert.ok(roOut.includes('cannot_resume'), 'readonly resume reports cannot_resume (got ' + roOut + ')');
+    assert.ok(roOut.includes('no_worktree'), 'reason is no_worktree (got ' + roOut + ')');
+
+    const wtRet = await tools.bg_delegate.execute({ prompt: 'write code', mode: 'worktree' });
+    const wtId = wtRet.match(/delegated (bg_\S+)/)[1];
+    await tools.bg_read.execute({ id: wtId });
+    const resumed = await tools.bg_resume.execute({ id: wtId });
+    assert.ok(resumed.includes('resumed ' + wtId), 'worktree delegation resumes (got ' + resumed + ')');
+
+    await tools.bg_stop.execute({ id: roId });
+    await tools.bg_stop.execute({ id: wtId });
   });
 
   console.log('\n' + passed + ' passed, ' + failed + ' failed');
