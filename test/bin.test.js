@@ -238,5 +238,18 @@ test('setup --select without a TTY exits 2 with guidance', () => {
   assert.ok(r.stderr.includes('--select needs an interactive terminal'), 'guidance on stderr');
 });
 
+test('setup --apply survives an unwritable opencode.json', () => {
+  // Review m1: a locked config must not crash setup after the goal flag
+  // was already written — report the manual snippet instead.
+  const dir = tempDir('bin-setup-');
+  fs.mkdirSync(path.join(dir, '.config', 'opencode'), { recursive: true });
+  fs.mkdirSync(path.join(dir, '.config', 'opencode', 'opencode.json'));
+  const r = runSetup(['--apply'], dir);
+  assert.strictEqual(r.status, 0, `expected exit 0, got ${r.status}: ${r.stderr}`);
+  assert.ok(r.stdout.includes('Add the entry manually'), 'manual snippet printed');
+  const cfg = JSON.parse(fs.readFileSync(path.join(dir, GOAL_CONFIG), 'utf8'));
+  assert.strictEqual(cfg.features.goal, true, 'goal flag write already happened');
+});
+
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed > 0 ? 1 : 0);

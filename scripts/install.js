@@ -75,6 +75,7 @@ const LEGACY_AGENTS_MD = path.join(AGENTS_DIR, 'AGENTS.md');
 
 const pkg = require(path.join(__dirname, '..', 'package.json'));
 const packConfig = require('./pack-config.js');
+const openCodeConfig = require('./opencode-config.js');
 const installSelect = require('./install-select.js');
 
 // Selection from `swe-pro-agents setup` (JSON) — when present the install is
@@ -319,6 +320,15 @@ function determineSelection(packAgents, packSkills, previous) {
     if (!Array.isArray(universe)) return [];
     return pack.filter((n) => !universe.includes(n));
   };
+  // Pre-selection manifests (no packAgents/packSkills universe) ALWAYS
+  // represent full installs — selection did not exist before this feature,
+  // so nothing absent from them was ever deselected. Treating them as an
+  // explicit pick would prune every file added or renamed since (e.g. the
+  // swe-implementation→swe-mini rename, web-researcher→deep-researcher).
+  // They install the full pack; the written manifest gains universe keys,
+  // so the NEXT upgrade preserves properly.
+  const legacyAgents = !previous || !Array.isArray(previous.packAgents);
+  const legacySkills = !previous || !Array.isArray(previous.packSkills);
 
   let agents;
   let skills;
@@ -326,17 +336,17 @@ function determineSelection(packAgents, packSkills, previous) {
   let addedSkills = [];
   if (resolved.agents !== null) {
     agents = resolved.agents;
-  } else if (previous) {
-    agents = [...new Set([...intersect(previous.agents, packAgents), ...addedSince(packAgents, previous.packAgents)])];
-  } else {
+  } else if (!previous || legacyAgents) {
     agents = [...packAgents];
+  } else {
+    agents = [...new Set([...intersect(previous.agents, packAgents), ...addedSince(packAgents, previous.packAgents)])];
   }
   if (resolved.skills !== null) {
     skills = resolved.skills;
-  } else if (previous) {
-    skills = [...new Set([...intersect(previous.skills, packSkills), ...addedSince(packSkills, previous.packSkills)])];
-  } else {
+  } else if (!previous || legacySkills) {
     skills = [...packSkills];
+  } else {
+    skills = [...new Set([...intersect(previous.skills, packSkills), ...addedSince(packSkills, previous.packSkills)])];
   }
   if (previous && previous.packAgents) {
     addedAgents = addedSince(packAgents, previous.packAgents);
@@ -510,11 +520,42 @@ async function main() {
       console.log();
     }
 
+    // Register the agents path in opencode.json automatically (oh-my-opencode
+    // precedent): idempotent, .bak backup before overwrite, skipped when
+    // already present. Never fails the install — worst case prints the manual
+    // snippet. Skipped entirely with SWE_PRO_AGENTS_NO_CONFIG, or when a
+    // custom OPENCODE_CONFIG dir is in use (those users manage their own file).
+    const configSnippet = `{ "agents": [{ "path": "${AGENTS_DIR.replace(/\\/g, '\\\\')}" }] }`;
+    try {
+      if (process.env.SWE_PRO_AGENTS_NO_CONFIG) {
+        console.log(`  Config registration skipped (SWE_PRO_AGENTS_NO_CONFIG). To wire the agents manually:`);
+        console.log(`  ${configSnippet}`);
+        console.log();
+      } else if (process.env.OPENCODE_CONFIG || process.env.OPENCODE_CONFIG_DIR) {
+        console.log(`  Custom OpenCode config location detected — leaving your config files alone.`);
+        console.log(`  Make sure your config loads this agents path:`);
+        console.log(`  ${configSnippet}`);
+        console.log();
+      } else {
+        const applied = openCodeConfig.ensureAgentPathEntry(openCodeConfig.defaultConfigPath(), AGENTS_DIR);
+        if (applied.outcome === 'present') {
+          console.log(`  opencode.json already references ${PACKAGE_NAME} — nothing to change.`);
+        } else if (applied.outcome === 'written') {
+          console.log(`  Registered the agents path in opencode.json${applied.backup ? ` (backup at ${applied.backup})` : ''}.`);
+        } else {
+          console.log(`  Could not update opencode.json automatically — add the entry manually:`);
+          console.log(`  ${configSnippet}`);
+        }
+        console.log();
+      }
+    } catch {
+      console.log(`  Skipping opencode.json registration — add the entry manually:`);
+      console.log(`  ${configSnippet}`);
+      console.log();
+    }
+
     // Next steps
-    console.log(`  Next step: add the agent path to your opencode.json:`);
-    console.log(`  { "agents": [{ "path": "${AGENTS_DIR.replace(/\\/g, '\\\\')}" }] }`);
-    console.log();
-    console.log(`  Or run:  swe-pro-agents setup --apply`);
+    console.log(`  Restart OpenCode and your agent team is ready.`);
     console.log(`  Reselect components anytime:  swe-pro-agents setup --select`);
     console.log();
     console.log(`  Skills are auto-discovered — no config needed.`);

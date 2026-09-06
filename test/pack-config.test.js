@@ -7,6 +7,15 @@ const path = require('path');
 
 const config = require('../scripts/pack-config.js');
 
+// Hermetic HOME (review m2 follow-up): isGoalEnabled falls back to a global
+// file under ~/.config, so a real-HOME opt-out would flip every fail-open
+// test in this file. os.homedir() follows these vars on Windows.
+const ISOLATED_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'cfg-home-'));
+process.env.HOME = ISOLATED_HOME;
+process.env.USERPROFILE = ISOLATED_HOME;
+process.env.HOMEDRIVE = path.parse(ISOLATED_HOME).root;
+process.env.HOMEPATH = ISOLATED_HOME.replace(path.parse(ISOLATED_HOME).root, '');
+
 let passed = 0;
 let failed = 0;
 

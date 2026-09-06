@@ -121,21 +121,21 @@ cp ~/.config/swe-pro-agents/AGENTS.md ~/.config/opencode/AGENTS.md
 
 If you already have one, merge in what you want — the installer never overwrites a global `AGENTS.md` automatically. `swe-pro-agents status` tells you which state you're in.
 
-Then register the agents with OpenCode:
+The installer also registers the agents path in your `opencode.json`
+automatically (with a `.bak` backup, skipped when already present — the same
+oh-my-opencode pattern), so there is no second setup step. Plugins and skills
+need no registration: OpenCode loads `~/.config/opencode/plugins/` and
+discovers skills on its own. Two escape hatches: `SWE_PRO_AGENTS_NO_CONFIG=1`
+skips the `opencode.json` write, and a custom `OPENCODE_CONFIG`/`OPENCODE_CONFIG_DIR`
+is always left alone with a printed snippet instead.
 
-```json
-{
-  "agents": [{ "path": "~/.config/opencode/agents/swe-pro-agents" }]
-}
-```
-
-Or let the CLI do it (backs up your config first):
+Then restart OpenCode and your agent team is ready. `swe-pro-agents setup`
+remains for reselecting components, toggling the goal system, and showing the
+manual snippet:
 
 ```bash
 swe-pro-agents setup --apply
 ```
-
-**That's it.** Restart OpenCode and your agent team is ready.
 
 ### Choose what gets installed
 
@@ -391,7 +391,7 @@ The preuninstall hook removes everything this pack installed: the agent files, t
 Plain Node.js (≥ 18), zero dependencies, no build step — the tests are the entry point:
 
 ```bash
-npm test          # 22 suites, 310 tests — installer, validators, loop engine, CLI, plugins, background subagents, codegen, install selection
+npm test          # 24 suites, 347 tests — installer, validators, loop engine, CLI, plugins, background subagents, codegen, install selection
 npm run validate  # strict pack validation (exits 1 on any violation)
 ```
 

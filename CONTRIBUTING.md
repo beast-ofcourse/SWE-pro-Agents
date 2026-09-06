@@ -37,17 +37,17 @@ npm test
 
 ## Testing
 
-- `npm test` runs the full zero-dependency suite: `test/installer.test.js` (17
+- `npm test` runs the full zero-dependency suite: `test/installer.test.js` (19
   tests — the install/uninstall lifecycle: fresh install, idempotent reinstall,
   stale-file pruning, no-manifest safety, uninstall isolation, manifest-less
   uninstall, and plugin-file handling), `test/validate.test.js` (23 tests — the
   pack validator's self-tests), `test/validate-plan.test.js` (12 tests — the plan
   validator), `test/loop-logic.test.js` (57 tests — the loop's pure logic),
   `test/ledger.test.js` (8 tests — the ledger store), `test/loop-gate.test.js`
-  (14 tests — the goal gate), `test/run-loop.test.js` (10 tests — the loop runner
-  end to end), `test/bin.test.js` (13 tests — the CLI: loop runner plus
-  `setup` selection flags), `test/continuation.test.js` (14 tests — the continuation
-  plugin's goal-gated idle nudge, including feature-flag gating),
+  (29 tests — the goal gate, records, and standalone commands), `test/run-loop.test.js` (10 tests — the loop runner
+  end to end), `test/bin.test.js` (14 tests — the CLI: loop runner plus
+  `setup` selection flags and config-write safety), `test/continuation.test.js` (17 tests — the continuation
+  plugin's goal-gated idle nudge, incl. unpinned registration),
   `test/pack-config.test.js` (18 tests — the `features.goal` config reader
   plus the global flag),
   `test/probe-spawn.test.js` (6 tests — the child-session spawn hard-gate probe),
@@ -61,7 +61,9 @@ npm test
   `test/background-results.test.js` (8 tests — result schemas + redaction),
   `test/background-scheduler.test.js` (8 tests — concurrency + backpressure), and
   `test/background-dashboard.test.js` (8 tests — dashboard views + task logs),
-  `test/install-select.test.js` (14 tests — pick parsing, flag resolution, option listing).
+  `test/install-select.test.js` (14 tests — pick parsing, flag resolution, option listing),
+  `test/opencode-config.test.js` (7 tests — agents-path entry writer),
+  `test/goal-tools.test.js` (9 tests — programmatic goal tools).
 - `npm run validate` runs `scripts/validate.js`, the **strict** pack validator: it
   lints every agent and skill and exits 1 on any violation. The validator is wired
   into CI, so the pack must stay green there too.

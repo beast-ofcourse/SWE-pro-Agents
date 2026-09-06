@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Programmatic goal tools (`get_goal`, `set_goal`, `list_all_goals`, `get_goal_history`, `update_goal_objective`, `update_goal_status`, `clear_goal`): the same per-session goal state the `/goal` commands drive, now inspectable and manageable by agents and integrations. Backed by goal records (objective, active/paused status, timestamps, bounded transition history) in `scripts/loop-gate.js`; pausing retains the record instead of deleting it. Records stay ephemeral — a restart still wipes everything, same as arming. Reads tolerate absence (null/[]); writes throw on missing session or empty objective; there is deliberately no close-with-evidence tool (this loop has pause/resume/clear, not close).
+- Standalone `/pause_goal` and `/resume_goal` commands (prevalentWare-style discoverability): same gate as `/goal pause|resume`, no subcommand parsing, arguments ignored, visible in the palette and to integrations listing the command catalog. Unpinned like `/goal`.
+
+### Fixed
+
+- `/goal` command was agent-pinned to `swe-pro`, which hides it from every other session including the default Build session (reported as "command doesn't ship"). Unpinned so it registers everywhere — goal handling is plain text that works in any session; the template now tells users autonomous execution runs in swe-pro sessions. The loop gate itself is unchanged (still swe-pro-only by design).
+
+### Added
+
+- **Zero-step setup**: `npm install -g` now finishes the job — the postinstall hook registers the agents path in `opencode.json` automatically (oh-my-opencode precedent: `.bak` backup, skipped when present, never fails the install). Escape hatches: `SWE_PRO_AGENTS_NO_CONFIG=1` skips the write; a custom `OPENCODE_CONFIG`/`OPENCODE_CONFIG_DIR` is left alone with a printed snippet. `swe-pro-agents setup --apply` remains for explicit/legacy use; the writer lives once in `scripts/opencode-config.js`, shared by both paths.
+
+### Fixed
+
+- Upgrades from pre-selection manifests install the full pack again: manifests written before component selection existed always represent full installs, so files added or renamed since (e.g. `swe-implementation`→`swe-mini`, `web-researcher`→`deep-researcher`) were silently skipped — and anything on disk but unrecorded got pruned. Such upgrades now install everything current (stale renames still prune); the written manifest gains universe tracking so the *next* upgrade preserves properly.
+
 ## [3.0.1] - 2026-09-06
 
 ### Added

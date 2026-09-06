@@ -445,12 +445,65 @@ test('reselecting narrower prunes the deselected components', () => {
   assert.deepStrictEqual(readManifest(home).agents, ['swe-mini.md'], 'manifest follows the reselect');
 });
 
+test('upgrade from a pre-selection manifest installs the full pack', () => {
+  const home = tempHome();
+  // Pre-3.0.1 manifests have no universe keys — and predate selection, so
+  // they always represent full installs. Renamed/replaced files since
+  // (swe-implementation→swe-mini, web-researcher→deep-researcher) must land,
+  // and stale names must prune. Regression: the first selection build treated
+  // the manifest as an explicit pick and skeletonized such upgrades.
+  fs.mkdirSync(path.join(home, '.config', 'swe-pro-agents'), { recursive: true });
+  fs.writeFileSync(
+    manifestPath(home),
+    JSON.stringify({
+      packageVersion: '2.4.0',
+      agents: ['swe-pro.md', 'swe-implementation.md', 'web-researcher.md'],
+      skills: ['caveman'],
+      plugins: ['swe-pro-agents.js'],
+    })
+  );
+  fs.mkdirSync(agentsDir(home), { recursive: true });
+  for (const f of ['swe-pro.md', 'swe-implementation.md', 'web-researcher.md']) {
+    fs.writeFileSync(path.join(agentsDir(home), f), 'stale\n');
+  }
+
+  run(INSTALL, home);
+
+  const installed = listDirFiles(agentsDir(home));
+  assert.deepStrictEqual(installed, AGENT_FILES, 'legacy upgrade installs the full current pack');
+  assert.ok(installed.includes('swe-mini.md'), 'renamed agent lands');
+  assert.ok(installed.includes('deep-researcher.md'), 'replacement agent lands');
+  const manifest = readManifest(home);
+  assert.deepStrictEqual([...manifest.agents].sort(), AGENT_FILES, 'manifest records the full set');
+  assert.ok(Array.isArray(manifest.packAgents) && manifest.packAgents.length > 0, 'universe now tracked for next time');
+});
+
 test('default install writes no global goal file (fail-open default)', () => {
   const home = tempHome();
   run(INSTALL, home);
   assert.ok(
     !fs.existsSync(path.join(packConfigDir(home), 'swe-pro-agents.config.json')),
     'no global config file on a default install'
+  );
+});
+
+test('install registers the agents path in opencode.json (idempotent)', () => {
+  const home = tempHome();
+  run(INSTALL, home);
+  const configFile = path.join(home, '.config', 'opencode', 'opencode.json');
+  const first = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+  assert.ok(
+    first.agents.some((a) => String(a.path).includes('swe-pro-agents')),
+    'agents path registered on install'
+  );
+  assert.ok(!fs.existsSync(configFile + '.bak'), 'no backup when the file is created fresh');
+
+  run(INSTALL, home);
+  const second = JSON.parse(fs.readFileSync(configFile, 'utf8'));
+  assert.strictEqual(
+    second.agents.filter((a) => String(a.path).includes('swe-pro-agents')).length,
+    1,
+    'reinstall adds no duplicate entry'
   );
 });
 

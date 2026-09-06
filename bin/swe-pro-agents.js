@@ -49,6 +49,7 @@ const {
 
 const { DEFAULT_PLAN_DIR, LEDGER_FILE, PLAN_FILE, stopReason, emit } = require('../scripts/cli-shared.js');
 const packConfig = require('../scripts/pack-config.js');
+const openCodeConfig = require('../scripts/opencode-config.js');
 const installSelect = require('../scripts/install-select.js');
 
 const PACKAGE_NAME = 'swe-pro-agents';
@@ -125,35 +126,31 @@ function checkForUpdates() {
 }
 
 function applyToOpenCodeConfig() {
-  let config = {};
-  let existed = false;
-
-  if (fs.existsSync(OPENCODE_CONFIG)) {
-    existed = true;
-    try {
-      const raw = fs.readFileSync(OPENCODE_CONFIG, 'utf-8').replace(/^\uFEFF/, '');
-      config = JSON.parse(raw);
-    } catch (err) {
-      console.log(`  ERROR: could not parse ${OPENCODE_CONFIG}: ${err.message}`);
-      console.log(`  Nothing was changed. Add the entry manually:`);
-      console.log(`    { "agents": [{ "path": "${configEntryPath()}" }] }`);
-      return;
-    }
+  // Review m1: filesystem failures (locked .bak, read-only dir) must not
+  // crash setup after the goal flag was already written — report the manual
+  // snippet instead, mirroring the postinstall path.
+  let result;
+  try {
+    result = openCodeConfig.ensureAgentPathEntry(OPENCODE_CONFIG, configEntryPath());
+  } catch (err) {
+    console.log(`  ERROR: could not update ${OPENCODE_CONFIG}: ${err.message}`);
+    console.log(`  Nothing was changed. Add the entry manually:`);
+    console.log(`    { "agents": [{ "path": "${configEntryPath()}" }] }`);
+    return;
   }
-
-  if (!config.agents) config.agents = [];
-  if (config.agents.some(a => String((a && a.path) || '').includes(PACKAGE_NAME))) {
+  if (result.outcome === 'present') {
     console.log(`  opencode.json already references ${PACKAGE_NAME} — nothing to change.`);
     return;
   }
-
-  if (existed) {
-    fs.copyFileSync(OPENCODE_CONFIG, OPENCODE_CONFIG + '.bak');
-    console.log(`  Backup written to ${OPENCODE_CONFIG}.bak`);
+  if (result.outcome === 'unparseable' || result.outcome === 'missing-dir') {
+    console.log(`  ERROR: could not update ${OPENCODE_CONFIG} (unreadable config).`);
+    console.log(`  Nothing was changed. Add the entry manually:`);
+    console.log(`    { "agents": [{ "path": "${configEntryPath()}" }] }`);
+    return;
   }
-
-  config.agents.push({ path: configEntryPath() });
-  fs.writeFileSync(OPENCODE_CONFIG, JSON.stringify(config, null, 2) + '\n');
+  if (result.backup) {
+    console.log(`  Backup written to ${result.backup}`);
+  }
   console.log(`  Added agent path to ${OPENCODE_CONFIG}`);
   console.log(`  Restart OpenCode to load the agents.`);
 }
@@ -161,17 +158,26 @@ function applyToOpenCodeConfig() {
 const GOAL_CONFIG_FILE = packConfig.CONFIG_FILE;
 
 // Interactive yes/no. Only prompts on a TTY; otherwise returns defaultValue.
+// A closing stdin (piped EOF) resolves the default instead of hanging.
 function promptGoalDefault(defaultValue) {
   if (!process.stdin.isTTY) return Promise.resolve(defaultValue);
   const readline = require('readline');
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
   return new Promise((resolve) => {
+    let done = false;
+    const finish = (value) => {
+      if (!done) {
+        done = true;
+        resolve(value);
+      }
+    };
+    rl.once('close', () => finish(defaultValue));
     rl.question('Enable the /goal autonomous-loop system? [Y/n] ', (answer) => {
       rl.close();
       const a = String(answer).trim().toLowerCase();
-      if (a === '' || a === 'y' || a === 'yes') return resolve(true);
-      if (a === 'n' || a === 'no') return resolve(false);
-      return resolve(defaultValue);
+      if (a === '' || a === 'y' || a === 'yes') return finish(true);
+      if (a === 'n' || a === 'no') return finish(false);
+      return finish(defaultValue);
     });
   });
 }

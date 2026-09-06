@@ -26,6 +26,14 @@ const path = require('path');
 // the supervisor timer.
 process.env.SWE_PRO_BG_SUPERVISOR = '0';
 process.env.SWE_PRO_DELEGATIONS_DIR = fs.mkdtempSync(path.join(os.tmpdir(), 'cont-bg-'));
+// Isolate HOME too (review m2): the goal flag falls back to a global file
+// under ~/.config, so a real-HOME opt-out would silently disable every
+// flag-on test in this file. os.homedir() follows these vars on Windows.
+const ISOLATED_HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'cont-home-'));
+process.env.HOME = ISOLATED_HOME;
+process.env.USERPROFILE = ISOLATED_HOME;
+process.env.HOMEDRIVE = path.parse(ISOLATED_HOME).root;
+process.env.HOMEPATH = ISOLATED_HOME.replace(path.parse(ISOLATED_HOME).root, '');
 
 const plugin = require('../plugins/swe-pro-agents.js');
 
@@ -376,6 +384,55 @@ async function main() {
       cfg.command && cfg.command['goal'],
       'goal command must be registered by default (fail-open)'
     );
+  });
+
+  await test('/goal command is not agent-pinned (visible in every session)', async () => {
+    // An `agent: <name>` pin hides the command from all other agents'
+    // sessions (including the default Build session) — the reported
+    // "command doesn't ship" failure. Goal handling is plain text that
+    // works anywhere; only the loop itself is swe-pro-bound.
+    const ledgerDir = tempDir('continuation-nopin-');
+    const hooks = await plugin.server({ client: fakeClient([]), directory: ledgerDir });
+    const cfg = {};
+    await hooks.config(cfg);
+    assert.ok(cfg.command && cfg.command['goal'], 'goal command registered');
+    assert.ok(!('agent' in cfg.command['goal']), 'goal command must not pin an agent');
+  });
+
+  await test('/pause_goal and /resume_goal are registered unpinned', async () => {
+    const ledgerDir = tempDir('continuation-standalone-');
+    const hooks = await plugin.server({ client: fakeClient([]), directory: ledgerDir });
+    const cfg = {};
+    await hooks.config(cfg);
+    for (const name of ['pause_goal', 'resume_goal']) {
+      assert.ok(cfg.command && cfg.command[name], `${name} registered`);
+      assert.ok(!('agent' in cfg.command[name]), `${name} must not pin an agent`);
+    }
+  });
+
+  await test('pause_goal disarms and resume_goal re-arms the idle nudge', async () => {
+    const ledgerDir = tempDir('continuation-standalone-flow-');
+    fs.mkdirSync(path.join(ledgerDir, 'plans'), { recursive: true });
+    fs.writeFileSync(path.join(ledgerDir, 'plans', 'state.json'), resumableLedger());
+    const emptyCwd = tempDir('continuation-cwd-');
+
+    const originalCwd = process.cwd();
+    process.chdir(emptyCwd);
+    try {
+      const calls = [];
+      const client = fakeClient(calls);
+      await fireCommand(ledgerDir, client, 'goal', 'ship it', 'sess-g');
+      await fireIdle(ledgerDir, client, 'sess-g');
+      assert.strictEqual(calls.length, 1, 'armed goal nudges on idle');
+      await fireCommand(ledgerDir, client, 'pause_goal', '', 'sess-g');
+      await fireIdle(ledgerDir, client, 'sess-g');
+      assert.strictEqual(calls.length, 1, 'pause_goal stops the nudge');
+      await fireCommand(ledgerDir, client, 'resume_goal', '', 'sess-g');
+      await fireIdle(ledgerDir, client, 'sess-g');
+      assert.strictEqual(calls.length, 2, 'resume_goal restarts the nudge');
+    } finally {
+      process.chdir(originalCwd);
+    }
   });
 
   console.log(`\n${passed} passed, ${failed} failed`);

@@ -76,7 +76,7 @@ async function run() {
     }
   };
 
-  await check('plugin exposes 10 tools and full lifecycle works with real worktree', async () => {
+  await check('plugin exposes 10 bg tools plus 7 goal tools and full lifecycle works with real worktree', async () => {
     const repoDir = tmpDir();
     initRepo(repoDir);
     const client = makeFakeClient();
@@ -86,7 +86,10 @@ async function run() {
     for (const t of ['bg_delegate', 'bg_status', 'bg_read', 'bg_list', 'bg_stop', 'bg_steer', 'bg_prune', 'bg_merge', 'bg_resume', 'bg_dashboard']) {
       assert.ok(tools[t] && typeof tools[t].execute === 'function', 'missing tool ' + t);
     }
-    assert.strictEqual(Object.keys(tools).length, 10, 'exactly 10 tools, got ' + Object.keys(tools).join(','));
+    for (const t of ['get_goal', 'set_goal', 'list_all_goals', 'get_goal_history', 'update_goal_objective', 'update_goal_status', 'clear_goal']) {
+      assert.ok(tools[t] && typeof tools[t].execute === 'function', 'missing tool ' + t);
+    }
+    assert.strictEqual(Object.keys(tools).length, 17, 'exactly 17 tools, got ' + Object.keys(tools).join(','));
 
     const ret = await tools.bg_delegate.execute({ prompt: 'do work', agent: 'swe-mini' });
     const m = ret.match(/delegated (bg_\S+)/);
